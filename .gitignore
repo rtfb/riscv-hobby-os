@@ -1,5 +1,6 @@
 busybox
 linux
 qemu
+qemu-build
 initramfs
 initramfs-busybox-riscv64.cpio.gz

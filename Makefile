@@ -1,6 +1,6 @@
 
 run:
-	sudo qemu-system-riscv64 -nographic -machine virt \
+	./qemu-build/bin/qemu-system-riscv64 -nographic -machine virt \
      -kernel linux/arch/riscv/boot/Image -append "root=/dev/vda ro console=ttyS0" \
      -drive file=busybox/busybox,format=raw,id=hd0 \
      -device virtio-blk-device,drive=hd0 \
@@ -19,10 +19,6 @@ clone:
 .PHONY: qemu
 qemu:
 	./scripts/build-qemu.sh
-
-.PHONY: install-qemu
-install-qemu:
-	./scripts/install-qemu.sh
 
 .PHONY: busybox
 busybox:
