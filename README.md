@@ -17,7 +17,6 @@ Make targets
 `make prereqs` -- apt-get the prerequisites.
 `make clone` -- clone the relevant source code.
 `make qemu` -- build Qemu for RISC-V.
-`make install-qemu` -- install the new build system-wide.
 `make linux`
 `make busybox`
 `make initrd`
