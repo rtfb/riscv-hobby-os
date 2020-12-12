@@ -17,13 +17,17 @@ prereqs:
 		curl \
 		flex \
 		gawk \
+		gcc-riscv64-linux-gnu \
 		git \
 		libexpat-dev \
+		libglib2.0-dev \
+		libpixman-1-dev \
 		libgmp-dev \
 		libmpc-dev \
 		libmpfr-dev \
 		libtool \
 		patchutils \
+		pkg-config \
 		texinfo gperf \
 		zlib1g-dev
 
