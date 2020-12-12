@@ -7,9 +7,25 @@ run:
      -initrd initramfs-busybox-riscv64.cpio.gz
 
 prereqs:
-	sudo apt install autoconf automake autotools-dev curl libmpc-dev \
-	libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf \
-	libtool patchutils bc zlib1g-dev libexpat-dev git
+	sudo apt --yes install \
+		autoconf \
+		automake \
+		autotools-dev \
+		bc \
+		bison \
+		build-essential \
+		curl \
+		flex \
+		gawk \
+		git \
+		libexpat-dev \
+		libgmp-dev \
+		libmpc-dev \
+		libmpfr-dev \
+		libtool \
+		patchutils \
+		texinfo gperf \
+		zlib1g-dev
 
 clone:
 	git clone https://github.com/qemu/qemu
