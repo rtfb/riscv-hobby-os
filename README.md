@@ -3,7 +3,7 @@ Run a RISC-V code in QEMU.
 Bare metal RISC-V assembly in QEMU
 =================================
 
-Run a bare metal RISC-V code in QEMU without any OS or C. Based on the source code from [here][riscv-hello-asm].
+Run a bare metal RISC-V code in QEMU without any OS or C. Based on the source code from [here][riscv-hello-asm] and [here][riscv-hello-asm2].
 
 The code supports 64bit `sifive_u` QEMU emulation target.
 
@@ -54,5 +54,6 @@ TODO: install Spike
 [riscv-qemu-docs]: https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-qemu.html
 [custom-kernel-tutorial]: http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
 [riscv-hello-asm]: https://github.com/noteed/riscv-hello-asm
+[riscv-hello-asm2]: https://theintobooks.wordpress.com/2019/12/28/hello-world-on-risc-v-with-qemu
 [spike]: https://github.com/riscv/riscv-isa-sim
 
