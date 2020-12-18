@@ -49,6 +49,9 @@ As of this writing, these are the latest versions of the software involved:
 
 TODO: install Spike
 
+Make targets
+------------
+
 `make run-spike` -- build RISC-V ELF executable and launch it via SPIKE.
 
 [riscv-qemu-docs]: https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-qemu.html
