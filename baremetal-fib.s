@@ -6,12 +6,12 @@
 .globl _start
 
 _start:
-        csrr    a1, mhartid             # read our hartid and only run on processor 0
-        bne     a1, zero, halt
+        csrr    a1, mhartid             # read our hartware thread id (`hart` stands for `hardware thread`)
+        bnez    a1, halt                # run only on one hardware thread (hardid == 0), halt all the other ones
 
-        la      sp, stack_top
+        la      sp, stack_top           # setup stack pointer
 
-        jal     main
+        jal     main                    # call main()
 
 halt:   j       halt
 
@@ -20,6 +20,7 @@ main:
         la      a0, hello_msg
         jal     prints
 
+        # test printd and prints functions
         li      a0, 1
         jal     printd
         li      a0, 5
@@ -37,6 +38,7 @@ main:
         la      a0, next_line
         jal     prints
 
+        # calculate Fibonacci sequence
         # for (int i = 1; i < 15; i++)
         li      s0, 1
         li      s1, 15
