@@ -1,4 +1,4 @@
-Run a RISC-V code in Qemu.
+Run a RISC-V code in QEMU.
 
 Bare metal RISC-V assembly in QEMU
 =================================
