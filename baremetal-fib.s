@@ -18,25 +18,25 @@ halt:   j       halt
 .global main
 main:
         la      a0, hello_msg
-        jal     prints
+        call    prints
 
         # test printd and prints functions
-        li      a0, 1
-        jal     printd
+        li      a0, 1                   
+        call    printd
         li      a0, 5
-        jal     printd
+        call    printd
         li      a0, 10
-        jal     printd
+        call    printd
         li      a0, 100
-        jal     printd
+        call    printd
         li      a0, 130
-        jal     printd
+        call    printd
         li      a0, -130
-        jal     printd
+        call    printd
         li      a0, -255
-        jal     printd
+        call    printd
         la      a0, next_line
-        jal     prints
+        call    prints
 
         # calculate Fibonacci sequence
         # for (int i = 1; i < 15; i++)
@@ -44,18 +44,18 @@ main:
         li      s1, 15
         # printf("fib(%d) = %d\n", i, fib(i));
 1:      la      a0, fib0_msg
-        jal     prints                    # print "fib("
+        call    prints                    # print "fib("
         mv      a0, s0
-        jal     printd                    # print "%d"
+        call    printd                    # print "%d"
         mv      a0, s0
-        jal     fib                       # call fib()
+        call    fib                       # call fib()
         mv      s2, a0
         la      a0, fib1_msg
-        jal     prints                    # print ") ="
+        call    prints                    # print ") ="
         mv      a0, s2
-        jal     printd                    # print "%d"
+        call    printd                    # print "%d"
         la      a0, next_line
-        jal     prints                    # print "\n"
+        call    prints                    # print "\n"
         addi    s0, s0, 1
         blt     s0, s1, 1b
 
