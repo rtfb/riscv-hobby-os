@@ -21,7 +21,7 @@ main:
         call    prints
 
         # test printd and prints functions
-        li      a0, 1                   
+        li      a0, 1
         call    printd
         li      a0, 5
         call    printd
@@ -152,20 +152,21 @@ printd:                                 # IN: a0 = decimal number
 
 1:      li      a1, 10                  # radix = 10
         mv      a2, sp                  # store string on stack
-        addi    sp, sp, -1
-        sb      zero, 0(sp)             # null-terminate the string
+        addi    sp, sp, -16             # allocate 16 symbols on stack to be safe
+        addi    a2, a2, -1
+        sb      zero, 0(a2)             # null-terminate the string
 
         # convert integer into the
         # sequence of single digits
         # and push them onto stack
 2:      rem     t0, a0, a1                # modulo radix
         addi    t0, t0, '0'
-        addi    sp, sp, -1
-        sb      t0, 0(sp)
+        addi    a2, a2, -1
+        sb      t0, 0(a2)
         div     a0, a0, a1
         bnez    a0, 2b
 
         # print top of the stack
-        mv      a0, sp
-        mv      sp, a2
+        mv      a0, a2
+        addi    sp, sp, 16              # restore stack pointer (TODO: restore stack pointer after prints not before)
         j       prints
