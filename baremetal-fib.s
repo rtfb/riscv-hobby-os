@@ -90,7 +90,7 @@ fib:
 hello_str:
         .string "Hello world!!!\n"
 hello_fmt:
-        .string "%sHello %c%c%c%c%c%c%c : %d %i %u %o %x %X _start=%p main=%p fib=%p this-str=%p.\n"
+        .string "%sHello %c%c%c%c%c%c%c %% %d %i %u %o %x %X _start=%p main=%p fib=%p this-str=%p unknown pattern type: %q.\n"
 hello_arg:
         .dword hello_str
         .ascii "numbers"
@@ -155,7 +155,12 @@ printf:                                 # IN: a0 = address of NULL terminated fo
 10:     addi    a0, a0, 2
         lbu     t0, -1(a0)              # read next character to determine type field (%s, %c, %d, %i, %u, %x, %o, %p)
 
-        li      t1, 'c'                 # if %c
+        li      t1, '%'                 # if %%
+        bne     t0, t1, 10f
+        addi    a0, a0, -1              # print % and don't skip the next character
+        j       2b
+
+10:     li      t1, 'c'                 # if %c
         bne     t0, t1, 10f
         # load char from a1, increment a1 by sizeof(char), print char
         call_printf_arg_handler printc, load_op=lbu, size=1
@@ -208,7 +213,9 @@ printf:                                 # IN: a0 = address of NULL terminated fo
         call_printf_arg_handler printx, load_op=ld, size=8
         j       0b                      # continue
 
-10:     j       2b                      # default - print current character
+10:     addi    a0, a0, -2              # unknown argument
+        lbu     t0, (a0)                # go back and print as characters
+        j       2b
 
 .global printc
 printc:                                 # IN: a0 = char
