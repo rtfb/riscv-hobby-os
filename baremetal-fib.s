@@ -104,10 +104,22 @@ fib_fmt:
 
 .section .text
 .global printf
-
+.macro  call_printf_arg_handler label, load_op, size
+        addi    sp, sp, -24
+        sd      ra, 0(sp)
+        sd      a0, 8(sp)
+        sd      a1, 16(sp)
+        \load_op a0, (a1)
+        jal     \label
+        ld      ra, 0(sp)
+        ld      a0, 8(sp)
+        ld      a1, 16(sp)
+        addi    sp, sp, 24
+        addi    a1, a1, \size
+.endm
 printf:                                 # IN: a0 = address of NULL terminated formatted string, a1 = address of argmuments
                                         # formatting supports %s, %c, %d, %i, %u, TODO: %x, %o, %p
-        lbu     t0, (a0)                # load and zero-extend byte from address a0
+0:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         bnez    t0, 1f
         ret                             # while not null
 
@@ -117,76 +129,39 @@ printf:                                 # IN: a0 = address of NULL terminated fo
 3:      lw      t1, UART_REG_TXFIFO(t2) # read from serial
         bltz    t1, 3b                  # until >= 0
         sw      t0, UART_REG_TXFIFO(t2) # write to serial
-        addi    a0, a0, 1               # increment a0
-        j       printf                  # continue
+        addi    a0, a0, 1               # increment a6
+        j       0b                      # continue
 
 10:     addi    a0, a0, 2
         lbu     t0, -1(a0)              # read next character to determine type field (%s, %c, %d, %i, %u, %x, %o, %p)
 
         li      t1, 'c'                 # if %c
         bne     t0, t1, 10f
-        addi    sp, sp, -24
-        sd      ra, 0(sp)
-        sd      a0, 8(sp)
-        sd      a1, 16(sp)
-        lbu     a0, (a1)                # load character from address a1
-        jal     printc
-        ld      ra, 0(sp)
-        ld      a0, 8(sp)
-        ld      a1, 16(sp)
-        addi    sp, sp, 24
-        addi    a1, a1, 1               # increment a1
-        j       printf                  # continue
+        # load char from a1, increment a1 by sizeof(char), print char
+        call_printf_arg_handler printc, load_op=lbu, size=1
+        j       0b                      # continue
 
 10:     li      t1, 's'                 # if %s
         bne     t0, t1, 10f
-        addi    sp, sp, -24
-        sd      ra, 0(sp)
-        sd      a0, 8(sp)
-        sd      a1, 16(sp)
-        ld      a0, (a1)                # load string pointer from address a1
-        jal     prints
-        ld      ra, 0(sp)
-        ld      a0, 8(sp)
-        ld      a1, 16(sp)
-        addi    sp, sp, 24
-        addi    a1, a1, 8               # increment a1
-        j       printf                  # continue
+        # load string pointer from a1, increment a1 by sizeof(char*), print string
+        call_printf_arg_handler prints, load_op=ld, size=8
+        j       0b                      # continue
 
 10:     li      t1, 'd'                 # if %d
-        beq     t0, t1, 11f
+        beq     t0, t1, 1f
         li      t1, 'i'                 # if %i
         bne     t0, t1, 10f
-11:     addi    sp, sp, -24
-        sd      ra, 0(sp)
-        sd      a0, 8(sp)
-        sd      a1, 16(sp)
-        lw      a0, (a1)                # load int from address a1
-        jal     printd
-        ld      ra, 0(sp)
-        ld      a0, 8(sp)
-        ld      a1, 16(sp)
-        addi    sp, sp, 24
-        addi    a1, a1, 4               # increment a1
-        j       printf                  # continue
+1:      # load int from a1, increment a1 by sizeof(int), print int
+        call_printf_arg_handler printd, load_op=lw, size=4
+        j       0b                      # continue
 
 10:     li      t1, 'u'                 # if %u
         bne     t0, t1, 10f
-        addi    sp, sp, -24
-        sd      ra, 0(sp)
-        sd      a0, 8(sp)
-        sd      a1, 16(sp)
-        lwu     a0, (a1)                # load unsigned int from address a1
-        jal     printu
-        ld      ra, 0(sp)
-        ld      a0, 8(sp)
-        ld      a1, 16(sp)
-        addi    sp, sp, 24
-        addi    a1, a1, 4               # increment a1
-        j       printf                  # continue
+        # load unsigned int from a1, increment a1 by sizeof(unsigned), print unsigned
+        call_printf_arg_handler printu, load_op=lwu, size=4
+        j       0b                      # continue
 
 10:     j       2b                      # default - print current character
-
 
 .global printc
 printc:                                 # IN: a0 = char
