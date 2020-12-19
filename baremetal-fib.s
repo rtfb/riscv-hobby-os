@@ -31,14 +31,14 @@ main:
         jal     fib                     # call fib() with a0 containing index of Fibonacci sequence.
                                         # The function will return result in a0.
 
-        addi    sp, sp, -16             # allocate 2 printf arguments on stack
+        addi    sp, sp, -8              # allocate 2 printf arguments (size of int) on stack
         mv      a1, sp
         sd      s0, 0(a1)               # 1st printf argument s0 contains index i
-        sd      a0, 8(a1)               # 2nd prinnt argument a0 contains result of fib(i)
+        sd      a0, 4(a1)               # 2nd prinnt argument a0 contains result of fib(i)
         la      a0, fib_fmt
         call    printf                  # call printf with a0 pointing to "fib(%d) = %d\n" pattern
                                         #              and a1 pointing to list of arguments (i, fib(i))
-        addi    sp, sp, 16              # restore stack
+        addi    sp, sp, 8              # restore stack
 
         addi    s0, s0, 1               # i++
         blt     s0, s1, 1b              # loop while i < 15
@@ -90,13 +90,13 @@ fib:
 hello_str:
         .string "Hello world!!!\n"
 hello_fmt:
-        .string "%sHello %c%c%c%c%c%c%c: %d %i %d.\n"
+        .string "%sHello %c%c%c%c%c%c%c: %d %i %u.\n"
 hello_arg:
         .dword hello_str
         .ascii "numbers"
-        .dword 100
-        .dword 20
-        .dword -30
+        .int 20
+        .int -30
+        .int -30
 fib_fmt:
         .string "fib(%d) = %d\n"
 
@@ -106,7 +106,7 @@ fib_fmt:
 .global printf
 
 printf:                                 # IN: a0 = address of NULL terminated formatted string, a1 = address of argmuments
-                                        # formatting supports %s, %c, %d (TODO:, %i, %u, %x, %o, %p)
+                                        # formatting supports %s, %c, %d, %i, %u, TODO: %x, %o, %p
         lbu     t0, (a0)                # load and zero-extend byte from address a0
         bnez    t0, 1f
         ret                             # while not null
@@ -161,13 +161,28 @@ printf:                                 # IN: a0 = address of NULL terminated fo
         sd      ra, 0(sp)
         sd      a0, 8(sp)
         sd      a1, 16(sp)
-        ld      a0, (a1)                # load decimal number from address a1
+        lw      a0, (a1)                # load int from address a1
         jal     printd
         ld      ra, 0(sp)
         ld      a0, 8(sp)
         ld      a1, 16(sp)
         addi    sp, sp, 24
-        addi    a1, a1, 8               # increment a1
+        addi    a1, a1, 4               # increment a1
+        j       printf                  # continue
+
+10:     li      t1, 'u'                 # if %u
+        bne     t0, t1, 10f
+        addi    sp, sp, -24
+        sd      ra, 0(sp)
+        sd      a0, 8(sp)
+        sd      a1, 16(sp)
+        lwu     a0, (a1)                # load unsigned int from address a1
+        jal     printu
+        ld      ra, 0(sp)
+        ld      a0, 8(sp)
+        ld      a1, 16(sp)
+        addi    sp, sp, 24
+        addi    a1, a1, 4               # increment a1
         j       printf                  # continue
 
 10:     j       2b                      # default - print current character
@@ -194,21 +209,23 @@ prints:                                 # IN: a0 = address of NULL terminated st
 3:      ret
 
 .global printd
+.global printu
 printd:                                 # IN: a0 = decimal number
         # if input is negative,
         # then print negative sign
-        bgez    a0, 1f
+        bgez    a0, printu
         neg     a0, a0                  # take two's complement of the input
         addi    sp, sp, -16
         sd      ra, 0(sp)
         sd      a0, 8(sp)
         li      a0, '-'
-        jal     printc
+        jal     printc                  # print '-' in front of the rest
         ld      ra, 0(sp)
         ld      a0, 8(sp)
         addi    sp, sp, 16
 
-1:      li      a1, 10                  # radix = 10
+printu:
+        li      a1, 10                  # radix = 10
         mv      a2, sp                  # store string on stack
         addi    sp, sp, -16             # allocate 16 symbols on stack to be safe
         addi    a2, a2, -1
@@ -217,11 +234,11 @@ printd:                                 # IN: a0 = decimal number
         # convert integer into the
         # sequence of single digits
         # and push them onto stack
-2:      rem     t0, a0, a1                # modulo radix
+2:      remu    t0, a0, a1                # modulo radix
         addi    t0, t0, '0'
         addi    a2, a2, -1
         sb      t0, 0(a2)
-        div     a0, a0, a1
+        divu    a0, a0, a1
         bnez    a0, 2b
 
         # print top of the stack
