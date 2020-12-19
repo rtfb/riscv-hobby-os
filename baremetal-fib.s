@@ -90,13 +90,16 @@ fib:
 hello_str:
         .string "Hello world!!!\n"
 hello_fmt:
-        .string "%sHello %c%c%c%c%c%c%c: %d %i %u.\n"
+        .string "%sHello %c%c%c%c%c%c%c: %d %i %u %o %x %X.\n"
 hello_arg:
         .dword hello_str
         .ascii "numbers"
         .int 20
         .int -30
         .int -30
+        .int 0100 # 64 in octal
+        .int 0xAA55
+        .int -1
 fib_fmt:
         .string "fib(%d) = %d\n"
 
@@ -118,7 +121,7 @@ fib_fmt:
         addi    a1, a1, \size
 .endm
 printf:                                 # IN: a0 = address of NULL terminated formatted string, a1 = address of argmuments
-                                        # formatting supports %s, %c, %d, %i, %u, TODO: %x, %o, %p
+                                        # formatting supports %s, %c, %d, %i, %u, %x, %o, TODO: %p
 0:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         bnez    t0, 1f
         ret                             # while not null
@@ -161,6 +164,20 @@ printf:                                 # IN: a0 = address of NULL terminated fo
         call_printf_arg_handler printu, load_op=lwu, size=4
         j       0b                      # continue
 
+10:     li      t1, 'o'                 # if %o
+        bne     t0, t1, 10f
+        # load unsigned int from a1, increment a1 by sizeof(unsigned), print unsigned as octal
+        call_printf_arg_handler printo, load_op=lwu, size=4
+        j       0b                      # continue
+
+10:     li      t1, 'x'                 # if %x
+        beq     t0, t1, 1f
+        li      t1, 'X'                 # if %X
+        bne     t0, t1, 10f
+1:      # load unsigned int from a1, increment a1 by sizeof(unsigned), print unsigned as hexadecimal
+        call_printf_arg_handler printx, load_op=lwu, size=4
+        j       0b                      # continue
+
 10:     j       2b                      # default - print current character
 
 .global printc
@@ -201,6 +218,8 @@ printd:                                 # IN: a0 = decimal number
 
 printu:
         li      a1, 10                  # radix = 10
+
+print_radix:
         mv      a2, sp                  # store string on stack
         addi    sp, sp, -16             # allocate 16 symbols on stack to be safe
         addi    a2, a2, -1
@@ -209,14 +228,24 @@ printu:
         # convert integer into the
         # sequence of single digits
         # and push them onto stack
-2:      remu    t0, a0, a1                # modulo radix
-        addi    t0, t0, '0'
+1:      remu    t0, a0, a1                # modulo radix
+        li      t1, 9
+        ble     t0, t1, 2f
+        addi    t0, t0, 'A'-'0'-10
+2:      addi    t0, t0, '0'
         addi    a2, a2, -1
         sb      t0, 0(a2)
         divu    a0, a0, a1
-        bnez    a0, 2b
+        bnez    a0, 1b
 
         # print top of the stack
         mv      a0, a2
         addi    sp, sp, 16              # restore stack pointer (TODO: restore stack pointer after prints not before)
         j       prints
+
+printo:
+        li      a1, 8
+        j       print_radix
+printx:
+        li      a1, 16
+        j       print_radix
