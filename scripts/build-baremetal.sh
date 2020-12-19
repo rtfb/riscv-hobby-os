@@ -7,4 +7,4 @@ then
 fi
 
 mkdir -pv baremetal
-$RISCV64_GCC -march=rv64g -mabi=lp64 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal-fib.ld baremetal-fib.s -o baremetal/fib
+$RISCV64_GCC -march=rv64g -mabi=lp64 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal-fib.ld baremetal-fib.s baremetal-print.s -o baremetal/fib
