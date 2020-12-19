@@ -17,47 +17,31 @@ halt:   j       halt
 
 .global main
 main:
-        la      a0, hello_msg
-        call    prints
-
-        # test printd and prints functions
-        li      a0, 1
-        call    printd
-        li      a0, 5
-        call    printd
-        li      a0, 10
-        call    printd
-        li      a0, 100
-        call    printd
-        li      a0, 130
-        call    printd
-        li      a0, -130
-        call    printd
-        li      a0, -255
-        call    printd
-        la      a0, next_line
-        call    prints
+        # test printf()
+        la      a0, hello_fmt
+        la      a1, hello_arg
+        call    printf
 
         # calculate Fibonacci sequence
         # for (int i = 1; i < 15; i++)
+        #     printf("fib(%d) = %d\n", i, fib(i));
         li      s0, 1
         li      s1, 15
-        # printf("fib(%d) = %d\n", i, fib(i));
-1:      la      a0, fib0_msg
-        call    prints                    # print "fib("
-        mv      a0, s0
-        call    printd                    # print "%d"
-        mv      a0, s0
-        call    fib                       # call fib()
-        mv      s2, a0
-        la      a0, fib1_msg
-        call    prints                    # print ") ="
-        mv      a0, s2
-        call    printd                    # print "%d"
-        la      a0, next_line
-        call    prints                    # print "\n"
-        addi    s0, s0, 1
-        blt     s0, s1, 1b
+1:      mv      a0, s0
+        jal     fib                     # call fib() with a0 containing index of Fibonacci sequence.
+                                        # The function will return result in a0.
+
+        addi    sp, sp, -16             # allocate 2 printf arguments on stack
+        mv      a1, sp
+        sd      s0, 0(a1)               # 1st printf argument s0 contains index i
+        sd      a0, 8(a1)               # 2nd prinnt argument a0 contains result of fib(i)
+        la      a0, fib_fmt
+        call    printf                  # call printf with a0 pointing to "fib(%d) = %d\n" pattern
+                                        #              and a1 pointing to list of arguments (i, fib(i))
+        addi    sp, sp, 16              # restore stack
+
+        addi    s0, s0, 1               # i++
+        blt     s0, s1, 1b              # loop while i < 15
 
         ret
 
@@ -103,18 +87,92 @@ fib:
         ret
 
 .section .rodata
-hello_msg:
-        .string "Hello world!\n"
-fib0_msg:
-        .string "fib("
-fib1_msg:
-        .string ") = "
-next_line:
-        .string "\n"
+hello_str:
+        .string "Hello world!!!\n"
+hello_fmt:
+        .string "%sHello %c%c%c%c%c%c%c: %d %i %d.\n"
+hello_arg:
+        .dword hello_str
+        .ascii "numbers"
+        .dword 100
+        .dword 20
+        .dword -30
+fib_fmt:
+        .string "fib(%d) = %d\n"
 
 # --- Utility functions ------------------------------------------------------------
 
 .section .text
+.global printf
+
+printf:                                 # IN: a0 = address of NULL terminated formatted string, a1 = address of argmuments
+                                        # formatting supports %s, %c, %d (TODO:, %i, %u, %x, %o, %p)
+        lbu     t0, (a0)                # load and zero-extend byte from address a0
+        bnez    t0, 1f
+        ret                             # while not null
+
+1:      li      t1, '%'                 # handle %
+        beq     t0, t1, 10f
+2:      li      t2, UART_BASE
+3:      lw      t1, UART_REG_TXFIFO(t2) # read from serial
+        bltz    t1, 3b                  # until >= 0
+        sw      t0, UART_REG_TXFIFO(t2) # write to serial
+        addi    a0, a0, 1               # increment a0
+        j       printf                  # continue
+
+10:     addi    a0, a0, 2
+        lbu     t0, -1(a0)              # read next character to determine type field (%s, %c, %d, %i, %u, %x, %o, %p)
+
+        li      t1, 'c'                 # if %c
+        bne     t0, t1, 10f
+        addi    sp, sp, -24
+        sd      ra, 0(sp)
+        sd      a0, 8(sp)
+        sd      a1, 16(sp)
+        lbu     a0, (a1)                # load character from address a1
+        jal     printc
+        ld      ra, 0(sp)
+        ld      a0, 8(sp)
+        ld      a1, 16(sp)
+        addi    sp, sp, 24
+        addi    a1, a1, 1               # increment a1
+        j       printf                  # continue
+
+10:     li      t1, 's'                 # if %s
+        bne     t0, t1, 10f
+        addi    sp, sp, -24
+        sd      ra, 0(sp)
+        sd      a0, 8(sp)
+        sd      a1, 16(sp)
+        ld      a0, (a1)                # load string pointer from address a1
+        jal     prints
+        ld      ra, 0(sp)
+        ld      a0, 8(sp)
+        ld      a1, 16(sp)
+        addi    sp, sp, 24
+        addi    a1, a1, 8               # increment a1
+        j       printf                  # continue
+
+10:     li      t1, 'd'                 # if %d
+        beq     t0, t1, 11f
+        li      t1, 'i'                 # if %i
+        bne     t0, t1, 10f
+11:     addi    sp, sp, -24
+        sd      ra, 0(sp)
+        sd      a0, 8(sp)
+        sd      a1, 16(sp)
+        ld      a0, (a1)                # load decimal number from address a1
+        jal     printd
+        ld      ra, 0(sp)
+        ld      a0, 8(sp)
+        ld      a1, 16(sp)
+        addi    sp, sp, 24
+        addi    a1, a1, 8               # increment a1
+        j       printf                  # continue
+
+10:     j       2b                      # default - print current character
+
+
 .global printc
 printc:                                 # IN: a0 = char
         li      a1, UART_BASE
