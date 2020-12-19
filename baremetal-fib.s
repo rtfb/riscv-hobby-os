@@ -90,7 +90,7 @@ fib:
 hello_str:
         .string "Hello world!!!\n"
 hello_fmt:
-        .string "%sHello %c%c%c%c%c%c%c: %d %i %u %o %x %X.\n"
+        .string "%sHello %c%c%c%c%c%c%c : %d %i %u %o %x %X _start=%p main=%p fib=%p this-str=%p.\n"
 hello_arg:
         .dword hello_str
         .ascii "numbers"
@@ -100,6 +100,10 @@ hello_arg:
         .int 0100 # 64 in octal
         .int 0xAA55
         .int -1
+        .dword _start
+        .dword main
+        .dword fib
+        .dword hello_fmt
 fib_fmt:
         .string "fib(%d) = %d\n"
 
@@ -120,8 +124,21 @@ fib_fmt:
         addi    sp, sp, 24
         addi    a1, a1, \size
 .endm
+.macro  push_printf_state
+        addi    sp, sp, -24
+        sd      ra, 0(sp)
+        sd      a0, 8(sp)
+        sd      a1, 16(sp)
+.endm
+.macro  pop_printf_state
+        ld      ra, 0(sp)
+        ld      a0, 8(sp)
+        ld      a1, 16(sp)
+        addi    sp, sp, 24
+.endm
+
 printf:                                 # IN: a0 = address of NULL terminated formatted string, a1 = address of argmuments
-                                        # formatting supports %s, %c, %d, %i, %u, %x, %o, TODO: %p
+                                        # formatting supports %s, %c, %d, %i, %u, %x, %o, %p
 0:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         bnez    t0, 1f
         ret                             # while not null
@@ -146,7 +163,7 @@ printf:                                 # IN: a0 = address of NULL terminated fo
 
 10:     li      t1, 's'                 # if %s
         bne     t0, t1, 10f
-        # load string pointer from a1, increment a1 by sizeof(char*), print string
+        # load string pointer from a1, increment a1 by sizeof(char*), print null-terminated string
         call_printf_arg_handler prints, load_op=ld, size=8
         j       0b                      # continue
 
@@ -176,6 +193,19 @@ printf:                                 # IN: a0 = address of NULL terminated fo
         bne     t0, t1, 10f
 1:      # load unsigned int from a1, increment a1 by sizeof(unsigned), print unsigned as hexadecimal
         call_printf_arg_handler printx, load_op=lwu, size=4
+        j       0b                      # continue
+
+10:     li      t1, 'p'                 # if %p
+        bne     t0, t1, 10f
+
+        push_printf_state
+        li      a0, '0'
+        jal     printc
+        li      a0, 'x'
+        jal     printc                  # print '0x' in front of the address
+        pop_printf_state
+        # load void* pointer from a1, increment a1 by sizeof(void*), print pointer address as hexadecimal
+        call_printf_arg_handler printx, load_op=ld, size=8
         j       0b                      # continue
 
 10:     j       2b                      # default - print current character
@@ -228,11 +258,11 @@ print_radix:
         # convert integer into the
         # sequence of single digits
         # and push them onto stack
-1:      remu    t0, a0, a1                # modulo radix
-        li      t1, 9
-        ble     t0, t1, 2f
-        addi    t0, t0, 'A'-'0'-10
-2:      addi    t0, t0, '0'
+1:      remu    t0, a0, a1              # modulo radix
+        li      t1, 10
+        blt     t0, t1, 2f              # if t0 > 9
+        addi    t0, t0, 'A'-'0'-10      #     t0 += 'A' - 10
+2:      addi    t0, t0, '0'             # else t0 += '0'
         addi    a2, a2, -1
         sb      t0, 0(a2)
         divu    a0, a0, a1
