@@ -5,11 +5,11 @@ Bare metal RISC-V assembly in QEMU
 
 Run a bare metal RISC-V code in QEMU without any OS or C. Based on the source code from [here][riscv-hello-asm] and [here][riscv-hello-asm2].
 
-The code supports 64bit `sifive_u` QEMU emulation target.
+This code is compiled with the [riscv-gnu-toolchain][riscv-gnu-toolchain] and can be run with the QEMU `sifive_u` machine.
 
 As of this writing, these are the latest versions of the software involved:
 * Qemu: `v5.1.0`
-* RISC-V GCC toolchain: `10.1.0`
+* RISC-V GNU toolchain: `10.1.0`
 
 Make targets
 ------------
@@ -29,7 +29,7 @@ As of this writing, these are the latest versions of the software involved:
 * Qemu: `v5.1.0`
 * Linux: `v5.9`
 * Busybox: `1_9_2`
-* RISC-V GCC toolchain: `10.1.0`
+* RISC-V GNU toolchain: `10.1.0`
 
 Make targets
 ------------
@@ -48,7 +48,7 @@ Run a RISC-V ELF executable in [SPIKE][spike] a standard RISC-V ISA simulator.
 As of this writing, these are the latest versions of the software involved:
 * Qemu: `v5.1.0`
 * Spike" `v1.0.1-dev`
-* RISC-V GCC toolchain: `10.1.0`
+* RISC-V GNU toolchain: `10.1.0`
 
 TODO: install Spike
 
@@ -57,6 +57,7 @@ Make targets
 
 `make run-spike` -- build RISC-V ELF executable and launch it via SPIKE.
 
+[riscv-gnu-toolchain]: https://github.com/riscv/riscv-gnu-toolchain
 [riscv-qemu-docs]: https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-qemu.html
 [custom-kernel-tutorial]: http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
 [riscv-hello-asm]: https://github.com/noteed/riscv-hello-asm
