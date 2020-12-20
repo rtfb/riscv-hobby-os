@@ -8,6 +8,9 @@ SECTIONS
   .text : { *(.text) }
   /* data: Initialized data segment */
   .rodata : { *(.rodata) }
+  /* build-id: Store after readonly data */
+  .gnu_build_id : { *(.note.gnu.build-id) }
+  gnu_build_id = .;
   .data : { *(.data) }
   .sdata : { *(.sdata) }
   .debug : { *(.debug) }
