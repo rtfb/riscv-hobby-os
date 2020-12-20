@@ -9,6 +9,7 @@ The code supports 64bit `sifive_u` QEMU emulation target.
 
 As of this writing, these are the latest versions of the software involved:
 * Qemu: `v5.1.0`
+* RISC-V GCC toolchain: `10.1.0`
 
 Make targets
 ------------
@@ -28,6 +29,7 @@ As of this writing, these are the latest versions of the software involved:
 * Qemu: `v5.1.0`
 * Linux: `v5.9`
 * Busybox: `1_9_2`
+* RISC-V GCC toolchain: `10.1.0`
 
 Make targets
 ------------
@@ -46,6 +48,7 @@ Run a RISC-V ELF executable in [SPIKE][spike] a standard RISC-V ISA simulator.
 As of this writing, these are the latest versions of the software involved:
 * Qemu: `v5.1.0`
 * Spike" `v1.0.1-dev`
+* RISC-V GCC toolchain: `10.1.0`
 
 TODO: install Spike
 
