@@ -2,8 +2,8 @@
 .section .text
 .globl _start
 _start:
-        csrr    a1, mhartid             # read our hartware thread id (`hart` stands for `hardware thread`)
-        bnez    a1, halt                # run only on one hardware thread (hardid == 0), halt all the other ones
+        csrr    a1, mhartid             # read hardware thread id (`hart` stands for `hardware thread`)
+        bnez    a1, halt                # run only on the first hardware thread (hartid == 0), halt all the other threads
 
         la      sp, stack_top           # setup stack pointer
 
