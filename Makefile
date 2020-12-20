@@ -1,12 +1,38 @@
+# If local QEmu build does not exist, use system wide installed QEmu
+QEMU ?= ./qemu-build/bin/qemu-system-riscv64
+ifeq ($(wildcard $(QEMU)),)
+	QEMU = qemu-system-riscv64
+endif
+# Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
+SPIKE ?= spike
 
-run:
-	./qemu-build/bin/qemu-system-riscv64 -nographic -machine virt \
+# Shortcuts
+runm: run-baremetal
+runb: run-baremetal
+runs: run-spike
+runl: run-linux
+
+run-baremetal: baremetal
+	$(QEMU) -nographic -machine sifive_u -bios none -kernel baremetal/fib
+
+run-spike: elf
+	$(SPIKE) pk generic-elf/hello bbl loader
+
+run-linux: linux busybox initrd
+	$(QEMU) -nographic -machine virt \
      -kernel linux/arch/riscv/boot/Image -append "root=/dev/vda ro console=ttyS0" \
      -drive file=busybox/busybox,format=raw,id=hd0 \
      -device virtio-blk-device,drive=hd0 \
      -initrd initramfs-busybox-riscv64.cpio.gz
 
+clean:
+	rm -Rf baremetal
+	rm -Rf generic-elf
+	rm -Rf initramfs
+
 prereqs:
+	# OSX brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat
+	# OSX brew install riscv-tools qemu
 	sudo apt --yes install \
 		autoconf \
 		automake \
@@ -51,3 +77,11 @@ linux:
 .PHONY: initrd
 initrd:
 	./scripts/build-initrd.sh
+
+.PHONY: baremetal
+baremetal:
+	./scripts/build-baremetal.sh
+
+.PHONY: elf
+elf:
+	./scripts/build-elf.sh
