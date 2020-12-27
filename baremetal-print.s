@@ -1,33 +1,47 @@
+.include "machine-word.inc"
 .align 2
+.ifdef UART
+.equ UART_BASE,         UART
+.else
 .equ UART_BASE,         0x10010000
+.endif
+
 .equ UART_REG_TXFIFO,   0
+
+.ifndef UART_BASE
+MACHINE NOT SUPPORTED!
+.endif
 
 .section .text
 .global printf
-.macro  call_printf_arg_handler label, load_op, size
-        addi    sp, sp, -24
-        sd      ra, 0(sp)
-        sd      a0, 8(sp)
-        sd      a1, 16(sp)
-        \load_op a0, (a1)
+.macro  call_printf_arg_handler label, load_op32, load_op64, size
+        addi    sp, sp, -3*REGBYTES
+        sx      ra, 0,(sp)
+        sx      a0, 1,(sp)
+        sx      a1, 2,(sp)
+        .ifdef RISCV32
+        \load_op32 a0, 0(a1)
+        .else
+        \load_op64 a0, 0(a1)
+        .endif
         jal     \label
-        ld      ra, 0(sp)
-        ld      a0, 8(sp)
-        ld      a1, 16(sp)
-        addi    sp, sp, 24
+        lx      ra, 0,(sp)
+        lx      a0, 1,(sp)
+        lx      a1, 2,(sp)
+        addi    sp, sp, 3*REGBYTES
         addi    a1, a1, \size
 .endm
 .macro  push_printf_state
-        addi    sp, sp, -24
-        sd      ra, 0(sp)
-        sd      a0, 8(sp)
-        sd      a1, 16(sp)
+        addi    sp, sp, -3*REGBYTES
+        sx      ra, 0,(sp)
+        sx      a0, 1,(sp)
+        sx      a1, 2,(sp)
 .endm
 .macro  pop_printf_state
-        ld      ra, 0(sp)
-        ld      a0, 8(sp)
-        ld      a1, 16(sp)
-        addi    sp, sp, 24
+        lx      ra, 0,(sp)
+        lx      a0, 1,(sp)
+        lx      a1, 2,(sp)
+        addi    sp, sp, 3*-3*REGBYTES
 .endm
 
 printf:                                 # IN: a0 = address of NULL terminated formatted string, a1 = address of argmuments
@@ -56,13 +70,13 @@ printf:                                 # IN: a0 = address of NULL terminated fo
 10:     li      t1, 'c'                 # if %c
         bne     t0, t1, 10f
         # load char from a1, increment a1 by sizeof(char), print char
-        call_printf_arg_handler printc, load_op=lbu, size=1
+        call_printf_arg_handler printc, load_op32=lbu, load_op64=lbu, size=1
         j       0b                      # continue
 
 10:     li      t1, 's'                 # if %s
         bne     t0, t1, 10f
         # load string pointer from a1, increment a1 by sizeof(char*), print null-terminated string
-        call_printf_arg_handler prints, load_op=ld, size=8
+        call_printf_arg_handler prints, load_op32=lw, load_op64=ld, size=REGBYTES
         j       0b                      # continue
 
 10:     li      t1, 'd'                 # if %d
@@ -70,19 +84,19 @@ printf:                                 # IN: a0 = address of NULL terminated fo
         li      t1, 'i'                 # if %i
         bne     t0, t1, 10f
 1:      # load int from a1, increment a1 by sizeof(int), print int
-        call_printf_arg_handler printd, load_op=lw, size=4
+        call_printf_arg_handler printd, load_op32=lw, load_op64=lw, size=4
         j       0b                      # continue
 
 10:     li      t1, 'u'                 # if %u
         bne     t0, t1, 10f
         # load unsigned int from a1, increment a1 by sizeof(unsigned), print unsigned
-        call_printf_arg_handler printu, load_op=lwu, size=4
+        call_printf_arg_handler printu, load_op32=lw, load_op64=lwu, size=4
         j       0b                      # continue
 
 10:     li      t1, 'o'                 # if %o
         bne     t0, t1, 10f
         # load unsigned int from a1, increment a1 by sizeof(unsigned), print unsigned as octal
-        call_printf_arg_handler printo, load_op=lwu, size=4
+        call_printf_arg_handler printo, load_op32=lw, load_op64=lwu, size=4
         j       0b                      # continue
 
 10:     li      t1, 'x'                 # if %x
@@ -90,7 +104,7 @@ printf:                                 # IN: a0 = address of NULL terminated fo
         li      t1, 'X'                 # if %X
         bne     t0, t1, 10f
 1:      # load unsigned int from a1, increment a1 by sizeof(unsigned), print unsigned as hexadecimal
-        call_printf_arg_handler printx, load_op=lwu, size=4
+        call_printf_arg_handler printx, load_op32=lw, load_op64=lwu, size=4
         j       0b                      # continue
 
 10:     li      t1, 'p'                 # if %p
@@ -103,7 +117,7 @@ printf:                                 # IN: a0 = address of NULL terminated fo
         jal     printc                  # print '0x' in front of the address
         pop_printf_state
         # load void* pointer from a1, increment a1 by sizeof(void*), print pointer address as hexadecimal
-        call_printf_arg_handler printx, load_op=ld, size=8
+        call_printf_arg_handler printx, load_op32=lw, load_op64=ld, size=REGBYTES
         j       0b                      # continue
 
 10:     addi    a0, a0, -2              # unknown argument
@@ -137,14 +151,14 @@ printd:                                 # IN: a0 = decimal number
         # then print negative sign
         bgez    a0, printu
         neg     a0, a0                  # take two's complement of the input
-        addi    sp, sp, -16
-        sd      ra, 0(sp)
-        sd      a0, 8(sp)
+        addi    sp, sp, -2*REGBYTES
+        sx      ra, 0,(sp)
+        sx      a0, 1,(sp)
         li      a0, '-'
         jal     printc                  # print '-' in front of the rest
-        ld      ra, 0(sp)
-        ld      a0, 8(sp)
-        addi    sp, sp, 16
+        lx      ra, 0,(sp)
+        lx      a0, 1,(sp)
+        addi    sp, sp, 2*REGBYTES
 
 printu:
         li      a1, 10                  # radix = 10
