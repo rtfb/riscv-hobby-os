@@ -5,32 +5,16 @@
 .else
 .equ UART_BASE,         0x10010000
 .endif
-
-.equ UART_REG_TXFIFO,   0
-
 .ifndef UART_BASE
 MACHINE NOT SUPPORTED!
 .endif
 
+.equ UART_REG_TXFIFO,   0
+
 .section .text
 .global printf
-.macro  call_printf_arg_handler label, load_op32, load_op64, size
-        addi    sp, sp, -3*REGBYTES
-        sx      ra, 0,(sp)
-        sx      a0, 1,(sp)
-        sx      a1, 2,(sp)
-        .ifdef RISCV32
-        \load_op32 a0, 0(a1)
-        .else
-        \load_op64 a0, 0(a1)
-        .endif
-        jal     \label
-        lx      ra, 0,(sp)
-        lx      a0, 1,(sp)
-        lx      a1, 2,(sp)
-        addi    sp, sp, 3*REGBYTES
-        addi    a1, a1, \size
-.endm
+                                        # IN: a0 = address of NULL terminated formatted string, a1 = address of argmuments
+                                        # formatting supports %s, %c, %d, %i, %u, %x, %o, %p
 .macro  push_printf_state
         addi    sp, sp, -3*REGBYTES
         sx      ra, 0,(sp)
@@ -41,11 +25,21 @@ MACHINE NOT SUPPORTED!
         lx      ra, 0,(sp)
         lx      a0, 1,(sp)
         lx      a1, 2,(sp)
-        addi    sp, sp, 3*-3*REGBYTES
+        addi    sp, sp, 3*REGBYTES
+.endm
+.macro  call_printf_arg_handler label, load_op32, load_op64, size
+        push_printf_state               # push state
+        .ifdef RISCV32
+        \load_op32 a0, 0(a1)
+        .else
+        \load_op64 a0, 0(a1)
+        .endif
+        jal     \label                  # invoke handler subroutine
+        pop_printf_state                # pop state
+        addi    a1, a1, \size           # advance arg pointer
 .endm
 
-printf:                                 # IN: a0 = address of NULL terminated formatted string, a1 = address of argmuments
-                                        # formatting supports %s, %c, %d, %i, %u, %x, %o, %p
+printf:
 0:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         bnez    t0, 1f
         ret                             # while not null
