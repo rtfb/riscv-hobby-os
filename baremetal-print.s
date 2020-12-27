@@ -1,5 +1,5 @@
 .include "machine-word.inc"
-.align 2
+.balign 4
 .ifdef UART
 .equ UART_BASE,         UART
 .else
@@ -13,20 +13,20 @@ MACHINE NOT SUPPORTED!
 
 .section .text
 .global printf                          # C-like print formatted string. Supports formatting: %s, %c, %d, %i, %u, %x, %o, %p
-                                        # IN: a0 = address of NULL terminated formatted string,
-                                        #     a1 = address of argmuments
+                                        # @param[in] a0 address of NULL terminated formatted string,
+                                        # @param[in] a1 address of argmuments
 
 .global prints                          # Print string.
-                                        # IN: a0 = address of NULL terminated string
+                                        # @param[in] a0 address of NULL terminated string
 
 .global printd                          # Print signed decimal number.
-                                        # IN: a0 = decimal number
+                                        # @param[in] a0 decimal number
 
 .global printu                          # Print unsigned decimal number.
-                                        # IN: a0 = decimal number
+                                        # @param[in] a0 decimal number
 
 .global printc                          # Print single character.
-                                        # IN: a0 = char
+                                        # @param[in] a0 char
 
 .macro  push_printf_state
         stackalloc_x 3
@@ -146,7 +146,7 @@ printf:
         j       2b
 
 .global printc
-printc:                                 # IN: a0 = char
+printc:                                 # @param[in] a0 char
         li      a1, UART_BASE
 1:      lw      t1, UART_REG_TXFIFO(a1) # read from serial
         bltz    t1, 1b                  # until >= 0
@@ -154,7 +154,7 @@ printc:                                 # IN: a0 = char
         ret
 
 .global prints
-prints:                                 # IN: a0 = address of NULL terminated string
+prints:                                 # @param[in] a0 address of NULL terminated string
         li      a1, UART_BASE
 1:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         beqz    t0, 3f                  # while not null
@@ -167,7 +167,7 @@ prints:                                 # IN: a0 = address of NULL terminated st
 
 .global printd
 .global printu
-printd:                                 # IN: a0 = decimal number
+printd:                                 # @param[in] a0 decimal number
 
                                         # if input is negative,
                                         # then print the negative sign first

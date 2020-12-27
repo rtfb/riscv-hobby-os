@@ -1,6 +1,6 @@
 .include "machine-word.inc"
 .equ STACK_PER_HART,    64 * REGBYTES
-.align 4
+.balign 4
 .section .text
 .globl _start
 _start:

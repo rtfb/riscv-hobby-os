@@ -1,5 +1,5 @@
 .include "machine-word.inc"
-.align 4
+.balign 4
 .section .text
 .globl _start
 _start:
