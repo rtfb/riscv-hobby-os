@@ -3,17 +3,27 @@ QEMU ?= ./qemu-build/bin/qemu-system-riscv64
 ifeq ($(wildcard $(QEMU)),)
 	QEMU = qemu-system-riscv64
 endif
+QEMU32 ?= ./qemu-build/bin/qemu-system-riscv32
+ifeq ($(wildcard $(QEMU32)),)
+	QEMU32 = qemu-system-riscv32
+endif
 # Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
 SPIKE ?= spike
 
 # Shortcuts
+run32: run-baremetal32
 runm: run-baremetal
 runb: run-baremetal
 runs: run-spike
 runl: run-linux
 
 run-baremetal: baremetal
-	$(QEMU) -nographic -machine sifive_u -bios none -kernel baremetal/fib
+	$(QEMU) -nographic -machine sifive_u -bios none -kernel baremetal/hello_sifive_u
+	$(QEMU) -nographic -machine sifive_u -bios none -kernel baremetal/fib_sifive_u
+
+run-baremetal32: baremetal
+	$(QEMU32) -nographic -machine sifive_e -bios none -kernel baremetal/hello_sifive_e32
+	$(QEMU32) -nographic -machine sifive_e -bios none -kernel baremetal/fib_sifive_e32
 
 run-spike: elf
 	$(SPIKE) pk generic-elf/hello bbl loader

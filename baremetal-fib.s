@@ -1,9 +1,10 @@
-.align 2
+.include "machine-word.inc"
+.balign 4
 .section .text
 .globl _start
 _start:
-        csrr    a1, mhartid             # read hardware thread id (`hart` stands for `hardware thread`)
-        bnez    a1, halt                # run only on the first hardware thread (hartid == 0), halt all the other threads
+        csrr    t0, mhartid             # read hardware thread id (`hart` stands for `hardware thread`)
+        bnez    t0, halt                # run only on the first hardware thread (hartid == 0), halt all the other threads
 
         la      sp, stack_top           # setup stack pointer
 
@@ -13,14 +14,13 @@ halt:   j       halt
 
 .global main
 main:
-        # test printf()
         la      a0, hello_fmt
         la      a1, hello_arg
-        call    printf
+        call    printf                  # test printf()
 
-        # calculate Fibonacci sequence
-        # for (int i = 1; i < 15; i++)
-        #     printf("fib(%d) = %d\n", i, fib(i));
+                                        # calculate Fibonacci sequence
+                                        # for (int i = 1; i < 15; i++)
+                                        #     printf("fib(%d) = %d\n", i, fib(i));
         li      s0, 1
         li      s1, 15
 1:      mv      a0, s0
@@ -29,8 +29,8 @@ main:
 
         addi    sp, sp, -8              # allocate 2 int arguments for printf() on the stack
         mv      a1, sp
-        sd      s0, 0(a1)               # 1st printf argument s0 contains index i
-        sd      a0, 4(a1)               # 2nd prinnt argument a0 contains result of fib(i)
+        sw      s0, 0(a1)               # 1st printf argument s0 contains index i
+        sw      a0, 4(a1)               # 2nd prinnt argument a0 contains result of fib(i)
         la      a0, fib_fmt
         call    printf                  # call printf() with a0 pointing to "fib(%d) = %d\n" pattern
                                         #                and a1 pointing to list of arguments [i, fib(i)] stored on stack
@@ -52,25 +52,25 @@ fib:
         mv      t0, a0
         addi    a0, t0, -1              # calculate n-1
 
-        addi    sp, sp, -16
-        sd      ra, 0(sp)
-        sd      t0, 8(sp)               # preserve t0, which contains our original argument
+        stackalloc_x 2
+        sx      ra, 0,(sp)
+        sx      t0, 1,(sp)              # preserve t0, which contains our original argument
         jal     fib
-        ld      ra, 0(sp)
-        ld      t0, 8(sp)
-        addi    sp, sp, 16
+        lx      ra, 0,(sp)
+        lx      t0, 1,(sp)
+        stackfree_x 2
 
         mv      t2, a0                  # t2 now contains fib(n-1)
 
         addi    a0, t0, -2              # calculate n-2
 
-        addi    sp, sp, -16
-        sd      ra, 0(sp)
-        sd      t2, 8(sp)               # preserve t2, which has fib(n-1)
+        stackalloc_x 2
+        sx      ra, 0,(sp)
+        sx      t2, 1,(sp)              # preserve t2, which has fib(n-1)
         jal     fib
-        ld      ra, 0(sp)
-        ld      t2, 8(sp)
-        addi    sp, sp, 16
+        lx      ra, 0,(sp)
+        lx      t2, 1,(sp)
+        stackfree_x 2
 
         mv      t3, a0                  # t3 now contains fib(n-2)
         add     a0, t2, t3              # add them and jump to return
@@ -88,7 +88,7 @@ hello_str:
 hello_fmt:
         .string "%sHello %% %c%c%c%c%c%c%c: %d %i %u %o %x %X _start=%p main=%p fib=%p this-str=%p unknown pattern type: %q.\n"
 hello_arg:
-        .dword hello_str
+        pointer hello_str
         .ascii "numbers"
         .int 20
         .int -30
@@ -96,9 +96,9 @@ hello_arg:
         .int 0100 # 64 in octal
         .int 0xAA55
         .int -1
-        .dword _start
-        .dword main
-        .dword fib
-        .dword hello_fmt
+        pointer _start
+        pointer main
+        pointer fib
+        pointer hello_fmt
 fib_fmt:
         .string "fib(%d) = %d\n"
