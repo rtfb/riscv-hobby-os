@@ -29,7 +29,7 @@ MACHINE NOT SUPPORTED!
                                         # IN: a0 = char
 
 .macro  push_printf_state
-        addi    sp, sp, -3*REGBYTES
+        stackalloc_x 3
         sx      ra, 0,(sp)
         sx      a0, 1,(sp)
         sx      a1, 2,(sp)
@@ -38,7 +38,7 @@ MACHINE NOT SUPPORTED!
         lx      ra, 0,(sp)
         lx      a0, 1,(sp)
         lx      a1, 2,(sp)
-        addi    sp, sp, 3*REGBYTES
+        stackfree_x 3
 .endm
 .macro  call_printf_arg_handler label, load_op32, load_op64, size
         push_printf_state               # push state
@@ -173,14 +173,14 @@ printd:                                 # IN: a0 = decimal number
                                         # then print the negative sign first
         bgez    a0, printu
         neg     a0, a0                  # take two's complement of the input
-        addi    sp, sp, -2*REGBYTES
+        stackalloc_x 2
         sx      ra, 0,(sp)
         sx      a0, 1,(sp)
         li      a0, '-'
         jal     printc                  # print '-' in front of the rest
         lx      ra, 0,(sp)
         lx      a0, 1,(sp)
-        addi    sp, sp, 2*REGBYTES
+        stackfree_x 2
 
 printu:
         li      a1, 10                  # radix = 10

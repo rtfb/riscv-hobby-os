@@ -30,7 +30,7 @@ _start:
         bne     t0, s2, 1b
 
         # print registers
-        addi    sp, sp, -19 * REGBYTES  # allocate 19 arguments on stack
+        stackalloc_x 19                 # allocate 19 register size arguments on stack
         sx      s2,  0,(sp)             # s2 contains mhartid
         sx      ra,  1,(sp)
         sx      gp,  2,(sp)
@@ -57,8 +57,9 @@ _start:
         la      a0, print_registers_str
         mv      a1, sp
         call    printf
+        stackfree_x 19
 
-                                        # print symbols (only on the 1st hart)
+                                        # print symbols, but only on the 1st hart
         bnez    s2, 2f
         la      a0, print_symbols_str
         la      a1, print_symbols_arg

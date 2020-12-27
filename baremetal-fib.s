@@ -52,25 +52,25 @@ fib:
         mv      t0, a0
         addi    a0, t0, -1              # calculate n-1
 
-        addi    sp, sp, -2*REGBYTES
+        stackalloc_x 2
         sx      ra, 0,(sp)
         sx      t0, 1,(sp)              # preserve t0, which contains our original argument
         jal     fib
         lx      ra, 0,(sp)
         lx      t0, 1,(sp)
-        addi    sp, sp,  2*REGBYTES
+        stackfree_x 2
 
         mv      t2, a0                  # t2 now contains fib(n-1)
 
         addi    a0, t0, -2              # calculate n-2
 
-        addi    sp, sp, -2*REGBYTES
+        stackalloc_x 2
         sx      ra, 0,(sp)
         sx      t2, 1,(sp)              # preserve t2, which has fib(n-1)
         jal     fib
         lx      ra, 0,(sp)
         lx      t2, 1,(sp)
-        addi    sp, sp, 2*REGBYTES
+        stackfree_x 2
 
         mv      t3, a0                  # t3 now contains fib(n-2)
         add     a0, t2, t3              # add them and jump to return

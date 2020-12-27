@@ -42,3 +42,15 @@
         .dword \a
     .endm
 .endif
+
+.macro addxi a, b, number_of_regs
+    addi \a, \b, \number_of_regs * REGBYTES
+.endm
+
+.macro stackalloc_x number_of_regs
+    addxi sp, sp, -(\number_of_regs)
+.endm
+
+.macro stackfree_x number_of_regs
+    addxi sp, sp,  (\number_of_regs)
+.endm
