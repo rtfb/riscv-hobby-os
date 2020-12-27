@@ -2,6 +2,8 @@ busybox
 linux
 qemu
 qemu-build
+riscv-isa-sim
+riscv-pk
 initramfs
 initramfs-busybox-riscv64.cpio.gz
 baremetal
