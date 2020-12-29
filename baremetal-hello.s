@@ -35,7 +35,7 @@ _start:
         sx      ra,  1,(sp)
         sx      gp,  2,(sp)
         sx      tp,  3,(sp)
-        sx      fp,  4,(sp)
+        sx      s0,  4,(sp)
         sx      s1,  5,(sp)             # s1 contains pc on entree
 
         sx      a0,  6,(sp)
