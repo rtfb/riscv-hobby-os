@@ -28,7 +28,7 @@ run-baremetal32: baremetal
 run-spike: elf
 	$(SPIKE) pk generic-elf/hello bbl loader
 
-run-linux: linux busybox initrd
+run-linux: initrd
 	$(QEMU) -nographic -machine virt \
      -kernel linux/arch/riscv/boot/Image -append "root=/dev/vda ro console=ttyS0" \
      -drive file=busybox/busybox,format=raw,id=hd0 \
