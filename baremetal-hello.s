@@ -1,5 +1,15 @@
 .include "machine-word.inc"
 .equ STACK_PER_HART,    64 * REGBYTES
+
+# These addresses are taken from the SiFive E31 core manual[1], Chapter 8: Core
+# Local Interruptor (CLINT)
+# [1] https://static.dev.sifive.com/E31-RISCVCoreIP.pdf
+.equ MTIME, 0x200bff8
+.equ MTIMECMP, 0x2004000
+
+# This was determined experimentally:
+.equ ONE_SECOND, 10000000
+
 .balign 4
 .section .text
 .globl _start
@@ -28,6 +38,32 @@ _start:
 1:      la      t0, current_hart
         lx      t0, 0,(t0)
         bne     t0, s2, 1b
+
+        # Set the timer: read current time from mtime, add delta time to it,
+        # and write the result to mtimecmp:
+        li      t2, MTIME
+        ld      t2, 0(t2)               # read from mtime mmapped register
+        li      t4, ONE_SECOND          # t4 = 1s
+        li      t5, 5                   # t5 = 5
+        mul     t4, t4, t5              # t4 = t4 * t5 = 5s
+        add     t2, t2, t4              # t2 = mtime + 5s
+        li      t3, MTIMECMP
+        sd      t2, 0(t3)               # write t2 to mtimecmp
+
+
+        # Enable interrupts by setting required values to mstatus, mtvec and mie:
+        li      t0, 0x8                 # make a mask for 3rd bit
+        csrrs   t1, mstatus, t0         # set MIE (M-mode Interrupts Enabled) bit in mstatus reg
+
+        # store timer_handler directly to tvec. This will leave the mode bits
+        # set to 0, which means direct mode, in which all exceptions call
+        # timer_handler directly.
+        la      t0, timer_handler
+        csrrw   t1, mtvec, t0
+
+        li      t0, 0x80                # mask for 7th bit
+        csrrs   t1, mie, t0             # set MTIE (M-mode Timer Interrupt Enabled) bit
+
 
         # print registers
         stackalloc_x 19                 # allocate 19 register size arguments on stack
@@ -65,6 +101,24 @@ _start:
         la      a1, print_symbols_arg
         call    printf
 
+        # print M-mode registers, also only on the 1st hart
+        stackalloc_x 5                  # allocate 5 register size arguments on stack
+        sx      s2, 0,(sp)              # s2 contains mhartid
+        csrr    t2, misa                # read misa (Machine ISA Register)
+        sx      t2, 1,(sp)
+        csrr    t2, mstatus             # read mstatus
+        sx      t2, 2,(sp)
+        li      t2, MTIME
+        ld      t2, 0(t2)               # read from mtime mmapped register
+        sx      t2, 3,(sp)
+        li      t2, MTIMECMP
+        ld      t2, 0(t2)               # read from mtimecmp mmapped register
+        sx      t2, 4,(sp)
+        la      a0, print_mregs_str
+        mv      a1, sp
+        call    printf
+        stackfree_x 5
+
 2:      la      t0, current_hart
         addi    t1, s2, 1
         sx      t1, 0, (t0)             # trigger the next hart
@@ -73,12 +127,52 @@ park:
         wfi
         j       park
 
+
+timer_handler:
+        # print a few interesting registers from the timer handler
+        stackalloc_x 6                  # allocate 6 register size arguments on stack
+        csrr    t2, mcause
+        sx      t2, 0,(sp)
+        csrr    t2, mepc
+        sx      t2, 1,(sp)
+        csrr    t2, mtval
+        sx      t2, 2,(sp)
+        csrr    t2, mstatus
+        sx      t2, 3,(sp)
+        li      t2, MTIME
+        ld      t2, 0(t2)
+        sx      t2, 4,(sp)
+        li      t2, MTIMECMP
+        ld      t2, 0(t2)
+        sx      t2, 5,(sp)
+        la      a0, print_timer_str
+        mv      a1, sp
+        call    printf
+        stackfree_x 6
+
+        # now reset the timer for the future again:
+        li      t2, MTIME
+        ld      t2, 0(t2)
+        li      t4, ONE_SECOND          # t4 = 1s
+        li      t5, 3                   # t5 = 3
+        mul     t4, t4, t5              # t4 = t4 * t5 = 3s
+        add     t2, t2, t4              # t2 = mtime + 3s
+        li      t3, MTIMECMP
+        sd      t2, 0(t3)               # write t2 to mtimecmp
+
+        # return from the handler
+        mret
+
 .section .rodata
 rodata_start:
 print_registers_str:
         .string "\nRegisters: mhartid=%p ra=%p gp=%p tp=%p fp=%p pc=%p\n\t\ta0=%p a1=%p a2=%p a3=%p a4=%p a5=%p a6=%p a7=%p\n\t\tt0=%p t1=%p t2=%p\n\t\tsp(entree)=%p sp(current)=%p\n"
 print_symbols_str:
         .string "Symbols: _start=%p rodata_start=%p data_start=%p printf=%p this-str=%p stack_top=%p _end=%p\n"
+print_mregs_str:
+        .string "\nM-mode registers: mhartid=%p misa=%p mstatus=%p mtime=%p mtimecmp=%p\n"
+print_timer_str:
+        .string "\nHullo from timer! mcause=%p mepc=%p mtval=%p mstatus=%p mtime=%p mtimecmp=%p\n"
 print_symbols_arg:
         pointer _start
         pointer rodata_start
