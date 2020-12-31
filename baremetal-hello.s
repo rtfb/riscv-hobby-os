@@ -39,6 +39,8 @@ _start:
         lx      t0, 0,(t0)
         bne     t0, s2, 1b
 
+# NB: only do timer in RV64 for now, will do RV32 later
+.ifdef RISCV64
         # Set the timer: read current time from mtime, add delta time to it,
         # and write the result to mtimecmp:
         li      t2, MTIME
@@ -61,7 +63,7 @@ _start:
 
         li      t0, 0x80                # mask for 7th bit
         csrrs   t1, mie, t0             # set MTIE (M-mode Timer Interrupt Enabled) bit
-
+.endif
 
         # print registers
         stackalloc_x 19                 # allocate 19 register size arguments on stack
@@ -106,11 +108,19 @@ _start:
         sx      t2, 1,(sp)
         csrr    t2, mstatus             # read mstatus
         sx      t2, 2,(sp)
+.ifdef RISCV64
         li      t2, MTIME
         ld      t2, 0(t2)               # read from mtime mmapped register
+.else
+        li      t2, 0
+.endif
         sx      t2, 3,(sp)
+.ifdef RISCV64
         li      t2, MTIMECMP
         ld      t2, 0(t2)               # read from mtimecmp mmapped register
+.else
+        li      t2, 0
+.endif
         sx      t2, 4,(sp)
         la      a0, print_mregs_str
         mv      a1, sp
@@ -126,6 +136,8 @@ park:
         j       park
 
 
+# NB: only do timer in RV64 for now, will do RV32 later
+.ifdef RISCV64
 timer_handler:
         # print a few interesting registers from the timer handler
         stackalloc_x 6                  # allocate 6 register size arguments on stack
@@ -158,6 +170,7 @@ timer_handler:
 
         # return from the handler
         mret
+.endif
 
 .section .rodata
 rodata_start:
