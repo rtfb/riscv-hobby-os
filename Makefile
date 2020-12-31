@@ -9,6 +9,17 @@ ifeq ($(wildcard $(QEMU32)),)
 endif
 # Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
 SPIKE ?= spike
+RISCV64_GCC ?= riscv64-linux-gnu-gcc
+ifeq (, $(shell which $(RISCV64_GCC)))
+	RISCV64_GCC = riscv64-unknown-elf-gcc
+endif
+
+all: baremetal/hello_sifive_u \
+	baremetal/fib_sifive_u \
+	baremetal/hello_sifive_e \
+	baremetal/fib_sifive_e \
+	baremetal/hello_sifive_e32 \
+	baremetal/fib_sifive_e32
 
 # Shortcuts
 run32: run-baremetal32
@@ -17,13 +28,70 @@ runb: run-baremetal
 runs: run-spike
 runl: run-linux
 
-run-baremetal: baremetal
-	$(QEMU) -nographic -machine sifive_u -bios none -kernel baremetal/hello_sifive_u
-	$(QEMU) -nographic -machine sifive_u -bios none -kernel baremetal/fib_sifive_u
+FIB_SIFIVE_U_DEPS = baremetal-fib.s baremetal-print.s
+HELLO_SIFIVE_U_DEPS = baremetal-hello.s baremetal-print.s
+FIB_SIFIVE_E_DEPS = baremetal-fib.s baremetal-print.s
+HELLO_SIFIVE_E_DEPS = baremetal-hello.s baremetal-print.s
+FIB_SIFIVE_E32_DEPS = baremetal-fib.s baremetal-print.s
+HELLO_SIFIVE_E32_DEPS = baremetal-hello.s baremetal-print.s
 
-run-baremetal32: baremetal
-	$(QEMU32) -nographic -machine sifive_e -bios none -kernel baremetal/hello_sifive_e32
-	$(QEMU32) -nographic -machine sifive_e -bios none -kernel baremetal/fib_sifive_e32
+.PHONY: run-baremetal
+run-baremetal: baremetal/hello_sifive_u
+	$(QEMU) -nographic -machine sifive_u -bios none -kernel $<
+
+.PHONY: run-baremetal-fib
+run-baremetal-fib: baremetal/fib_sifive_u
+	$(QEMU) -nographic -machine sifive_u -bios none -kernel $<
+
+.PHONY: run-baremetal32
+run-baremetal32: baremetal/hello_sifive_e32
+	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
+
+.PHONY: run-baremetal32-fib
+run-baremetal32-fib: baremetal/fib_sifive_e32
+	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
+
+baremetal/hello_sifive_u: ${HELLO_SIFIVE_U_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		${HELLO_SIFIVE_U_DEPS} -o $@
+
+baremetal/fib_sifive_u: ${FIB_SIFIVE_U_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		${FIB_SIFIVE_U_DEPS} -o $@
+
+baremetal/hello_sifive_e: ${HELLO_SIFIVE_E_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
+		${HELLO_SIFIVE_E_DEPS} -o $@
+
+baremetal/fib_sifive_e: ${FIB_SIFIVE_E_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
+		${FIB_SIFIVE_E_DEPS} -o $@
+
+baremetal/hello_sifive_e32: ${HELLO_SIFIVE_E32_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
+		-Wa,--defsym,XLEN=32 \
+		${HELLO_SIFIVE_E32_DEPS} -o $@
+
+baremetal/fib_sifive_e32: ${FIB_SIFIVE_E32_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
+		-Wa,--defsym,XLEN=32 \
+		${FIB_SIFIVE_E32_DEPS} -o $@
 
 run-spike: elf
 	$(SPIKE) pk generic-elf/hello bbl loader
