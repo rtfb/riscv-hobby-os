@@ -43,9 +43,7 @@ _start:
         # and write the result to mtimecmp:
         li      t2, MTIME
         ld      t2, 0(t2)               # read from mtime mmapped register
-        li      t4, ONE_SECOND          # t4 = 1s
-        li      t5, 5                   # t5 = 5
-        mul     t4, t4, t5              # t4 = t4 * t5 = 5s
+        li      t4, (5*ONE_SECOND)      # t4 = 5s, use a register because the value is too big for immediate instruction
         add     t2, t2, t4              # t2 = mtime + 5s
         li      t3, MTIMECMP
         sd      t2, 0(t3)               # write t2 to mtimecmp
@@ -153,9 +151,7 @@ timer_handler:
         # now reset the timer for the future again:
         li      t2, MTIME
         ld      t2, 0(t2)
-        li      t4, ONE_SECOND          # t4 = 1s
-        li      t5, 3                   # t5 = 3
-        mul     t4, t4, t5              # t4 = t4 * t5 = 3s
+        li      t4, (3*ONE_SECOND)      # t4 = 3s
         add     t2, t2, t4              # t2 = mtime + 3s
         li      t3, MTIMECMP
         sd      t2, 0(t3)               # write t2 to mtimecmp
