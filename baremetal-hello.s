@@ -55,10 +55,11 @@ _start:
         li      t0, 0x8                 # make a mask for 3rd bit
         csrrs   t1, mstatus, t0         # set MIE (M-mode Interrupts Enabled) bit in mstatus reg
 
-        # store timer_handler directly to tvec. This will leave the mode bits
-        # set to 0, which means direct mode, in which all exceptions call
-        # timer_handler directly.
-        la      t0, timer_handler
+        # store trap_vector to tvec, but first increment it by 1. This will set
+        # the mode bits to 1, which means vectored mode, in which exceptions
+        # jump to trap_vector+4*cause.
+        la      t0, trap_vector
+        addi    t0, t0, 1
         csrrw   t1, mtvec, t0
 
         li      t0, 0x80                # mask for 7th bit
@@ -135,10 +136,22 @@ park:
         wfi
         j       park
 
+trap_vector:
+        j noop_handler            # offs  0: user software interrupt
+        j noop_handler            # offs  4: supervisor software interrupt
+        j noop_handler            # offs  8: reserved
+        j noop_handler            # offs  c: machine software interrupt
+        j noop_handler            # offs 10: user timer interrupt
+        j noop_handler            # offs 14: supervisor timer interrupt
+        j noop_handler            # offs 18: reserved
+        j timer_handler           # offs 1c: machine timer interrupt
 
+noop_handler:
+        mret
+
+timer_handler:
 # NB: only do timer in RV64 for now, will do RV32 later
 .ifdef RISCV64
-timer_handler:
         # print a few interesting registers from the timer handler
         stackalloc_x 6                  # allocate 6 register size arguments on stack
         csrr    t2, mcause
@@ -167,10 +180,9 @@ timer_handler:
         add     t2, t2, t4              # t2 = mtime + 3s
         li      t3, MTIMECMP
         sd      t2, 0(t3)               # write t2 to mtimecmp
-
+.endif
         # return from the handler
         mret
-.endif
 
 .section .rodata
 rodata_start:
