@@ -104,17 +104,17 @@ _start:
 
                                         # enable interrupts by setting required values to mstatus, mtvec and mie:
         li      t0, 0x8                 # make a mask for 3rd bit
-        csrrs   t1, mstatus, t0         # set MIE (M-mode Interrupts Enabled) bit in mstatus reg
+        csrs    mstatus, t0             # set MIE (M-mode Interrupts Enabled) bit in mstatus reg
 
                                         # store trap_vector to tvec, but first increment it by 1. This will set
                                         # the mode bits to 1, which means vectored mode, in which exceptions
                                         # jump to trap_vector+4*cause.
         la      t0, trap_vector
         addi    t0, t0, 1
-        csrrw   t1, mtvec, t0
+        csrw    mtvec, t0
 
         li      t0, 0x80                # mask for 7th bit
-        csrrs   t1, mie, t0             # set MTIE (M-mode Timer Interrupt Enabled) bit
+        csrs    mie, t0                 # set MTIE (M-mode Timer Interrupt Enabled) bit
 
 
 2:      la      t0, current_hart
