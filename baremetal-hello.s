@@ -102,9 +102,8 @@ _start:
         li      a0, (5*ONE_SECOND)      # a0 = 5sec
         jal     set_timer_for_current_hart
 
-                                        # enable interrupts by setting required values to mstatus, mtvec and mie:
-        li      t0, 0x8                 # make a mask for 3rd bit
-        csrs    mstatus, t0             # set MIE (M-mode Interrupts Enabled) bit in mstatus reg
+                                        # enable interrupts by setting required values to mstatus, mtvec and mie: 
+        csrsi   mstatus, 0x8            # set MIE (M-mode Interrupts Enabled) = 3rd bit (0x08 mask) in mstatus CSR
 
                                         # store trap_vector to tvec, but first increment it by 1. This will set
                                         # the mode bits to 1, which means vectored mode, in which exceptions
@@ -114,7 +113,7 @@ _start:
         csrw    mtvec, t0
 
         li      t0, 0x80                # mask for 7th bit
-        csrs    mie, t0                 # set MTIE (M-mode Timer Interrupt Enabled) bit
+        csrs    mie, t0                 # set MTIE (M-mode Timer Interrupt Enabled) in mie CSR
 
 
 2:      la      t0, current_hart
