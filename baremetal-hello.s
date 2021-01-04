@@ -1,5 +1,15 @@
 .include "machine-word.inc"
 .equ STACK_PER_HART,    64 * REGBYTES
+
+# These addresses are taken from the SiFive E31 core manual[1], Chapter 8: Core
+# Local Interruptor (CLINT)
+# [1] https://static.dev.sifive.com/E31-RISCVCoreIP.pdf
+.equ MTIME, 0x200bff8
+.equ MTIMECMP, 0x2004000
+
+# This was determined experimentally:
+.equ ONE_SECOND, 10000000
+
 .balign 4
 .section .text
 .globl _start
@@ -29,13 +39,40 @@ _start:
         lx      t0, 0,(t0)
         bne     t0, s2, 1b
 
+# NB: only do timer in RV64 for now, will do RV32 later
+.ifdef RISCV64
+        # Set the timer: read current time from mtime, add delta time to it,
+        # and write the result to mtimecmp:
+        li      t2, MTIME
+        ld      t2, 0(t2)               # read from mtime mmapped register
+        li      t4, (5*ONE_SECOND)      # t4 = 5s, use a register because the value is too big for immediate instruction
+        add     t2, t2, t4              # t2 = mtime + 5s
+        li      t3, MTIMECMP
+        sd      t2, 0(t3)               # write t2 to mtimecmp
+
+
+        # Enable interrupts by setting required values to mstatus, mtvec and mie:
+        li      t0, 0x8                 # make a mask for 3rd bit
+        csrrs   t1, mstatus, t0         # set MIE (M-mode Interrupts Enabled) bit in mstatus reg
+
+        # store trap_vector to tvec, but first increment it by 1. This will set
+        # the mode bits to 1, which means vectored mode, in which exceptions
+        # jump to trap_vector+4*cause.
+        la      t0, trap_vector
+        addi    t0, t0, 1
+        csrrw   t1, mtvec, t0
+
+        li      t0, 0x80                # mask for 7th bit
+        csrrs   t1, mie, t0             # set MTIE (M-mode Timer Interrupt Enabled) bit
+.endif
+
         # print registers
         stackalloc_x 19                 # allocate 19 register size arguments on stack
         sx      s2,  0,(sp)             # s2 contains mhartid
         sx      ra,  1,(sp)
         sx      gp,  2,(sp)
         sx      tp,  3,(sp)
-        sx      fp,  4,(sp)
+        sx      s0,  4,(sp)
         sx      s1,  5,(sp)             # s1 contains pc on entree
 
         sx      a0,  6,(sp)
@@ -65,6 +102,32 @@ _start:
         la      a1, print_symbols_arg
         call    printf
 
+        # print M-mode registers, also only on the 1st hart
+        stackalloc_x 5                  # allocate 5 register size arguments on stack
+        sx      s2, 0,(sp)              # s2 contains mhartid
+        csrr    t2, misa                # read misa (Machine ISA Register)
+        sx      t2, 1,(sp)
+        csrr    t2, mstatus             # read mstatus
+        sx      t2, 2,(sp)
+.ifdef RISCV64
+        li      t2, MTIME
+        ld      t2, 0(t2)               # read from mtime mmapped register
+.else
+        li      t2, 0
+.endif
+        sx      t2, 3,(sp)
+.ifdef RISCV64
+        li      t2, MTIMECMP
+        ld      t2, 0(t2)               # read from mtimecmp mmapped register
+.else
+        li      t2, 0
+.endif
+        sx      t2, 4,(sp)
+        la      a0, print_mregs_str
+        mv      a1, sp
+        call    printf
+        stackfree_x 5
+
 2:      la      t0, current_hart
         addi    t1, s2, 1
         sx      t1, 0, (t0)             # trigger the next hart
@@ -73,12 +136,64 @@ park:
         wfi
         j       park
 
+trap_vector:
+        j noop_handler            # offs  0: user software interrupt
+        j noop_handler            # offs  4: supervisor software interrupt
+        j noop_handler            # offs  8: reserved
+        j noop_handler            # offs  c: machine software interrupt
+        j noop_handler            # offs 10: user timer interrupt
+        j noop_handler            # offs 14: supervisor timer interrupt
+        j noop_handler            # offs 18: reserved
+        j timer_handler           # offs 1c: machine timer interrupt
+
+noop_handler:
+        mret
+
+timer_handler:
+# NB: only do timer in RV64 for now, will do RV32 later
+.ifdef RISCV64
+        # print a few interesting registers from the timer handler
+        stackalloc_x 6                  # allocate 6 register size arguments on stack
+        csrr    t2, mcause
+        sx      t2, 0,(sp)
+        csrr    t2, mepc
+        sx      t2, 1,(sp)
+        csrr    t2, mtval
+        sx      t2, 2,(sp)
+        csrr    t2, mstatus
+        sx      t2, 3,(sp)
+        li      t2, MTIME
+        ld      t2, 0(t2)
+        sx      t2, 4,(sp)
+        li      t2, MTIMECMP
+        ld      t2, 0(t2)
+        sx      t2, 5,(sp)
+        la      a0, print_timer_str
+        mv      a1, sp
+        call    printf
+        stackfree_x 6
+
+        # now reset the timer for the future again:
+        li      t2, MTIME
+        ld      t2, 0(t2)
+        li      t4, (3*ONE_SECOND)      # t4 = 3s
+        add     t2, t2, t4              # t2 = mtime + 3s
+        li      t3, MTIMECMP
+        sd      t2, 0(t3)               # write t2 to mtimecmp
+.endif
+        # return from the handler
+        mret
+
 .section .rodata
 rodata_start:
 print_registers_str:
         .string "\nRegisters: mhartid=%p ra=%p gp=%p tp=%p fp=%p pc=%p\n\t\ta0=%p a1=%p a2=%p a3=%p a4=%p a5=%p a6=%p a7=%p\n\t\tt0=%p t1=%p t2=%p\n\t\tsp(entree)=%p sp(current)=%p\n"
 print_symbols_str:
         .string "Symbols: _start=%p rodata_start=%p data_start=%p printf=%p this-str=%p stack_top=%p _end=%p\n"
+print_mregs_str:
+        .string "\nM-mode registers: mhartid=%p misa=%p mstatus=%p mtime=%p mtimecmp=%p\n"
+print_timer_str:
+        .string "\nHullo from timer! mcause=%p mepc=%p mtval=%p mstatus=%p mtime=%p mtimecmp=%p\n"
 print_symbols_arg:
         pointer _start
         pointer rodata_start

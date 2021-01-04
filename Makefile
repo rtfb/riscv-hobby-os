@@ -7,11 +7,20 @@ QEMU32 ?= ./qemu-build/bin/qemu-system-riscv32
 ifeq ($(wildcard $(QEMU32)),)
 	QEMU32 = qemu-system-riscv32
 endif
-# Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
-SPIKE ?= spike
+
 RISCV64_GCC ?= riscv64-linux-gnu-gcc
 ifeq (, $(shell which $(RISCV64_GCC)))
 	RISCV64_GCC = riscv64-unknown-elf-gcc
+endif
+# Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
+SPIKE ?= ./riscv-isa-sim/build/build/bin/spike
+ifeq ($(wildcard $(SPIKE)),)
+	SPIKE = spike
+endif
+# Proxy Kernel, a lightweight app execution environment that can host RISC-V ELF binaries (https://github.com/riscv/riscv-pk)
+RISCV_PK ?= riscv-pk/build/build/riscv64-linux-gnu/bin/pk
+ifeq ($(wildcard $(RISCV_PK)),)
+	RISCV_PK = pk
 endif
 
 all: baremetal/hello_sifive_u \
@@ -94,9 +103,9 @@ baremetal/fib_sifive_e32: ${FIB_SIFIVE_E32_DEPS}
 		${FIB_SIFIVE_E32_DEPS} -o $@
 
 run-spike: elf
-	$(SPIKE) pk generic-elf/hello bbl loader
+	$(SPIKE) $(RISCV_PK) generic-elf/hello bbl loader
 
-run-linux: linux busybox initrd
+run-linux: initrd
 	$(QEMU) -nographic -machine virt \
      -kernel linux/arch/riscv/boot/Image -append "root=/dev/vda ro console=ttyS0" \
      -drive file=busybox/busybox,format=raw,id=hd0 \
@@ -119,6 +128,7 @@ prereqs:
 		bison \
 		build-essential \
 		curl \
+		device-tree-compiler \
 		flex \
 		gawk \
 		gcc-riscv64-linux-gnu \
@@ -139,6 +149,8 @@ clone:
 	git clone https://github.com/qemu/qemu
 	git clone https://github.com/torvalds/linux
 	git clone https://git.busybox.net/busybox
+	git clone https://github.com/riscv/riscv-isa-sim
+	git clone https://github.com/riscv/riscv-pk
 
 .PHONY: qemu
 qemu:
