@@ -162,7 +162,7 @@ timer_handler:
         la      a0, print_timer_str
         mv      a1, sp
         call    printf
-        stackfree_x 6
+        stackfree_x 7
 
         li      a0, (3*ONE_SECOND)      # a0 = 3s
         jal     set_timer_for_current_hart
