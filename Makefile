@@ -7,8 +7,16 @@ QEMU32 ?= ./qemu-build/bin/qemu-system-riscv32
 ifeq ($(wildcard $(QEMU32)),)
 	QEMU32 = qemu-system-riscv32
 endif
+
 # Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
-SPIKE ?= spike
+SPIKE ?= ./riscv-isa-sim/build/build/bin/spike
+ifeq ($(wildcard $(SPIKE)),)
+	SPIKE = spike
+endif
+RISCV_PK ?= riscv-pk/build/build/riscv64-linux-gnu/bin/pk
+ifeq ($(wildcard $(RISCV_PK)),)
+	RISCV_PK = pk
+endif
 
 # Shortcuts
 run32: run-baremetal32
@@ -26,7 +34,7 @@ run-baremetal32: baremetal
 	$(QEMU32) -nographic -machine sifive_e -bios none -kernel baremetal/fib_sifive_e32
 
 run-spike: elf
-	$(SPIKE) pk generic-elf/hello bbl loader
+	$(SPIKE) $(RISCV_PK) generic-elf/hello bbl loader
 
 run-linux: linux busybox initrd
 	$(QEMU) -nographic -machine virt \
@@ -51,6 +59,7 @@ prereqs:
 		bison \
 		build-essential \
 		curl \
+		device-tree-compiler \
 		flex \
 		gawk \
 		gcc-riscv64-linux-gnu \
@@ -71,6 +80,8 @@ clone:
 	git clone https://github.com/qemu/qemu
 	git clone https://github.com/torvalds/linux
 	git clone https://git.busybox.net/busybox
+	git clone https://github.com/riscv/riscv-isa-sim
+	git clone https://github.com/riscv/riscv-pk
 
 .PHONY: qemu
 qemu:
