@@ -29,6 +29,7 @@ all: baremetal/hello_sifive_u \
 	baremetal/fib_sifive_e \
 	baremetal/hello_sifive_e32 \
 	baremetal/fib_sifive_e32
+baremetal: all
 
 # Shortcuts
 run32: run-baremetal32
@@ -167,10 +168,6 @@ linux:
 .PHONY: initrd
 initrd:
 	./scripts/build-initrd.sh
-
-.PHONY: baremetal
-baremetal:
-	./scripts/build-baremetal.sh
 
 .PHONY: elf
 elf:
