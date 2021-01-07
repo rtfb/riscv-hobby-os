@@ -5,11 +5,10 @@
 .section .text
 .globl _start
 _start:
-                                        # From sifive-interrupt-cookbook-v1p2.pdf
-                                        # set up a simple trap vector to catch anything that goes wrong early in the boot process
-
         csrwi   mie, 0                  # it is recommended to disable interrupts globally using mstatus.mie prior to changing mtvec
 
+                                        # From sifive-interrupt-cookbook-v1p2.pdf
+                                        # set up a simple trap vector to catch anything that goes wrong early in the boot process
         la      t0, early_trap_vector
         csrw    mtvec, t0
 
@@ -50,11 +49,15 @@ _start:
                                         # judging from https://github.com/qemu/qemu/blob/master/hw/riscv/sifive_u.c
                                         # pointer to Device Tree is passed in a1 register @TODO: figure out, if this behavior is SiFive specific
 
+        la      t0, trap_vector
+        addi    t0, t0, 1
+        csrw    mtvec, t0
+
 
         bnez    a0, park                # park all harts except the 1st one
 
 
-        la      a0, print_hello_str
+        la      a0, print_m_hello_str
         call    printf
 
                                         # Privelege ISA
@@ -87,16 +90,16 @@ _start:
 
 user_entree_point:
 
-        la      a0, print_hello_str
-        call    printf
+        # la      a0, print_hello_str
+        # call    printf
 
         li      a7, 4
+        la      a0, print_u_hello_str
         ecall                           # Environment call from U-mode (mcause=8)
+
         csrr    a0, mhartid             # causes Illegal instruction (mcause=2) in User mode
 
-        la      a0, print_hello_str
-        call    printf
-        la      a0, print_hello_str
+        la      a0, print_u_hello_str
         call    printf
 
 park:
@@ -107,34 +110,141 @@ park:
                                         # For sanity's sake we set up an early trap vector that just does nothing.
                                         # If you end up here then there's a bug in the early boot code somewhere.
 early_trap_vector:
-        .cfi_startproc
         csrr    t0, mcause
         csrr    t1, mepc
         csrr    t2, mtval
-                                        # handling exception, so stack might be corrupted
-                                        # store printf arguments in .data section instead
-        la      a0, print_exception_str
-        la      a1, print_exception_cause
-        sx      t0, 0, (a1)
-        sx      t1, 1, (a1)
-        sx      t2, 2, (a1)
-        call    printf
 1:      j       1b
-        .cfi_endproc
+
+trap_vector:
+        j exception_handler             #  0: user software interrupt
+        j noop_handler                  #  1: supervisor software interrupt
+        j noop_handler                  #  2: reserved
+        j noop_handler                  #  3: machine software interrupt
+        j timer_handler                 #  4: user timer interrupt
+        j timer_handler                 #  5: supervisor timer interrupt
+        j noop_handler                  #  6: reserved
+        j timer_handler                 #  7: machine timer interrupt
+        j noop_handler                  #  8: user external interrupt
+        j noop_handler                  #  9: supervisor external interrupt
+        j noop_handler                  # 10: reserved
+        j noop_handler                  # 11: machine external interrupt
+
+noop_handler:
+        mret
+
+timer_handler:
+        mret
+
+exception_handler:
+        stackalloc_x 32
+        sx      x0,   0, (sp)
+        sx      x1,   1, (sp)
+        sx      x2,   2, (sp)
+        sx      x3,   3, (sp)
+        sx      x4,   4, (sp)
+        sx      x5,   5, (sp)
+        sx      x6,   6, (sp)
+        sx      x7,   7, (sp)
+        sx      x8,   8, (sp)
+        sx      x9,   9, (sp)
+        sx      x10, 10, (sp)
+        sx      x11, 11, (sp)
+        sx      x12, 12, (sp)
+        sx      x13, 13, (sp)
+        sx      x14, 14, (sp)
+        sx      x15, 15, (sp)
+        sx      x16, 16, (sp)
+        sx      x17, 17, (sp)
+        sx      x18, 18, (sp)
+        sx      x19, 19, (sp)
+        sx      x20, 20, (sp)
+        sx      x21, 21, (sp)
+        sx      x22, 22, (sp)
+        sx      x23, 23, (sp)
+        sx      x24, 24, (sp)
+        sx      x25, 25, (sp)
+        sx      x26, 26, (sp)
+        sx      x27, 27, (sp)
+        sx      x28, 28, (sp)
+        sx      x29, 29, (sp)
+        sx      x30, 30, (sp)
+        sx      x31, 31, (sp)
+
+        csrr    t0, mcause
+        li      t1, 8                   # environment call from U-mode
+        beq     t0, t1, syscall
+        li      t1, 9                   # environment call from S-mode
+        beq     t0, t1, syscall
+        li      t1, 11                  # environment call from M-mode
+        beq     t0, t1, syscall
+
+        stackalloc_x 4
+        csrr    t0, mcause
+        csrr    t1, mepc
+        csrr    t2, mtval
+        la      t3, user_entree_point
+        sx      t0, 0, (sp)
+        sx      t1, 1, (sp)
+        sx      t2, 2, (sp)
+        sx      t3, 3, (sp)
+        la      a0, print_exception_str
+        mv      a1, sp
+        call    printf
+        stackfree_x  4
+
+exception_handler_ret:
+        csrr    t0, mepc
+        addi    t0, t0, 4
+        csrw    mepc, t0
+
+        lx      x0,   0, (sp)
+        lx      x1,   1, (sp)
+        lx      x2,   2, (sp)
+        lx      x3,   3, (sp)
+        lx      x4,   4, (sp)
+        lx      x5,   5, (sp)
+        lx      x6,   6, (sp)
+        lx      x7,   7, (sp)
+        lx      x8,   8, (sp)
+        lx      x9,   9, (sp)
+        lx      x10, 10, (sp)
+        lx      x11, 11, (sp)
+        lx      x12, 12, (sp)
+        lx      x13, 13, (sp)
+        lx      x14, 14, (sp)
+        lx      x15, 15, (sp)
+        lx      x16, 16, (sp)
+        lx      x17, 17, (sp)
+        lx      x18, 18, (sp)
+        lx      x19, 19, (sp)
+        lx      x20, 20, (sp)
+        lx      x21, 21, (sp)
+        lx      x22, 22, (sp)
+        lx      x23, 23, (sp)
+        lx      x24, 24, (sp)
+        lx      x25, 25, (sp)
+        lx      x26, 26, (sp)
+        lx      x27, 27, (sp)
+        lx      x28, 28, (sp)
+        lx      x29, 29, (sp)
+        lx      x30, 30, (sp)
+        lx      x31, 31, (sp)
+        stackfree_x 32
+        mret
+
+syscall:
+        call    prints
+        j       exception_handler_ret
 
 .section .rodata
-print_hello_str:
-        .string "Hello!\n"
+print_m_hello_str:
+        .string "Hello from M-mode!\n"
+print_u_hello_str:
+        .string "Hello from U-mode!\n"
 print_exception_str:
         .string "Exception occured, mcause:%p mepc:%p mtval:%p. (user_entree_point:%p)\n"
 
 .section .data
-print_exception_cause:
-        pointer 0
-        pointer 0
-        pointer 0
-        pointer user_entree_point
-
 
 ### CHECK if USER mode is supported
 #   https://github.com/riscv/riscv-tests/blob/master/isa/rv64si/csr.S
