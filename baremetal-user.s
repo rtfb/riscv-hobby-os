@@ -84,6 +84,9 @@ single_core:                            # only the 1st hart past this point
         ori     t0, t0, 0b01            # mtvec.mode = 0b01 (trap_vector in t0 is 4 byte aligned, last two bits are zero)
         csrw    mtvec, t0
 
+                                        # @TODO: setup physical memory protection (PMP) for user mode
+                                        # 3.6 Physical Memory Protection
+
         la      a0, print_m_hello_str   # DEBUG print
         call    printf                  # DEBUG print
 
