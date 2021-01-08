@@ -75,8 +75,10 @@ single_core:                            # only the 1st hart past this point
                                         # This ambiguity does not arise in practice, since user-mode software interrupts are
                                         # either disabled or delegated to a less-privileged mode.
 
+
                                         # set up exception, interrupt & syscall trap vector
         la      t0, trap_vector
+                                        # 3.1.12 Machine Trap-Vector Base-Address Register (mtvec), Table 3.5: Encoding of mtvec MODE field.
                                         # trap vector mode is encoded in 2 bits: Direct = 0b00, Vectored = 0b01
                                         # and is stored in 0:1 bits of mtvect CSR (mtvec.mode)
         ori     t0, t0, 0b01            # mtvec.mode = 0b01 (trap_vector in t0 is 4 byte aligned, last two bits are zero)
@@ -102,6 +104,7 @@ single_core:                            # only the 1st hart past this point
                                         # set Machine Exception Program Counter  -> mepc = entree_point
                                         # call MRET
 
+                                        # 1.3 Privelege Levels, Table 1.1: RISC-V privilege levels.
                                         # privelege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
         li      t0, (0b11 << 11)        # and stored in 11:12 bits of mstatus CSR (mstatus.mpp)
         csrc    mstatus, t0             # mstatus.mpp = 0b00
@@ -156,7 +159,7 @@ early_trap_vector:
                                         # an independent thread. Therefore, there is only one reasonable solution for the return address:
                                         # the first instruction that has not completed yet. Thus, when returning from the interrupt handler,
                                         # the execution continues exactly where it was interrupted.
-trap_vector:
+trap_vector:                            # 3.1.20 Machine Cause Register (mcause), Table 3.6: Machine cause register (mcause) values after trap.
         j exception_dispatch            #  0: user software interrupt OR _exception_ (See note in 3.1.12: Machine Trap-Vector Base-Address Register)
         j interrupt_noop                #  1: supervisor software interrupt
         j interrupt_noop                #  2: reserved
@@ -170,7 +173,7 @@ trap_vector:
         j interrupt_noop                # 10: reserved
         j interrupt_noop                # 11: machine external interrupt
 
-exception_vector:
+exception_vector:                       # 3.1.20 Machine Cause Register (mcause), Table 3.6: Machine cause register (mcause) values after trap.
         j exception                     #  0: instruction address misaligned
         j exception                     #  1: instruction access fault
         j exception                     #  2: illegal instruction
