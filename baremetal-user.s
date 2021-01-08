@@ -81,7 +81,7 @@ single_core:                            # only the 1st hart past this point
                                         # 3.1.12 Machine Trap-Vector Base-Address Register (mtvec), Table 3.5: Encoding of mtvec MODE field.
                                         # trap vector mode is encoded in 2 bits: Direct = 0b00, Vectored = 0b01
                                         # and is stored in 0:1 bits of mtvect CSR (mtvec.mode)
-        ori     t0, t0, 0b01            # mtvec.mode = 0b01 (trap_vector in t0 is 4 byte aligned, last two bits are zero)
+        ori     t0, t0, 0b01            # mtvec.mode |= 0b01; trap_vector in t0 is 4 byte aligned, last two bits are zero
         csrw    mtvec, t0
 
                                         # @TODO: setup physical memory protection (PMP) for user mode
@@ -110,7 +110,7 @@ single_core:                            # only the 1st hart past this point
                                         # 1.3 Privelege Levels, Table 1.1: RISC-V privilege levels.
                                         # privelege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
         li      t0, (0b11 << 11)        # and stored in 11:12 bits of mstatus CSR (mstatus.mpp)
-        csrc    mstatus, t0             # mstatus.mpp = 0b00
+        csrc    mstatus, t0             # mstatus.mpp &= ~0b11; clear mstatus.mpp bits to 0 with t0 containing mask for bits to clear
 
                                         # set entry point address that mret will jump to
         la      t0, user_entry_point
