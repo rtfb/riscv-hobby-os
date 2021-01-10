@@ -18,14 +18,16 @@ _start:
         la      t0, early_trap_vector
         csrw    mtvec, t0
 
-        csrwi   mstatus, 0
-        csrwi   mideleg, 0
-        csrwi   medeleg, 0
-
-        csrr    a0, mhartid             # read hardware thread id (`hart` stands for `hardware thread`)
+        csrwi   mstatus, 0              # reset machine mode status
+        csrwi   mideleg, 0              # disable trap delegation, all interrupts and exceptions will be handled in machine mode
+        csrwi   medeleg, 0              # 3.1.13 Machine Trap Delegation Registers (medeleg and mideleg)
+                                        # > In systems with all three privilege modes (M/S/U), setting a bit in medeleg or mideleg
+                                        # > will delegate the corresponding trap in S-mode or U-mode to the S-mode trap handler.
+                                        # > In systems with two privilege modes (M/U), setting a bit in medeleg or mideleg
+                                        # > will delegate the corresponding trap in U-mode to the U-mode trap handler.
 
                                         # @TODO: support multi-core
-
+        csrr    a0, mhartid             # read hardware thread id (`hart` stands for `hardware thread`)
         beqz    a0, single_core         # park all harts except the 1st one
 1:      wfi                             # parked hart will sleep waiting for interrupt
         j       1b
@@ -416,7 +418,7 @@ user_entry_point:
 
         sys_print msg_load_from_protected_mem
         la      a0, msg_m_hello
-        lx      t0, 0,(a0)
+        lx      t0, 0,(a0)              # causes Load access fault (mcause=5) in User mode
 
         sys_print msg_done
 
@@ -444,8 +446,6 @@ msg_call_printf:
         .string "Illegal call to function in protected memory: "
 msg_done:
         .string "Done.\n"
-msg_pass:
-        .string "?\n"
 msg_ok:
         .string "OK\n"
 
