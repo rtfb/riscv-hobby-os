@@ -55,10 +55,14 @@ single_core:                            # only the 1st hart past this point
 
                                         # set up exception, interrupt & syscall trap vector
         la      t0, trap_vector
+
                                         # 3.1.12 Machine Trap-Vector Base-Address Register (mtvec), Table 3.5: Encoding of mtvec MODE field.
+        .equ TRAP_DIRECT,       0b00    # All exceptions set pc to BASE.
+        .equ TRAP_VECTORED,     0b01    # Exceptions set pc to BASE, interrupts set pc to BASE+4*cause.
+
                                         # trap vector mode is encoded in 2 bits: Direct = 0b00, Vectored = 0b01
                                         # and is stored in 0:1 bits of mtvect CSR (mtvec.mode)
-        ori     t0, t0, 0b01            # mtvec.mode |= 0b01; trap_vector in t0 is 4 byte aligned, last two bits are zero
+        ori     t0, t0, TRAP_VECTORED   # mtvec.mode |= 0b01; trap_vector in t0 is 4 byte aligned, last two bits are zero
         csrw    mtvec, t0
 
                                         # 3.6.1 Physical Memory Protection CSRs
@@ -97,12 +101,8 @@ single_core:                            # only the 1st hart past this point
         csrw    pmpaddr2, t2
         csrw    pmpaddr3, t3
 
-                                        # set 4 PMP entries to TOR (Top Of the address Range) addressing mode so that the associated
-                                        # address register forms the top of the address range per entry,
-                                        # the type of PMP entry is encoded in 2 bits: OFF = 0, TOR = 1, NA4 = 2, NAPOT = 3
-                                        # and stored in 3:4 bits of every PMP entry
-
-                                        # 3.6.1 Physical Memory Protection CSRs
+                                        # 3.6.1 Physical Memory Protection CSRs, Table 3.8: Encoding of A field in PMP configuration registers.
+                                        # 3.6.1 Physical Memory Protection CSRs, Figure 3.27: PMP configuration register format.
         .equ PMP_LOCK,  (1<<7)
         .equ PMP_NAPOT, (3<<3)          # Address Mode: Naturally aligned power-of-two region, >=8 bytes
         .equ PMP_NA4,   (2<<3)          # Address Mode: Naturally aligned four-byte region
@@ -116,6 +116,10 @@ single_core:                            # only the 1st hart past this point
         .equ PMP_2,     (1<<16)         # [16..24] 3rd PMP entry in pmpcfgX register
         .equ PMP_3,     (1<<24)         # [24..32] 4th PMP entry in pmpcfgX register
 
+                                        # set 4 PMP entries to TOR (Top Of the address Range) addressing mode so that the associated
+                                        # address register forms the top of the address range per entry,
+                                        # the type of PMP entry is encoded in 2 bits: OFF = 0, TOR = 1, NA4 = 2, NAPOT = 3
+                                        # and stored in 3:4 bits of every PMP entry
         li      t0, PMP_TOR*(PMP_0|PMP_1|PMP_2|PMP_3)
 
                                         # set access flags for 4 PMP entries:
@@ -145,21 +149,29 @@ single_core:                            # only the 1st hart past this point
                                         # > In addition to manipulating the privilege stack as described in Section 3.1.7,
                                         # > xRET sets the pc to the value stored in the x epc register.
 
-                                        # switch from Machine to User mode:
-                                        # set Machine Previous Privelege to User -> mstatus.mpp = User
-                                        # set Machine Exception Program Counter  -> mepc = entree_point
-                                        # call MRET
-
                                         # 1.3 Privelege Levels, Table 1.1: RISC-V privilege levels.
+        .equ MODE_U,    (0b00 << 11)
+        .equ MODE_S,    (0b01 << 11)
+        .equ MODE_M,    (0b11 << 11)
+        .equ MODE_MASK, (0b11 << 11)
+
+                                        # use MRET instruction to switch privelege level from Machine (M-mode) to User (U-mode)
+                                        # MRET will change privelege to Machine Previous Privelege stored in mstatus CSR
+                                        # and jump to Machine Exception Program Counter specified by mepcs CSR
+
                                         # privelege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
-        li      t0, (0b11 << 11)        # and stored in 11:12 bits of mstatus CSR (mstatus.mpp)
-        csrc    mstatus, t0             # mstatus.mpp &= ~0b11; clear mstatus.mpp bits to 0 with t0 containing mask for bits to clear
+                                        # and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
+        li      t1, MODE_U
+        li      t2, MODE_MASK           # mask to preserve all bits of mstatus except 11:12
+        csrr    t0, mstatus
+        and     t0, t0, t2              # mstatus.mpp &= 0
+        or      t0, t0, t1              # mstatus.mpp |= MODE_U
+        csrw    mstatus, t0
 
-                                        # set entry point address that mret will jump to
         la      t0, user_entry_point
-        csrw    mepc, t0
+        csrw    mepc, t0                # set the entry point address for User mode
 
-        mret                            # mret will switch the mode stored in mstatus.mpp and jump to address stored in mepc CSR
+        mret                            # switch to User mode
 
 
 ### Trap Tables & Dispatchers #################################################
@@ -372,7 +384,7 @@ test_func:
         syscall 4
 .endm
 
-.balign 4096                            # at least in QEMU memory protection works on 4KiB page boundaries
+.balign 4096                            # at least in QEMU 5.1 memory protection seems to work on 4KiB page boundaries
                                         # align user payload part on 4KiB to make the further experiments more predicatble
 user_payload:
 user_entry_point:
@@ -449,9 +461,8 @@ msg_done:
 msg_ok:
         .string "OK\n"
 
+.balign 4096                            # align the end of user payload part on 4KiB otherwise QEMU 2nd hart PMP behaves inconsistently, bug?
 user_payload_end:
-.balign 4096
-
 
 ### Data ######################################################################
 #
@@ -462,4 +473,6 @@ msg_m_hello:
 msg_exception:
         .string "Exception occured, mcause:%p mepc:%p mtval:%p (user payload at:%p, stack top:%p).\n"
 
-.section .data
+
+.balign 4096                            # align the stack section on 4KiB otherwise QEMU 2nd hart PMP behaves inconsistently, bug?
+stack_bottom:
