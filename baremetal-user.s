@@ -71,6 +71,14 @@ single_core:                            # only the 1st hart past this point
                                         # > This ambiguity does not arise in practice, since user-mode software interrupts are
                                         # > either disabled or delegated to a less-privileged mode.
 
+                                        # @TODO: check if user mode is supported
+                                        # see: https://github.com/riscv/riscv-tests/blob/master/isa/rv64si/csr.S
+                                        # OR alternatively use the trick of setting exception handler trailing the operation
+                                        # see: https://github.com/riscv/riscv-test-env/blob/master/p/riscv_test.h
+                                        # >      la t0, 1f
+                                        # >      csrw mtvec, t0
+                                        # >      ... code that might fail due to lack of support in CPU
+                                        # > 1:
 
                                         # set up exception, interrupt & syscall trap vector
         la      t0, trap_vector
@@ -515,89 +523,3 @@ msg_exception:
 # 2:
 # #endif
 # #endif
-
-
-### PMP SETUP EXAMPLE
-#   https://github.com/riscv/riscv-test-env/blob/master/p/riscv_test.h
-
-#   #define INIT_PMP                                         
-#   la t0, 1f;                                               
-#   csrw mtvec, t0;                                          
-#   /* Set up a PMP to permit all accesses */                
-#   li t0, (1 << (31 + (__riscv_xlen / 64) * (53 - 31))) - 1;
-#   csrw pmpaddr0, t0;                                       
-#   li t0, PMP_NAPOT | PMP_R | PMP_W | PMP_X;                
-#   csrw pmpcfg0, t0;                                        
-#   .align 2;                                                
-# 1:
-
-
-
-### TRAP EXMAPLES from Freedom SDK
-#   https://github.com/sifive/freedom-metal/master/src/trap.S
-
-#define METAL_MSTATUS_MIE_SHIFT 8
-#define METAL_MSTATUS_MPP_M     3
-#define METAL_MSTATUS_MPP_SHIFT 11
-
-#define METAL_MTVEC_MODE_MASK   3
-
-# /* void _metal_trap(int ecode)
-#  *
-#  * Trigger a machine-mode trap with exception code ecode
-#  */
-# .global _metal_trap
-# .type _metal_trap, @function
-
-# _metal_trap:
-
-#     /* Store the instruction which called _metal_trap in mepc */
-#     addi t0, ra, -1
-#     csrw mepc, t0
-
-#     /* Set mcause to the desired exception code */
-#     csrw mcause, a0
-
-#     /* Read mstatus */
-#     csrr t0, mstatus
-
-#     /* Set MIE=0 */
-#     li t1, -1
-#     xori t1, t1, METAL_MSTATUS_MIE_SHIFT
-#     and t0, t0, t1
-
-#     /* Set MPP=M */
-#     li t1, METAL_MSTATUS_MPP_M
-#     slli t1, t1, METAL_MSTATUS_MPP_SHIFT
-#     or t0, t0, t1
-
-#     /* Write mstatus */
-#     csrw mstatus, t0
-
-#     /* Read mtvec */
-#     csrr t0, mtvec
-
-#     /*
-#      * Mask the mtvec MODE bits
-#      * Exceptions always jump to mtvec.BASE regradless of the vectoring mode.
-#      */
-#     andi t0, t0, METAL_MTVEC_MODE_MASK
-
-#     /* Jump to mtvec */
-#     jr t0
-
-
-# /*
-#  * For sanity's sake we set up an early trap vector that just does nothing.
-#  * If you end up here then there's a bug in the early boot code somewhere.
-#  */
-# .section .text.metal.init.trapvec
-# .global early_trap_vector
-# .align 2
-# early_trap_vector:
-#     .cfi_startproc
-#     csrr t0, mcause
-#     csrr t1, mepc
-#     csrr t2, mtval
-#     j early_trap_vector
-#     .cfi_endproc
