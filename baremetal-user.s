@@ -22,32 +22,6 @@ _start:
         csrwi   mideleg, 0
         csrwi   medeleg, 0
 
-                                        # @TODO: setup Global Pointer
-
-                                        # from: https://github.com/sifive/freedom-metal/master/src/entry.S & metal.ramrodata.lds
-                                        # > The absolute first thing that must happen is configuring the global
-                                        # > pointer register, which must be done with relaxation disabled because
-                                        # > it's not valid to obtain the address of any symbol without GP configured.
-                                        # >       . = ALIGN(8);
-                                        # >       PROVIDE( __global_pointer$ = . + 0x800 );
-                                        # >       *(.sdata .sdata.* .sdata2.*)
-
-                                        # from: https://gnu-mcu-eclipse.github.io/arch/riscv/programmer/
-                                        # > The gp (Global Pointer) register is a solution to further optimise memory accesses within a single 4KB region.
-                                        # > The region size is 4K because RISC-V immediate values are 12-bit signed values,
-                                        # > since the values are signed, the __global_pointer$ must point to the middle of the region.
-                                        # >       PROVIDE( __global_pointer$ = . + (4K / 2) );
-                                        # >       *(.sdata .sdata.*)
-        # .option push                  # > requires that we disable linker relaxations (or it will be relaxed to `mv gp, gp`).
-        # .option norelax
-        # la  gp, __global_pointer$
-        # .option pop
-
-                                        # @TODO: process Device Tree, if available
-                                        # judging by: https://github.com/qemu/qemu/blob/master/hw/riscv/sifive_u.c
-                                        # pointer to Device Tree is passed in a1 register @TODO: figure out, if this behavior is SiFive specific
-
-
         csrr    a0, mhartid             # read hardware thread id (`hart` stands for `hardware thread`)
 
                                         # @TODO: support multi-core
@@ -57,10 +31,7 @@ _start:
         j       1b
 
 single_core:                            # only the 1st hart past this point
-        la      sp, stack_top
-        # li      t0, STACK_PER_HART    # setup stack pointer for each hardware thread
-        # mul     t0, t0, a0
-        # sub     sp, sp, t0            # sp -= stack_size * hart_id
+        la      sp, stack_top           # setup stack pointer
 
                                         # 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)
                                         # > When MODE=Vectored, all synchronous exceptions into machine mode cause
@@ -420,12 +391,6 @@ user_entry_point:
         lb      t0, 0(a0)
         lx      t0, 0,(a0)
         sys_print msg_ok
-
-#         li      a0, 0x7FFFF000
-#         li      a1, 0x80010000
-# 1:      lx      t0, 0,(a0)
-#         addi    a0, a0, 0x100
-#         blt     a0, a1, 1b
 
         sys_print msg_stack_access
         stackalloc_x 2
