@@ -17,6 +17,7 @@ SECTIONS
   .data : { *(.data) }
   .sdata : { *(.sdata) }
   .debug : { *(.debug) }
+  stack_bottom = .;
   . += STACK_SIZE;
   stack_top = .;
 
