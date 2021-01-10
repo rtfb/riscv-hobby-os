@@ -498,28 +498,3 @@ msg_exception:
         .string "Exception occured, mcause:%p mepc:%p mtval:%p (user payload at:%p, stack top:%p).\n"
 
 .section .data
-
-### CHECK if USER mode is supported
-#   https://github.com/riscv/riscv-tests/blob/master/isa/rv64si/csr.S
-
-#   # For RV64, make sure UXL encodes RV64.  (UXL does not exist for RV32.)
-# #if __riscv_xlen == 64
-#   # If running in M mode, use mstatus.MPP to check existence of U mode.
-#   # Otherwise, if in S mode, then U mode must exist and we don't need to check.
-# #ifdef __MACHINE_MODE
-#   li t0, MSTATUS_MPP
-#   csrc mstatus, t0
-#   csrr t1, mstatus
-#   and t0, t0, t1
-#   bnez t0, 1f
-# #endif
-#   # If U mode is present, UXL should be 2 (XLEN = 64-bit)
-#   TEST_CASE(18, a0, SSTATUS_UXL & (SSTATUS_UXL << 1), csrr a0, sstatus; li a1, SSTATUS_UXL; and a0, a0, a1)
-# #ifdef __MACHINE_MODE
-#   j 2f
-# 1:
-#   # If U mode is not present, UXL should be 0
-#   TEST_CASE(19, a0, 0, csrr a0, sstatus; li a1, SSTATUS_UXL; and a0, a0, a1)
-# 2:
-# #endif
-# #endif
