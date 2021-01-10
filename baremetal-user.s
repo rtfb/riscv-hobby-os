@@ -18,7 +18,6 @@ _start:
         la      t0, early_trap_vector
         csrw    mtvec, t0
 
-        csrwi   mstatus, 0              # reset machine mode status
         csrwi   mideleg, 0              # disable trap delegation, all interrupts and exceptions will be handled in machine mode
         csrwi   medeleg, 0              # 3.1.13 Machine Trap Delegation Registers (medeleg and mideleg)
                                         # > In systems with all three privilege modes (M/S/U), setting a bit in medeleg or mideleg
