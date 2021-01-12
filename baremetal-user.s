@@ -152,7 +152,7 @@ single_core:                            # only the 1st hart past this point
         .equ MODE_U,    (0b00 << 11)
         .equ MODE_S,    (0b01 << 11)
         .equ MODE_M,    (0b11 << 11)
-        .equ MODE_MASK, (0b11 << 11)
+        .equ MODE_MASK, ~(0b11 << 11)
 
                                         # use MRET instruction to switch privelege level from Machine (M-mode) to User (U-mode)
                                         # MRET will change privelege to Machine Previous Privelege stored in mstatus CSR
