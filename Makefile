@@ -31,7 +31,10 @@ all: baremetal/hello_sifive_u \
 	baremetal/user_sifive_e \
 	baremetal/hello_sifive_e32 \
 	baremetal/fib_sifive_e32 \
-	baremetal/user_sifive_e32
+	baremetal/user_sifive_e32 \
+	baremetal/hello_virt \
+	baremetal/fib_virt \
+	baremetal/user_virt
 baremetal: all
 
 # Shortcuts
@@ -41,15 +44,21 @@ runb: run-baremetal
 runs: run-spike
 runl: run-linux
 
-FIB_SIFIVE_U_DEPS = baremetal-fib.s baremetal-print.s
-HELLO_SIFIVE_U_DEPS = baremetal-hello.s baremetal-print.s
-USER_SIFIVE_U_DEPS = baremetal-user.s baremetal-print.s
-FIB_SIFIVE_E_DEPS = baremetal-fib.s baremetal-print.s
-HELLO_SIFIVE_E_DEPS = baremetal-hello.s baremetal-print.s
-USER_SIFIVE_E_DEPS = baremetal-user.s baremetal-print.s
-FIB_SIFIVE_E32_DEPS = baremetal-fib.s baremetal-print.s
-HELLO_SIFIVE_E32_DEPS = baremetal-hello.s baremetal-print.s
-USER_SIFIVE_E32_DEPS = baremetal-user.s baremetal-print.s
+FIB_DEPS = baremetal-fib.s baremetal-print.s baremetal-poweroff.s
+HELLO_DEPS = baremetal-hello.s baremetal-print.s
+USER_DEP = baremetal-user.s baremetal-print.s baremetal-poweroff.s
+FIB_SIFIVE_U_DEPS = $(FIB_DEPS)
+HELLO_SIFIVE_U_DEPS = $(HELLO_DEPS)
+USER_SIFIVE_U_DEPS = $(USER_DEP)
+FIB_SIFIVE_E_DEPS = $(FIB_DEPS)
+HELLO_SIFIVE_E_DEPS = $(HELLO_DEPS)
+USER_SIFIVE_E_DEPS = $(USER_DEP)
+FIB_SIFIVE_E32_DEPS = $(FIB_DEPS)
+HELLO_SIFIVE_E32_DEPS = $(HELLO_DEPS)
+USER_SIFIVE_E32_DEPS = $(USER_DEP)
+FIB_VIRT_DEPS = $(FIB_DEPS)
+HELLO_VIRT_DEPS = $(HELLO_DEPS)
+USER_VIRT_DEPS = $(USER_DEP)
 
 .PHONY: run-baremetal
 run-baremetal: baremetal/hello_sifive_u
@@ -137,6 +146,28 @@ baremetal/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		${USER_SIFIVE_E32_DEPS} -o $@
+
+baremetal/hello_virt: ${HELLO_VIRT_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
+		${HELLO_VIRT_DEPS} -o $@
+
+baremetal/fib_virt: ${FIB_VIRT_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
+		${FIB_VIRT_DEPS} -o $@
+
+baremetal/user_virt: ${USER_VIRT_DEPS}
+	@mkdir -p baremetal
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
+		${USER_VIRT_DEPS} -o $@
+
 
 run-spike: elf
 	$(SPIKE) $(RISCV_PK) generic-elf/hello bbl loader

@@ -361,6 +361,8 @@ interrupt_timer:
         j       interrupt_epilogue
 
 syscall0:
+        jal     poweroff
+        j       syscall_epilogue
 syscall1:
 syscall2:
 syscall3:
@@ -377,6 +379,10 @@ test_func:
 .macro  syscall nr
         li      a7, \nr                 # for fun let's pretend syscall is kinda like Linux: syscall nr in a7, other arguments in a0..a6
         ecall
+.endm
+.macro  sys_poweroff exit_code
+        la      a0, \exit_code
+        syscall 0
 .endm
 .macro  sys_print addr
         la      a0, \addr
@@ -396,7 +402,8 @@ user_entry_point:
         sys_print msg_u_hello
 
         sys_print msg_read_user_csr
-        csrr    a0, cycle
+                                        # 2.2 CSR Listing, Table 2.2: Currently allocated RISC-V user-level CSR addresses.
+        csrr    a0, cycle               # read user level cycle counter
         sys_print msg_ok
 
         sys_print msg_load_from_user_mem
@@ -433,8 +440,7 @@ user_entry_point:
 
         sys_print msg_done
 
-1:      wfi                             # park hart waiting for interrupt
-        j       1b
+        sys_poweroff 0                  # shutdown and exit QEMU, if possible
 
 msg_u_hello:
         .string "Hello from U-mode!\n"

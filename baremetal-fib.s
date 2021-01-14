@@ -39,6 +39,8 @@ main:
         addi    s0, s0, 1               # i++
         blt     s0, s1, 1b              # loop while i < 15
 
+        call    poweroff                # shutdown and exit QEMU, if possible
+
         ret
 
 .global fib
