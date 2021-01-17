@@ -8,3 +8,4 @@ initramfs
 initramfs-busybox-riscv64.cpio.gz
 baremetal
 generic-elf
+out
