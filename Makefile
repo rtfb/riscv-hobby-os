@@ -23,18 +23,20 @@ ifeq ($(wildcard $(RISCV_PK)),)
 	RISCV_PK = pk
 endif
 
-all: baremetal/hello_sifive_u \
-	baremetal/test_sifive_u \
-	baremetal/user_sifive_u \
-	baremetal/hello_sifive_e \
-	baremetal/test_sifive_e \
-	baremetal/user_sifive_e \
-	baremetal/hello_sifive_e32 \
-	baremetal/test_sifive_e32 \
-	baremetal/user_sifive_e32 \
-	baremetal/hello_virt \
-	baremetal/test_virt \
-	baremetal/user_virt
+OUT = out
+
+all: $(OUT)/hello_sifive_u \
+	$(OUT)/test_sifive_u \
+	$(OUT)/user_sifive_u \
+	$(OUT)/hello_sifive_e \
+	$(OUT)/test_sifive_e \
+	$(OUT)/user_sifive_e \
+	$(OUT)/hello_sifive_e32 \
+	$(OUT)/test_sifive_e32 \
+	$(OUT)/user_sifive_e32 \
+	$(OUT)/hello_virt \
+	$(OUT)/test_virt \
+	$(OUT)/user_virt
 baremetal: all
 
 # Shortcuts
@@ -61,109 +63,109 @@ HELLO_VIRT_DEPS = $(HELLO_DEPS)
 USER_VIRT_DEPS = $(USER_DEPS)
 
 .PHONY: test
-test: out/test-output.txt
+test: $(OUT)/test-output.txt
 	@diff -u testdata/want-output.txt $<
 	@echo "OK"
 
-out/test-output.txt: out/test_virt
-	@mkdir -p out
+$(OUT)/test-output.txt: $(OUT)/test_virt
+	@mkdir -p $(OUT)
 	@$(QEMU) -nographic -machine virt -bios none -kernel $< > $@
 
 .PHONY: run-baremetal
-run-baremetal: baremetal/hello_sifive_u
+run-baremetal: $(OUT)/hello_sifive_u
 	$(QEMU) -nographic -machine sifive_u -bios none -kernel $<
 
 .PHONY: run-baremetal-user
-run-baremetal-user: baremetal/user_sifive_u
+run-baremetal-user: $(OUT)/user_sifive_u
 	$(QEMU) -nographic -machine sifive_u -bios none -kernel $<
 
 .PHONY: run-baremetal32
-run-baremetal32: baremetal/hello_sifive_e32
+run-baremetal32: $(OUT)/hello_sifive_e32
 	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
 
 .PHONY: run-baremetal32-user
-run-baremetal32-user: baremetal/user_sifive_e32
+run-baremetal32-user: $(OUT)/user_sifive_e32
 	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
 
-baremetal/hello_sifive_u: ${HELLO_SIFIVE_U_DEPS}
-	@mkdir -p baremetal
+$(OUT)/hello_sifive_u: ${HELLO_SIFIVE_U_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		${HELLO_SIFIVE_U_DEPS} -o $@
 
-baremetal/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
-	@mkdir -p baremetal
+$(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		${TEST_SIFIVE_U_DEPS} -o $@
 
-baremetal/user_sifive_u: ${USER_SIFIVE_U_DEPS}
-	@mkdir -p baremetal
+$(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		${USER_SIFIVE_U_DEPS} -o $@
 
-baremetal/hello_sifive_e: ${HELLO_SIFIVE_E_DEPS}
-	@mkdir -p baremetal
+$(OUT)/hello_sifive_e: ${HELLO_SIFIVE_E_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${HELLO_SIFIVE_E_DEPS} -o $@
 
-baremetal/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
-	@mkdir -p baremetal
+$(OUT)/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${TEST_SIFIVE_E_DEPS} -o $@
 
-baremetal/user_sifive_e: ${USER_SIFIVE_E_DEPS}
-	@mkdir -p baremetal
+$(OUT)/user_sifive_e: ${USER_SIFIVE_E_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${USER_SIFIVE_E_DEPS} -o $@
 
-baremetal/hello_sifive_e32: ${HELLO_SIFIVE_E32_DEPS}
-	@mkdir -p baremetal
+$(OUT)/hello_sifive_e32: ${HELLO_SIFIVE_E32_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		${HELLO_SIFIVE_E32_DEPS} -o $@
 
-baremetal/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
-	@mkdir -p baremetal
+$(OUT)/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		${TEST_SIFIVE_E32_DEPS} -o $@
 
-baremetal/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
-	@mkdir -p baremetal
+$(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
-baremetal/hello_virt: ${HELLO_VIRT_DEPS}
-	@mkdir -p baremetal
+$(OUT)/hello_virt: ${HELLO_VIRT_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${HELLO_VIRT_DEPS} -o $@
 
-out/test_virt: ${TEST_VIRT_DEPS}
-	@mkdir -p baremetal
+$(OUT)/test_virt: ${TEST_VIRT_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${TEST_VIRT_DEPS} -o $@
 
-baremetal/user_virt: ${USER_VIRT_DEPS}
-	@mkdir -p baremetal
+$(OUT)/user_virt: ${USER_VIRT_DEPS}
+	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
@@ -181,7 +183,7 @@ run-linux: initrd
      -initrd initramfs-busybox-riscv64.cpio.gz
 
 clean:
-	rm -Rf baremetal
+	rm -Rf $(OUT)
 	rm -Rf generic-elf
 	rm -Rf initramfs
 
