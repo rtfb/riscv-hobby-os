@@ -23,9 +23,8 @@ ifeq ($(wildcard $(RISCV_PK)),)
 	RISCV_PK = pk
 endif
 
-OUT = out
-
-all: $(OUT)/hello_sifive_u \
+OUT := out
+BINS := $(OUT)/hello_sifive_u \
 	$(OUT)/test_sifive_u \
 	$(OUT)/user_sifive_u \
 	$(OUT)/hello_sifive_e \
@@ -37,6 +36,12 @@ all: $(OUT)/hello_sifive_u \
 	$(OUT)/hello_virt \
 	$(OUT)/test_virt \
 	$(OUT)/user_virt
+
+# This target makes all the binaries depend on existence (but not timestamp) of
+# $(OUT), which lets us avoid repetitive 'mkdir -p out'
+$(BINS): | $(OUT)
+
+all: $(BINS)
 baremetal: all
 
 # Shortcuts
@@ -68,7 +73,6 @@ test: $(OUT)/test-output.txt
 	@echo "OK"
 
 $(OUT)/test-output.txt: $(OUT)/test_virt
-	@mkdir -p $(OUT)
 	@$(QEMU) -nographic -machine virt -bios none -kernel $< > $@
 
 .PHONY: run-baremetal
@@ -88,46 +92,39 @@ run-baremetal32-user: $(OUT)/user_sifive_e32
 	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
 
 $(OUT)/hello_sifive_u: ${HELLO_SIFIVE_U_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		${HELLO_SIFIVE_U_DEPS} -o $@
 
 $(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		${TEST_SIFIVE_U_DEPS} -o $@
 
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		${USER_SIFIVE_U_DEPS} -o $@
 
 $(OUT)/hello_sifive_e: ${HELLO_SIFIVE_E_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${HELLO_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${TEST_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/user_sifive_e: ${USER_SIFIVE_E_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${USER_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/hello_sifive_e32: ${HELLO_SIFIVE_E32_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
@@ -135,7 +132,6 @@ $(OUT)/hello_sifive_e32: ${HELLO_SIFIVE_E32_DEPS}
 		${HELLO_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
@@ -143,7 +139,6 @@ $(OUT)/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
 		${TEST_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
@@ -151,26 +146,25 @@ $(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 		${USER_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/hello_virt: ${HELLO_VIRT_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${HELLO_VIRT_DEPS} -o $@
 
 $(OUT)/test_virt: ${TEST_VIRT_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${TEST_VIRT_DEPS} -o $@
 
 $(OUT)/user_virt: ${USER_VIRT_DEPS}
-	@mkdir -p $(OUT)
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
 		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${USER_VIRT_DEPS} -o $@
 
+$(OUT):
+	mkdir -p $(OUT)
 
 run-spike: elf
 	$(SPIKE) $(RISCV_PK) generic-elf/hello bbl loader
