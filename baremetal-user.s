@@ -381,7 +381,7 @@ test_func:
         ecall
 .endm
 .macro  sys_poweroff exit_code
-        la      a0, \exit_code
+        li      a0, \exit_code
         syscall 0
 .endm
 .macro  sys_print addr
@@ -390,7 +390,7 @@ test_func:
 .endm
 
 .balign 4096                            # at least in QEMU 5.1 memory protection seems to work on 4KiB page boundaries
-                                        # align user payload part on 4KiB to make the further experiments more predicatble
+                                        # align user payload part on 4KiB to make the further experiments more predictable
 user_payload:
 user_entry_point:
         nop                             # no-operation instructions here help to distinguish between
