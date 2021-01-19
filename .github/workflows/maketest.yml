@@ -13,9 +13,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: install xcompiler
+    - name: Install xcompiler
       run: ./scripts/install-ci.sh
-    - name: xcompiler version
+    - name: Print xcompiler version
       run: riscv64-linux-gnu-gcc --version
-    - name: make test
+    - name: Run tests
       run: make test
+    - name: Make all binaries
+      run: make all
