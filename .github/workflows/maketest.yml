@@ -1,8 +1,8 @@
-name: Make test
+name: Run builds and tests
 
 on:
   push:
-    branches: [ try-workflows ]
+    branches: [ '*' ]
   pull_request:
     branches: [ $default-branch ]
 
