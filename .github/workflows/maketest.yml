@@ -1,0 +1,21 @@
+name: Make test
+
+on:
+  push:
+    branches: [ try-workflows ]
+  pull_request:
+    branches: [ $default-branch ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install xcompiler
+      run: ./scripts/install-ci.sh
+    - name: xcompiler version
+      run: riscv64-linux-gnu-gcc --version
+    - name: make test
+      run: make test
