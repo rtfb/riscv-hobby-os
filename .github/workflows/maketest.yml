@@ -1,0 +1,23 @@
+name: Run builds and tests
+
+on:
+  push:
+    branches: [ '*' ]
+  pull_request:
+    branches: [ $default-branch ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install xcompiler
+      run: ./scripts/install-ci.sh
+    - name: Print xcompiler version
+      run: riscv64-linux-gnu-gcc --version
+    - name: Run tests
+      run: make test
+    - name: Make all binaries
+      run: make all
