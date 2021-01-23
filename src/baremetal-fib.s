@@ -1,4 +1,4 @@
-.include "machine-word.inc"
+.include "src/machine-word.inc"
 .balign 4
 .section .text
 .globl _start
