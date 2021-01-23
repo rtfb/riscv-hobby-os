@@ -53,7 +53,8 @@ runl: run-linux
 
 TEST_DEPS = src/baremetal-fib.s src/baremetal-print.s src/baremetal-poweroff.s
 HELLO_DEPS = src/baremetal-hello.s src/baremetal-print.s
-USER_DEPS = src/baremetal-user.s src/baremetal-print.s src/baremetal-poweroff.s
+USER_DEPS = src/baremetal-user.s src/baremetal-print.s \
+			src/baremetal-poweroff.s src/userland.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 HELLO_SIFIVE_U_DEPS = $(HELLO_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
