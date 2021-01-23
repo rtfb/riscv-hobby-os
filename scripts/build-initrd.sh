@@ -6,10 +6,11 @@ then
     RISCV64_GCC="riscv64-unknown-elf-gcc"
 fi
 
+make out/generic-elf/hello
 mkdir -pv initramfs/riscv64-busybox
 cd initramfs/riscv64-busybox
 mkdir -pv {bin,sbin,etc,proc,sys,usr/{bin,sbin}}
-$RISCV64_GCC -static -o usr/bin/hello ../../hello.c ../../hiasm.S
+cp ../../out/generic-elf/hello usr/bin/
 cp -av ../../busybox/_install/* .
 cp ../../scripts/init .
 chmod +x init

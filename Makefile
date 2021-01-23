@@ -232,6 +232,6 @@ linux:
 initrd:
 	./scripts/build-initrd.sh
 
-.PHONY: elf
-elf:
-	./scripts/build-elf.sh
+$(OUT)/generic-elf/hello:
+	@mkdir -p $(OUT)/generic-elf
+	$(RISCV64_GCC) -static -o $@ src/generic-elf/hello.c src/generic-elf/hiasm.S
