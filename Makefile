@@ -51,9 +51,9 @@ runb: run-baremetal
 runs: run-spike
 runl: run-linux
 
-TEST_DEPS = baremetal-fib.s baremetal-print.s baremetal-poweroff.s
-HELLO_DEPS = baremetal-hello.s baremetal-print.s
-USER_DEPS = baremetal-user.s baremetal-print.s baremetal-poweroff.s
+TEST_DEPS = src/baremetal-fib.s src/baremetal-print.s src/baremetal-poweroff.s
+HELLO_DEPS = src/baremetal-hello.s src/baremetal-print.s
+USER_DEPS = src/baremetal-user.s src/baremetal-print.s src/baremetal-poweroff.s
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 HELLO_SIFIVE_U_DEPS = $(HELLO_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
@@ -93,73 +93,73 @@ run-baremetal32-user: $(OUT)/user_sifive_e32
 
 $(OUT)/hello_sifive_u: ${HELLO_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		${HELLO_SIFIVE_U_DEPS} -o $@
 
 $(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		${TEST_SIFIVE_U_DEPS} -o $@
 
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		${USER_SIFIVE_U_DEPS} -o $@
 
 $(OUT)/hello_sifive_e: ${HELLO_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${HELLO_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${TEST_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/user_sifive_e: ${USER_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${USER_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/hello_sifive_e32: ${HELLO_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		${HELLO_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		${TEST_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/hello_virt: ${HELLO_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${HELLO_VIRT_DEPS} -o $@
 
 $(OUT)/test_virt: ${TEST_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${TEST_VIRT_DEPS} -o $@
 
 $(OUT)/user_virt: ${USER_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64  -static -mcmodel=medany \
-		-fvisibility=hidden -nostdlib -nostartfiles -Tbaremetal.ld \
+		-fvisibility=hidden -nostdlib -nostartfiles -Tsrc/baremetal.ld \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${USER_VIRT_DEPS} -o $@
 

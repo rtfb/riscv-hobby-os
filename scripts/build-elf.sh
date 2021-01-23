@@ -7,4 +7,4 @@ then
 fi
 
 mkdir -pv generic-elf
-$RISCV64_GCC -static -o generic-elf/hello hello.c hiasm.S
+$RISCV64_GCC -static -o generic-elf/hello src/generic-elf/hello.c src/generic-elf/hiasm.S

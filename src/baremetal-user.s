@@ -1,4 +1,4 @@
-.include "machine-word.inc"
+.include "src/machine-word.inc"
 .equ STACK_PER_HART,    64 * REGBYTES
 .equ HALT_ON_EXCEPTION, 0
 
