@@ -1,5 +1,5 @@
 Hello world!!!
-Hello % numbers: 20 -30 4294967266 100 AA55 FFFFFFFF _start=0x80000000 main=0x80000018 fib=0x8000006C this-str=0x800003D8 unknown pattern type: %q.
+Hello % numbers: 20 -30 4294967266 100 AA55 FFFFFFFF _start=0x80000000 main=0x80000018 fib=0x8000006C this-str=0x80002010 unknown pattern type: %q.
 fib(1) = 1
 fib(2) = 1
 fib(3) = 2

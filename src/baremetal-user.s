@@ -1,6 +1,6 @@
 .include "src/machine-word.inc"
 .equ STACK_PER_HART,    64 * REGBYTES
-.equ HALT_ON_EXCEPTION, 1
+.equ HALT_ON_EXCEPTION, 0
 
 .balign 4
 .section .text
@@ -376,17 +376,17 @@ test_func:
 
 ### User payload = code + readonly data for U-mode ############################
 #
-.macro  syscall nr
+.macro  macro_syscall nr
         li      a7, \nr                 # for fun let's pretend syscall is kinda like Linux: syscall nr in a7, other arguments in a0..a6
         ecall
 .endm
-.macro  sys_poweroff exit_code
+.macro  macro_sys_poweroff exit_code
         li      a0, \exit_code
-        syscall 0
+        macro_syscall 0
 .endm
-.macro  sys_print addr
+.macro  macro_sys_print addr
         la      a0, \addr
-        syscall 4
+        macro_syscall 4
 .endm
 
 .section .user_text                     # at least in QEMU 5.1 memory protection seems to work on 4KiB page boundaries,
@@ -401,85 +401,44 @@ user_entry_point:
                                         # which makes instruction address easier to follow in case of an exception
 
         call u_main
-        # la a0, msg_u_hello
-        # li a7, 4
-        # ecall
-        # call do_sys_print
-        # sys_print msg_u_hello
 
-        # sys_print msg_read_user_csr
-        #                                 # 2.2 CSR Listing, Table 2.2: Currently allocated RISC-V user-level CSR addresses.
-        # csrr    a0, cycle               # read user level cycle counter
-        # sys_print msg_ok
+        # XXX: why does this test succeed despite the msg claiming it illegal?
+        macro_sys_print msg_write_to_readonly_mem
+        la      a0, user_entry_point
+        sx      t0, 0,(a0)
+        macro_sys_print msg_ok
 
-        # sys_print msg_load_from_user_mem
-        # la      a0, msg_u_hello
-        # lb      t0, 0(a0)
-        # lx      t0, 0,(a0)
-        # sys_print msg_ok
+        macro_sys_print msg_done
 
-        # sys_print msg_stack_access
-        # stackalloc_x 2
-        # lx      t0, 0,(sp)
-        # lx      t1, 1,(sp)
-        # sx      t0, 0,(sp)
-        # sx      t1, 1,(sp)
-        # stackfree_x 2
-        # sys_print msg_ok
+        macro_sys_poweroff 0            # shutdown and exit QEMU, if possible
 
-        # sys_print msg_read_unaligned_mem
-        # la      a0, msg_u_hello
-        # lw      t0, 1(a0)
-        # sys_print msg_ok
-
-        # sys_print msg_write_to_readonly_mem
-        # la      a0, user_entry_point
-        # sx      t0, 0,(a0)
-        # sys_print msg_ok
-
-        # sys_print msg_read_protected_csr
-        # csrr    a0, mhartid             # causes Illegal instruction (mcause=2) in User mode
-
-        # sys_print msg_load_from_protected_mem
-        # la      a0, msg_m_hello
-        # lx      t0, 0,(a0)              # causes Load access fault (mcause=5) in User mode
-
-        # sys_print msg_done
-
-        sys_poweroff 0                  # shutdown and exit QEMU, if possible
-
-.globl do_sys_print
-do_sys_print:
+.globl sys_puts
+sys_puts:
         addi    sp,sp,-8
         sd      ra,8(sp)
-        syscall 4
+        macro_syscall 4
         ld      ra,8(sp)
         addi    sp,sp,8
         ret
 
-# msg_u_hello:
-#         .string "Hello from U-mode!\n"
+a_string_in_user_mem:
+        .string "This is a test string in user memory"
+.globl a_string_in_user_mem_ptr
+a_string_in_user_mem_ptr:
+        pointer a_string_in_user_mem
+.globl msg_m_hello_ptr
+msg_m_hello_ptr:
+        pointer msg_m_hello
 
-msg_read_user_csr:
-        .string "Read user CSR: "
-msg_load_from_user_mem:
-        .string "Read from memory: "
-msg_stack_access:
-        .string "Read/write stack: "
-msg_read_unaligned_mem:
-        .string "Read from unaligned memory:  "
 msg_write_to_readonly_mem:
         .string "Illegal write to read-only memory: "
-msg_read_protected_csr:
-        .string "Illegal read from protected CSR: "
-msg_load_from_protected_mem:
-        .string "Illegal read from protected memory: "
 msg_call_printf:
-        .string "Illegal call to function in protected memory: "
+        .string "Illegal call to function in protected memory: "  # XXX: unused
 msg_done:
-        .string "Done.\n"
+        .string "Done\n"
 msg_ok:
         .string "OK\n"
+
 
 ### Data ######################################################################
 #
