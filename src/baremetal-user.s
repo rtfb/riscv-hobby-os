@@ -450,7 +450,11 @@ user_entry_point:
 
 .globl do_sys_print
 do_sys_print:
+        addi    sp,sp,-8
+        sd      ra,8(sp)
         syscall 4
+        ld      ra,8(sp)
+        addi    sp,sp,8
         ret
 
 # msg_u_hello:
