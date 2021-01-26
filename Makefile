@@ -8,6 +8,16 @@ ifeq ($(wildcard $(QEMU32)),)
 	QEMU32 = qemu-system-riscv32
 endif
 
+DEBUG_FLAGS := ""
+ifeq ($(DBG),1)
+	# DEBUG_FLAGS are gdb-related flags to QEMU:
+	# -S only loads an image, but stops the CPU, giving a chance to attach gdb
+	# -s is a shorthand to listen for gdb on localhost:1234
+	DEBUG_FLAGS = -s -S
+	QEMU += $(DEBUG_FLAGS)
+	QEMU32 += $(DEBUG_FLAGS)
+endif
+
 RISCV64_GCC ?= riscv64-linux-gnu-gcc
 ifeq (, $(shell which $(RISCV64_GCC)))
 	RISCV64_GCC = riscv64-unknown-elf-gcc
