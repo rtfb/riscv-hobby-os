@@ -402,14 +402,6 @@ user_entry_point:
 
         call u_main
 
-        # XXX: why does this test succeed despite the msg claiming it illegal?
-        macro_sys_print msg_write_to_readonly_mem
-        la      a0, user_entry_point
-        sx      t0, 0,(a0)
-        macro_sys_print msg_ok
-
-        macro_sys_print msg_done
-
         macro_sys_poweroff 0            # shutdown and exit QEMU, if possible
 
 .globl sys_puts
@@ -430,15 +422,8 @@ a_string_in_user_mem_ptr:
 msg_m_hello_ptr:
         pointer msg_m_hello
 
-msg_write_to_readonly_mem:
-        .string "Illegal write to read-only memory: "
 msg_call_printf:
         .string "Illegal call to function in protected memory: "  # XXX: unused
-msg_done:
-        .string "Done\n"
-msg_ok:
-        .string "OK\n"
-
 
 ### Data ######################################################################
 #
