@@ -4,7 +4,11 @@
 .globl get_clock_cycles
 get_clock_cycles:
                                         # 2.2 CSR Listing, Table 2.2: Currently allocated RISC-V user-level CSR addresses.
+.if XLEN == 64
         csrr    a0, cycle               # read user level cycle counter
+.else
+        # TODO
+.endif
         ret
 
 

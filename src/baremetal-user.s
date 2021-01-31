@@ -406,11 +406,11 @@ user_entry_point:
 
 .globl sys_puts
 sys_puts:
-        addi    sp,sp,-8
-        sd      ra,8(sp)
+        addi    sp, sp, -8
+        sx      ra, 8, (sp)
         macro_syscall 4
-        ld      ra,8(sp)
-        addi    sp,sp,8
+        lx      ra, 8, (sp)
+        addi    sp, sp, 8
         ret
 
 a_string_in_user_mem:

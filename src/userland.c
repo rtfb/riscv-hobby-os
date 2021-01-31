@@ -8,7 +8,7 @@ int __attribute__((__section__(".user_text"))) u_main() {
     sys_puts("OK\n");
 
     sys_puts("Read from memory: ");
-    int64_t word = *a_string_in_user_mem_ptr;
+    int word = *a_string_in_user_mem_ptr;
     sys_puts("OK\n");
 
     sys_puts("Read from unaligned memory: ");
@@ -28,7 +28,7 @@ int __attribute__((__section__(".user_text"))) u_main() {
 
     sys_puts("Illegal read from protected CSR: ");
     // causes Illegal instruction (mcause=2) in User mode:
-    int64_t hart_id = m_read_hard_id();
+    int hart_id = m_read_hard_id();
 
     sys_puts("Illegal read from protected memory: ");
     // causes Load access fault (mcause=5) in User mode:
