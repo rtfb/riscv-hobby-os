@@ -148,17 +148,17 @@ single_core:                            # only the 1st hart past this point
                                         # > In addition to manipulating the privilege stack as described in Section 3.1.7,
                                         # > xRET sets the pc to the value stored in the x epc register.
 
-                                        # 1.3 Privelege Levels, Table 1.1: RISC-V privilege levels.
+                                        # 1.3 Privilege Levels, Table 1.1: RISC-V privilege levels.
         .equ MODE_U,    (0b00 << 11)
         .equ MODE_S,    (0b01 << 11)
         .equ MODE_M,    (0b11 << 11)
         .equ MODE_MASK, ~(0b11 << 11)
 
-                                        # use MRET instruction to switch privelege level from Machine (M-mode) to User (U-mode)
-                                        # MRET will change privelege to Machine Previous Privelege stored in mstatus CSR
+                                        # use MRET instruction to switch privilege level from Machine (M-mode) to User (U-mode)
+                                        # MRET will change privilege to Machine Previous Privilege stored in mstatus CSR
                                         # and jump to Machine Exception Program Counter specified by mepcs CSR
 
-                                        # privelege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
+                                        # privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
                                         # and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
         li      t1, MODE_U
         li      t2, MODE_MASK           # mask to preserve all bits of mstatus except 11:12
