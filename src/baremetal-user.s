@@ -136,41 +136,7 @@ single_core:                            # only the 1st hart past this point
         la      a0, msg_m_hello         # DEBUG print
         call    printf                  # DEBUG print
 
-                                        # 3.1.7 Privilege and Global Interrupt-Enable Stack in mstatus register
-                                        # > The MRET, SRET, or URET instructions are used to return from traps in M-mode, S-mode, or U-mode respectively.
-                                        # > When executing an xRET instruction, supposing x PP holds the value y, x IE is set to xPIE;
-                                        # > the privilege mode is changed to y; xPIE is set to 1; and xPP is set to U (or M if user-mode is not supported).
-
-                                        # 3.2.2 Trap-Return Instructions
-                                        # > An xRET instruction can be executed in privilege mode x or higher,
-                                        # > where executing a lower-privilege xRET instruction will pop
-                                        # > the relevant lower-privilege interrupt enable and privilege mode stack.
-                                        # > In addition to manipulating the privilege stack as described in Section 3.1.7,
-                                        # > xRET sets the pc to the value stored in the x epc register.
-
-                                        # 1.3 Privilege Levels, Table 1.1: RISC-V privilege levels.
-        .equ MODE_U,    (0b00 << 11)
-        .equ MODE_S,    (0b01 << 11)
-        .equ MODE_M,    (0b11 << 11)
-        .equ MODE_MASK, ~(0b11 << 11)
-
-                                        # use MRET instruction to switch privilege level from Machine (M-mode) to User (U-mode)
-                                        # MRET will change privilege to Machine Previous Privilege stored in mstatus CSR
-                                        # and jump to Machine Exception Program Counter specified by mepcs CSR
-
-                                        # privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
-                                        # and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
-        li      t1, MODE_U
-        li      t2, MODE_MASK           # mask to preserve all bits of mstatus except 11:12
-        csrr    t0, mstatus
-        and     t0, t0, t2              # mstatus.mpp &= 0
-        or      t0, t0, t1              # mstatus.mpp |= MODE_U
-        csrw    mstatus, t0
-
-        la      t0, user_entry_point
-        csrw    mepc, t0                # set the entry point address for User mode
-
-        mret                            # switch to User mode
+        call    kmain
 
 
 ### Trap Tables & Dispatchers #################################################
@@ -393,6 +359,7 @@ test_func:
                                         # so store user payload part in its own section, which is aligned on 4KiB to make
                                         # the further experiments more predictable
 user_payload:
+.globl user_entry_point
 user_entry_point:
         nop                             # no-operation instructions here help to distinguish between
         nop                             # illegal instruction -vs- page fault due to missing e(X)ecute access flag
