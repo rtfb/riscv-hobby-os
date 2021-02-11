@@ -190,7 +190,7 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
         j interrupt_timer               #  4: user timer interrupt
         j interrupt_timer               #  5: supervisor timer interrupt
         j interrupt_noop                #  6: reserved
-        j interrupt_timer               #  7: machine timer interrupt
+        j k_interrupt_timer             #  7: machine timer interrupt
         j interrupt_noop                #  8: user external interrupt
         j interrupt_noop                #  9: supervisor external interrupt
         j interrupt_noop                # 10: reserved
@@ -325,6 +325,9 @@ interrupt_noop:
 
 interrupt_timer:
         j       interrupt_epilogue
+
+k_interrupt_timer:
+        call    kernel_timer_tick
 
 syscall0:
         jal     poweroff

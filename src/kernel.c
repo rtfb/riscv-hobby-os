@@ -1,10 +1,22 @@
+#include "sys.h"
 #include "kernel.h"
 
 void kmain() {
     kprints("kmain\n");
     void *p = (void*)0xf10a;
     kprintp(p);
+    kernel_timer_tick();
     schedule_user_process();
+}
+
+// kernel_timer_tick will be called from timer to give kernel time to do its
+// housekeeping as well as run the scheduler to pick the next user process to
+// run.
+void kernel_timer_tick() {
+    kprints("K");
+    disable_interrupts();
+    set_timer_after(ONE_SECOND);
+    enable_interrupts();
 }
 
 void schedule_user_process() {
@@ -64,6 +76,45 @@ void jump_to_func(void *func) {
         :               // no output
         : "r"(func)     // input in func
     );
+}
+
+unsigned int get_hart_id() {
+    register int a0 asm ("a0");
+    asm volatile (
+        "csrr a0, mhartid"
+        : "=r"(a0)   // output in a0
+    );
+    return a0;
+}
+
+void set_timer_after(uint64_t delta) {
+    unsigned int hart_id = get_hart_id();
+    uint64_t *mtime = (uint64_t*)MTIME;
+    uint64_t *mtimecmp = (uint64_t*)(MTIMECMP_BASE) + 8*hart_id;
+    uint64_t now = *mtime;
+    *mtimecmp = now + delta;
+}
+
+void set_mie(unsigned int value) {
+    asm volatile (
+        "csrs   mie, %0;"   // set mie to the requested value
+        :            // no output
+        : "r"(value) // input in value
+    );
+}
+
+void disable_interrupts() {
+    set_mie(0);
+}
+
+void enable_interrupts() {
+    // set mstatus.MIE (Machine Interrupt Enable) bit to 1:
+    unsigned int mstatus = get_mstatus();
+    mstatus |= 1 << 3;
+    set_mstatus(mstatus);
+
+    // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
+    set_mie(1 << 7);
 }
 
 void kprintp(void* p) {
