@@ -339,6 +339,14 @@ syscall4:
 test_func:
         ret
 
+.globl kprints
+kprints:
+        addi    sp, sp, -8
+        sx      ra, 8, (sp)
+        call    printf
+        lx      ra, 8, (sp)
+        addi    sp, sp, 8
+        ret
 
 ### User payload = code + readonly data for U-mode ############################
 #

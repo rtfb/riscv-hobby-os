@@ -12,6 +12,8 @@ void set_user_mode();
 void jump_to_func(void *func);
 unsigned int get_mstatus();
 void set_mstatus(unsigned int mstatus);
+void kprints(char const *msg);
+void kprintp(void* p);
 
 extern void user_entry_point();
 

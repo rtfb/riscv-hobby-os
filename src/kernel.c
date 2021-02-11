@@ -1,6 +1,9 @@
 #include "kernel.h"
 
 void kmain() {
+    kprints("kmain\n");
+    void *p = (void*)0xf10a;
+    kprintp(p);
     schedule_user_process();
 }
 
@@ -61,4 +64,20 @@ void jump_to_func(void *func) {
         :               // no output
         : "r"(func)     // input in func
     );
+}
+
+void kprintp(void* p) {
+    static char hex_table[] = "0123456789abcdef";
+    char buf[256];
+    int i = 15;
+    unsigned long pp = (unsigned long)p;
+    while (i >= 0) {
+        char lowest_4_bits = pp & 0xf;
+        buf[i] = hex_table[lowest_4_bits];
+        i--;
+        pp >>= 4;
+    }
+    buf[16] = '\n';
+    buf[17] = 0;
+    kprints(buf);
 }
