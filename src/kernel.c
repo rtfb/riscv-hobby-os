@@ -1,12 +1,22 @@
 #include "sys.h"
 #include "kernel.h"
 
-void *userland_pc = 0;
+typedef struct process_s {
+    int pid;
+    void *pc;
+} process_t;
+
+process_t proc_table[2];
+int curr_proc = 0;
 
 void kmain() {
     kprints("kmain\n");
     void *p = (void*)0xf10a;
     kprintp(p);
+    proc_table[0].pid = 1;
+    proc_table[0].pc = user_entry_point;
+    proc_table[1].pid = 2;
+    proc_table[1].pc = user_entry_point2;
     kernel_timer_tick();
 }
 
@@ -15,7 +25,10 @@ void kmain() {
 // run.
 void kernel_timer_tick() {
     kprints("K");
-    userland_pc = (void*)get_mepc();
+    void* userland_pc = (void*)get_mepc();
+    if (userland_pc) {
+        proc_table[curr_proc].pc = userland_pc;
+    }
     disable_interrupts();
     set_timer_after(ONE_SECOND);
     enable_interrupts();
@@ -24,13 +37,11 @@ void kernel_timer_tick() {
 
 void schedule_user_process() {
     set_user_mode();
-    if (!userland_pc) {
-        // this is a fresh start of the user process
-        jump_to_address(user_entry_point);
-    } else {
-        // this is a return to an interrupted user process
-        jump_to_address(userland_pc);
+    curr_proc++;
+    if (curr_proc > 1) {
+        curr_proc = 0;
     }
+    jump_to_address(proc_table[curr_proc].pc);
 }
 
 // Privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01,

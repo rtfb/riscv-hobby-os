@@ -381,6 +381,17 @@ user_entry_point:
         call u_main
         ret
 
+.globl user_entry_point2
+user_entry_point2:
+        nop                             # no-operation instructions here help to distinguish between
+        nop                             # illegal instruction -vs- page fault due to missing e(X)ecute access flag
+        nop                             #
+        nop                             # 4 nops instead of one, to align the code below on 0x10
+                                        # which makes instruction address easier to follow in case of an exception
+
+        call u_main2
+        ret
+
 .globl sys_puts
 sys_puts:
         addi    sp, sp, -8

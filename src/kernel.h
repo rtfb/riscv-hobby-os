@@ -34,5 +34,6 @@ void kprints(char const *msg);
 void kprintp(void* p);
 
 extern void user_entry_point();
+extern void user_entry_point2();
 
 #endif // ifndef _KERNEL_H_
