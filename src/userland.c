@@ -38,6 +38,20 @@ int _userland u_main() {
     // causes Load access fault (mcause=5) in User mode:
     word = *msg_m_hello_ptr;
 
+    int64_t counter = 0;
+    int flipper = 0;
+    while (1) {
+        counter++;
+        if (counter % 10000000 == 0) {
+            flipper++;
+            if ((flipper & 1) == 0) {
+                sys_puts("-");
+            } else {
+                sys_puts("|");
+            }
+        }
+    }
+
     sys_puts("C Done.\n");
     return 0;
 }

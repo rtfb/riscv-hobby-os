@@ -368,8 +368,7 @@ user_entry_point:
                                         # which makes instruction address easier to follow in case of an exception
 
         call u_main
-
-        macro_sys_poweroff 0            # shutdown and exit QEMU, if possible
+        ret
 
 .globl sys_puts
 sys_puts:
