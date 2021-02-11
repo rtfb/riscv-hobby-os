@@ -84,11 +84,11 @@ single_core:                            # only the 1st hart past this point
 
                                         # define 4 memory address ranges for Physical Memory Protection
                                         # 0 :: [0 .. user_payload]
-                                        # 1 :: [user_payload .. user_payload_end]
-                                        # 2 :: [user_payload_end .. stack_bottom]
+                                        # 1 :: [user_payload .. .rodata]
+                                        # 2 :: [.rodata .. stack_bottom]
                                         # 3 :: [stack_bottom .. stack_top]
         la      t0, user_payload
-        la      t1, user_payload_end
+        la      t1, .rodata
         la      t2, stack_bottom
         la      t3, stack_top
         srli    t0, t0, 2               # store only the highest [XLEN-2:2] bits of the address in the PMP address register
@@ -123,8 +123,8 @@ single_core:                            # only the 1st hart past this point
 
                                         # set access flags for 4 PMP entries:
                                         # 0 :: [0 .. user_payload]                      000  M-mode kernel code, no access in U-mode
-                                        # 1 :: [user_payload .. user_payload_end]       X0R  user code, executable, non-modifiable in U-mode
-                                        # 2 :: [user_payload_end .. stack_bottom]       000  no access in U-mode
+                                        # 1 :: [user_payload .. .rodata]                X0R  user code, executable, non-modifiable in U-mode
+                                        # 2 :: [.rodata .. stack_bottom]                000  no access in U-mode
                                         # 3 :: [stack_bottom .. stack_top]              0WR  user stack, modifiable, but no executable in U-mode
                                         # access (R)ead, (W)rite and e(X)ecute are 1 bit flags and stored in 0:2 bits of every PMP entry
         li      t1, (PMP_X|PMP_R)*PMP_1 | (PMP_W|PMP_R)*PMP_3
@@ -148,17 +148,17 @@ single_core:                            # only the 1st hart past this point
                                         # > In addition to manipulating the privilege stack as described in Section 3.1.7,
                                         # > xRET sets the pc to the value stored in the x epc register.
 
-                                        # 1.3 Privelege Levels, Table 1.1: RISC-V privilege levels.
+                                        # 1.3 Privilege Levels, Table 1.1: RISC-V privilege levels.
         .equ MODE_U,    (0b00 << 11)
         .equ MODE_S,    (0b01 << 11)
         .equ MODE_M,    (0b11 << 11)
         .equ MODE_MASK, ~(0b11 << 11)
 
-                                        # use MRET instruction to switch privelege level from Machine (M-mode) to User (U-mode)
-                                        # MRET will change privelege to Machine Previous Privelege stored in mstatus CSR
+                                        # use MRET instruction to switch privilege level from Machine (M-mode) to User (U-mode)
+                                        # MRET will change privilege to Machine Previous Privilege stored in mstatus CSR
                                         # and jump to Machine Exception Program Counter specified by mepcs CSR
 
-                                        # privelege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
+                                        # privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
                                         # and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
         li      t1, MODE_U
         li      t2, MODE_MASK           # mask to preserve all bits of mstatus except 11:12
@@ -376,21 +376,22 @@ test_func:
 
 ### User payload = code + readonly data for U-mode ############################
 #
-.macro  syscall nr
+.macro  macro_syscall nr
         li      a7, \nr                 # for fun let's pretend syscall is kinda like Linux: syscall nr in a7, other arguments in a0..a6
         ecall
 .endm
-.macro  sys_poweroff exit_code
+.macro  macro_sys_poweroff exit_code
         li      a0, \exit_code
-        syscall 0
+        macro_syscall 0
 .endm
-.macro  sys_print addr
+.macro  macro_sys_print addr
         la      a0, \addr
-        syscall 4
+        macro_syscall 4
 .endm
 
-.balign 4096                            # at least in QEMU 5.1 memory protection seems to work on 4KiB page boundaries
-                                        # align user payload part on 4KiB to make the further experiments more predictable
+.section .user_text                     # at least in QEMU 5.1 memory protection seems to work on 4KiB page boundaries,
+                                        # so store user payload part in its own section, which is aligned on 4KiB to make
+                                        # the further experiments more predictable
 user_payload:
 user_entry_point:
         nop                             # no-operation instructions here help to distinguish between
@@ -399,75 +400,30 @@ user_entry_point:
         nop                             # 4 nops instead of one, to align the code below on 0x10
                                         # which makes instruction address easier to follow in case of an exception
 
-        sys_print msg_u_hello
+        call u_main
 
-        sys_print msg_read_user_csr
-                                        # 2.2 CSR Listing, Table 2.2: Currently allocated RISC-V user-level CSR addresses.
-        csrr    a0, cycle               # read user level cycle counter
-        sys_print msg_ok
+        macro_sys_poweroff 0            # shutdown and exit QEMU, if possible
 
-        sys_print msg_load_from_user_mem
-        la      a0, msg_u_hello
-        lb      t0, 0(a0)
-        lx      t0, 0,(a0)
-        sys_print msg_ok
+.globl sys_puts
+sys_puts:
+        addi    sp, sp, -8
+        sx      ra, 8, (sp)
+        macro_syscall 4
+        lx      ra, 8, (sp)
+        addi    sp, sp, 8
+        ret
 
-        sys_print msg_stack_access
-        stackalloc_x 2
-        lx      t0, 0,(sp)
-        lx      t1, 1,(sp)
-        sx      t0, 0,(sp)
-        sx      t1, 1,(sp)
-        stackfree_x 2
-        sys_print msg_ok
+a_string_in_user_mem:
+        .string "This is a test string in user memory"
+.globl a_string_in_user_mem_ptr
+a_string_in_user_mem_ptr:
+        pointer a_string_in_user_mem
+.globl msg_m_hello_ptr
+msg_m_hello_ptr:
+        pointer msg_m_hello
 
-        sys_print msg_read_unaligned_mem
-        la      a0, msg_u_hello
-        lw      t0, 1(a0)
-        sys_print msg_ok
-
-        sys_print msg_write_to_readonly_mem
-        la      a0, user_entry_point
-        sx      t0, 0,(a0)
-        sys_print msg_ok
-
-        sys_print msg_read_protected_csr
-        csrr    a0, mhartid             # causes Illegal instruction (mcause=2) in User mode
-
-        sys_print msg_load_from_protected_mem
-        la      a0, msg_m_hello
-        lx      t0, 0,(a0)              # causes Load access fault (mcause=5) in User mode
-
-        sys_print msg_done
-
-        sys_poweroff 0                  # shutdown and exit QEMU, if possible
-
-msg_u_hello:
-        .string "Hello from U-mode!\n"
-
-msg_read_user_csr:
-        .string "Read user CSR: "
-msg_load_from_user_mem:
-        .string "Read from memory: "
-msg_stack_access:
-        .string "Read/write stack: "
-msg_read_unaligned_mem:
-        .string "Read from unaligned memory:  "
-msg_write_to_readonly_mem:
-        .string "Illegal write to read-only memory: "
-msg_read_protected_csr:
-        .string "Illegal read from protected CSR: "
-msg_load_from_protected_mem:
-        .string "Illegal read from protected memory: "
 msg_call_printf:
-        .string "Illegal call to function in protected memory: "
-msg_done:
-        .string "Done.\n"
-msg_ok:
-        .string "OK\n"
-
-.balign 4096                            # align the end of user payload part on 4KiB otherwise QEMU 2nd hart PMP behaves inconsistently, bug?
-user_payload_end:
+        .string "Illegal call to function in protected memory: "  # XXX: unused
 
 ### Data ######################################################################
 #
@@ -476,8 +432,4 @@ user_payload_end:
 msg_m_hello:
         .string "Hello from M-mode!\n"
 msg_exception:
-        .string "Exception occured, mcause:%p mepc:%p mtval:%p (user payload at:%p, stack top:%p).\n"
-
-
-.balign 4096                            # align the stack section on 4KiB otherwise QEMU 2nd hart PMP behaves inconsistently, bug?
-stack_bottom:
+        .string "Exception occurred, mcause:%p mepc:%p mtval:%p (user payload at:%p, stack top:%p).\n"

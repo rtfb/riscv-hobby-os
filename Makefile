@@ -63,7 +63,8 @@ runl: run-linux
 
 TEST_DEPS = src/baremetal-fib.s src/baremetal-print.s src/baremetal-poweroff.s
 HELLO_DEPS = src/baremetal-hello.s src/baremetal-print.s
-USER_DEPS = src/baremetal-user.s src/baremetal-print.s src/baremetal-poweroff.s
+USER_DEPS = src/baremetal-user.s src/baremetal-print.s \
+			src/baremetal-poweroff.s src/userland.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 HELLO_SIFIVE_U_DEPS = $(HELLO_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
@@ -76,6 +77,10 @@ USER_SIFIVE_E32_DEPS = $(USER_DEPS)
 TEST_VIRT_DEPS = $(TEST_DEPS)
 HELLO_VIRT_DEPS = $(HELLO_DEPS)
 USER_VIRT_DEPS = $(USER_DEPS)
+
+
+# $ riscv64-linux-gnu-objdump -s -j .rodata out/test_virt
+
 
 .PHONY: test
 test: $(OUT)/test-output.txt
