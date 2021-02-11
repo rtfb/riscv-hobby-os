@@ -1,12 +1,13 @@
 #include "sys.h"
 #include "kernel.h"
 
+void *userland_pc = 0;
+
 void kmain() {
     kprints("kmain\n");
     void *p = (void*)0xf10a;
     kprintp(p);
     kernel_timer_tick();
-    schedule_user_process();
 }
 
 // kernel_timer_tick will be called from timer to give kernel time to do its
@@ -14,14 +15,22 @@ void kmain() {
 // run.
 void kernel_timer_tick() {
     kprints("K");
+    userland_pc = (void*)get_mepc();
     disable_interrupts();
     set_timer_after(ONE_SECOND);
     enable_interrupts();
+    schedule_user_process();
 }
 
 void schedule_user_process() {
     set_user_mode();
-    jump_to_func(user_entry_point);
+    if (!userland_pc) {
+        // this is a fresh start of the user process
+        jump_to_address(user_entry_point);
+    } else {
+        // this is a return to an interrupted user process
+        jump_to_address(userland_pc);
+    }
 }
 
 // Privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01,
@@ -37,18 +46,26 @@ unsigned int get_mstatus() {
     register unsigned int a0 asm ("a0");
     asm volatile (
         "csrr a0, mstatus"
-        : "=r"(a0)      // output in a0
+        : "=r"(a0)   // output in a0
     );
     return a0;
 }
 
-void set_mstatus(unsigned int mstatus) {
-    register unsigned int a0 asm ("a0");
+void set_mstatus(unsigned int value) {
     asm volatile (
-        "csrw mstatus, a0"
-        :               // no output
-        : "r"(a0)       // input in a0
+        "csrw mstatus, %0"
+        :            // no output
+        : "r"(value) // input in value
     );
+}
+
+void* get_mepc() {
+    register void* a0 asm ("a0");
+    asm volatile (
+        "csrr a0, mepc"
+        : "=r"(a0)   // output in a0
+    );
+    return a0;
 }
 
 // 3.1.7 Privilege and Global Interrupt-Enable Stack in mstatus register
@@ -69,12 +86,12 @@ void set_mstatus(unsigned int mstatus) {
 // (U-mode) MRET will change privilege to Machine Previous Privilege stored in
 // mstatus CSR and jump to Machine Exception Program Counter specified by mepc
 // CSR.
-void jump_to_func(void *func) {
+void jump_to_address(void *func) {
     asm volatile (
         "csrw   mepc, %0;"   // set mepc to userland function
-        "mret;"              // mret will jump to what mepc points to
-        :               // no output
-        : "r"(func)     // input in func
+        "mret"               // return from timer interrupt handler to mepc
+        :            // no output
+        : "r"(func)  // input in func
     );
 }
 
