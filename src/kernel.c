@@ -13,28 +13,47 @@ void kmain() {
     kprints("kmain\n");
     void *p = (void*)0xf10a;
     kprintp(p);
-    proc_table[0].pid = 1;
-    proc_table[0].pc = user_entry_point;
-    proc_table[1].pid = 2;
-    proc_table[1].pc = user_entry_point2;
-    kernel_timer_tick();
+    init_process_table();
+    set_timer_after(ONE_SECOND);
+    enable_interrupts();
 }
 
 // kernel_timer_tick will be called from timer to give kernel time to do its
 // housekeeping as well as run the scheduler to pick the next user process to
 // run.
 void kernel_timer_tick() {
+    disable_interrupts();
     kprints("K");
     void* userland_pc = (void*)get_mepc();
     if (userland_pc) {
         proc_table[curr_proc].pc = userland_pc;
     }
-    disable_interrupts();
     set_timer_after(ONE_SECOND);
     enable_interrupts();
     schedule_user_process();
 }
 
+// 3.1.7 Privilege and Global Interrupt-Enable Stack in mstatus register
+// > The MRET, SRET, or URET instructions are used to return from traps in
+// > M-mode, S-mode, or U-mode respectively. When executing an xRET instruction,
+// > supposing x PP holds the value y, x IE is set to xPIE; the privilege mode
+// > is changed to > y; xPIE is set to 1; and xPP is set to U (or M if user-mode
+// > is not supported).
+//
+// 3.2.2 Trap-Return Instructions
+// > An xRET instruction can be executed in privilege mode x or higher,
+// > where executing a lower-privilege xRET instruction will pop
+// > the relevant lower-privilege interrupt enable and privilege mode stack.
+// > In addition to manipulating the privilege stack as described in Section
+// > 3.1.7, xRET sets the pc to the value stored in the x epc register.
+//
+// Use MRET instruction to switch privilege level from Machine (M-mode) to User
+// (U-mode). MRET will change privilege to Machine Previous Privilege stored in
+// mstatus CSR and jump to Machine Exception Program Counter specified by mepc
+// CSR.
+//
+// schedule_user_process() is only called from kernel_timer_tick(), and MRET is
+// called in interrupt_epilogue, after kernel_timer_tick() exits.
 void schedule_user_process() {
     set_user_mode();
     curr_proc++;
@@ -42,6 +61,16 @@ void schedule_user_process() {
         curr_proc = 0;
     }
     jump_to_address(proc_table[curr_proc].pc);
+}
+
+void init_process_table() {
+    proc_table[0].pid = 1;
+    proc_table[0].pc = user_entry_point;
+    proc_table[1].pid = 2;
+    proc_table[1].pc = user_entry_point2;
+    // init curr_proc to -1, it will get incremented to 0 on the first
+    // scheduler run:
+    curr_proc = -1;
 }
 
 // Privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01,
@@ -79,28 +108,9 @@ void* get_mepc() {
     return a0;
 }
 
-// 3.1.7 Privilege and Global Interrupt-Enable Stack in mstatus register
-// > The MRET, SRET, or URET instructions are used to return from traps in
-// > M-mode, S-mode, or U-mode respectively. When executing an xRET instruction,
-// > supposing x PP holds the value y, x IE is set to xPIE; the privilege mode
-// > is changed to > y; xPIE is set to 1; and xPP is set to U (or M if user-mode
-// > is not supported).
-//
-// 3.2.2 Trap-Return Instructions
-// > An xRET instruction can be executed in privilege mode x or higher,
-// > where executing a lower-privilege xRET instruction will pop
-// > the relevant lower-privilege interrupt enable and privilege mode stack.
-// > In addition to manipulating the privilege stack as described in Section
-// > 3.1.7, xRET sets the pc to the value stored in the x epc register.
-//
-// Use MRET instruction to switch privilege level from Machine (M-mode) to User
-// (U-mode) MRET will change privilege to Machine Previous Privilege stored in
-// mstatus CSR and jump to Machine Exception Program Counter specified by mepc
-// CSR.
 void jump_to_address(void *func) {
     asm volatile (
         "csrw   mepc, %0;"   // set mepc to userland function
-        "mret"               // return from timer interrupt handler to mepc
         :            // no output
         : "r"(func)  // input in func
     );

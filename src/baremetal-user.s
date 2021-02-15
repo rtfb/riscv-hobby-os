@@ -136,7 +136,11 @@ single_core:                            # only the 1st hart past this point
         la      a0, msg_m_hello         # DEBUG print
         call    printf                  # DEBUG print
 
-        call    kmain
+        call    kmain                   # kmain() will set up the kernel for further operations and return
+
+1:      wfi                             # after kmain() is done, halt this hart until the timer gets called, all the remaining
+        j       1b                      # kernel ops will be orchestrated from the timer
+                                        # parked hart will sleep waiting for interrupt
 
 
 ### Trap Tables & Dispatchers #################################################
@@ -328,6 +332,7 @@ interrupt_timer:
 
 k_interrupt_timer:
         call    kernel_timer_tick
+        j       interrupt_epilogue
 
 syscall0:
         jal     poweroff
