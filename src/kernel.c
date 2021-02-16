@@ -29,8 +29,8 @@ void kernel_timer_tick() {
         proc_table[curr_proc].pc = userland_pc;
     }
     set_timer_after(ONE_SECOND);
-    enable_interrupts();
     schedule_user_process();
+    enable_interrupts();
 }
 
 // 3.1.7 Privilege and Global Interrupt-Enable Stack in mstatus register
