@@ -55,12 +55,12 @@ void kernel_timer_tick() {
 // schedule_user_process() is only called from kernel_timer_tick(), and MRET is
 // called in interrupt_epilogue, after kernel_timer_tick() exits.
 void schedule_user_process() {
-    set_user_mode();
     curr_proc++;
     if (curr_proc > 1) {
         curr_proc = 0;
     }
     jump_to_address(proc_table[curr_proc].pc);
+    set_user_mode();
 }
 
 void init_process_table() {
