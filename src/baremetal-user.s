@@ -136,9 +136,9 @@ single_core:                            # only the 1st hart past this point
         la      a0, msg_m_hello         # DEBUG print
         call    printf                  # DEBUG print
 
-        call    kmain                   # kmain() will set up the kernel for further operations and return
+        call    kinit                   # kinit() will set up the kernel for further operations and return
 
-1:      wfi                             # after kmain() is done, halt this hart until the timer gets called, all the remaining
+1:      wfi                             # after kinit() is done, halt this hart until the timer gets called, all the remaining
         j       1b                      # kernel ops will be orchestrated from the timer
                                         # parked hart will sleep waiting for interrupt
 

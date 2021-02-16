@@ -9,8 +9,8 @@ typedef struct process_s {
 process_t proc_table[2];
 int curr_proc = 0;
 
-void kmain() {
-    kprints("kmain\n");
+void kinit() {
+    kprints("kinit\n");
     void *p = (void*)0xf10a;
     kprintp(p);
     init_process_table();
