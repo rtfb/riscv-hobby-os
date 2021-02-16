@@ -59,7 +59,7 @@ void schedule_user_process() {
     if (curr_proc > 1) {
         curr_proc = 0;
     }
-    jump_to_address(proc_table[curr_proc].pc);
+    set_jump_address(proc_table[curr_proc].pc);
     set_user_mode();
 }
 
@@ -111,7 +111,7 @@ void* get_mepc() {
     return a0;
 }
 
-void jump_to_address(void *func) {
+void set_jump_address(void *func) {
     asm volatile (
         "csrw   mepc, %0;"   // set mepc to userland function
         :            // no output

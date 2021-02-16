@@ -21,7 +21,7 @@
 void init_process_table();
 void schedule_user_process();
 void set_user_mode();
-void jump_to_address(void *func);
+void set_jump_address(void *func);
 unsigned int get_mstatus();
 void set_mstatus(unsigned int mstatus);
 void* get_mepc();
