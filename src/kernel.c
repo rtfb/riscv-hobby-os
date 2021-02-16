@@ -25,7 +25,7 @@ void kernel_timer_tick() {
     disable_interrupts();
     kprints("K");
     void* userland_pc = (void*)get_mepc();
-    if (userland_pc) {
+    if (userland_pc && curr_proc >= 0) {
         proc_table[curr_proc].pc = userland_pc;
     }
     set_timer_after(ONE_SECOND);
@@ -69,7 +69,10 @@ void init_process_table() {
     proc_table[1].pid = 2;
     proc_table[1].pc = user_entry_point2;
     // init curr_proc to -1, it will get incremented to 0 on the first
-    // scheduler run:
+    // scheduler run. This will also help to identify the very first call to
+    // kernel_timer_tick, which will happen from the kernel land. We want to
+    // know that so we can discard the kernel code pc that we get on that first
+    // call.
     curr_proc = -1;
 }
 
