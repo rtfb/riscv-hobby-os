@@ -64,9 +64,9 @@ void schedule_user_process() {
 }
 
 void init_process_table() {
-    proc_table[0].pid = 1;
+    proc_table[0].pid = 0;
     proc_table[0].pc = user_entry_point;
-    proc_table[1].pid = 2;
+    proc_table[1].pid = 1;
     proc_table[1].pc = user_entry_point2;
     // init curr_proc to -1, it will get incremented to 0 on the first
     // scheduler run. This will also help to identify the very first call to
