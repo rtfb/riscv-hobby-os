@@ -90,7 +90,7 @@ run-baremetal32: $(OUT)/user_sifive_e32
 	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
-          -Tsrc/baremetal.ld
+          -Tsrc/baremetal.ld -Iinclude
 
 $(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
