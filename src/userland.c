@@ -38,6 +38,72 @@ int _userland u_main() {
     // causes Load access fault (mcause=5) in User mode:
     word = *msg_m_hello_ptr;
 
+    int64_t counter = 0;
+    int flipper = 0;
+    while (1) {
+        counter++;
+        if (counter % 10000000 == 0) {
+            flipper++;
+            if ((flipper & 1) == 0) {
+                sys_puts("-");
+            } else {
+                sys_puts("|");
+            }
+        }
+    }
+
+    sys_puts("C Done.\n");
+    return 0;
+}
+
+int _userland u_main2() {
+    sys_puts("Hello from U-mode 2!\n");
+
+    sys_puts("Read user CSR: ");
+    uint64_t clock_cycles = get_clock_cycles();
+    sys_puts("OK\n");
+
+    sys_puts("Read from memory: ");
+    int word = *a_string_in_user_mem_ptr;
+    sys_puts("OK\n");
+
+    sys_puts("Read from unaligned memory: ");
+    char *cptr = (char*)a_string_in_user_mem_ptr;
+    cptr++;
+    char c = *cptr;
+    sys_puts("OK\n");
+
+    sys_puts("Read/write stack: ");
+    push_pop_stack();
+    sys_puts("OK\n");
+
+    sys_puts("Illegal write to read-only memory: ");
+    // XXX: this ought to fail, but succeeds in QEMU for some reason:
+    *a_string_in_user_mem_ptr = 7;
+    sys_puts("OK\n");
+
+    sys_puts("Illegal read from protected CSR: ");
+    // causes Illegal instruction (mcause=2) in User mode:
+    int hart_id = m_read_hart_id();
+
+    sys_puts("Illegal read from protected memory: ");
+    // causes Load access fault (mcause=5) in User mode:
+    word = *msg_m_hello_ptr;
+
+    int64_t counter = 0;
+    int flipper = 0;
+    while (1) {
+        counter++;
+        if (counter % 10000000 == 0) {
+            flipper++;
+            if ((flipper & 1) == 0) {
+                sys_puts(".");
+            } else {
+                sys_puts("o");
+            }
+        }
+    }
+
     sys_puts("C Done.\n");
     return 0;
 }

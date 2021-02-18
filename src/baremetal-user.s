@@ -136,41 +136,11 @@ single_core:                            # only the 1st hart past this point
         la      a0, msg_m_hello         # DEBUG print
         call    printf                  # DEBUG print
 
-                                        # 3.1.7 Privilege and Global Interrupt-Enable Stack in mstatus register
-                                        # > The MRET, SRET, or URET instructions are used to return from traps in M-mode, S-mode, or U-mode respectively.
-                                        # > When executing an xRET instruction, supposing x PP holds the value y, x IE is set to xPIE;
-                                        # > the privilege mode is changed to y; xPIE is set to 1; and xPP is set to U (or M if user-mode is not supported).
+        call    kinit                   # kinit() will set up the kernel for further operations and return
 
-                                        # 3.2.2 Trap-Return Instructions
-                                        # > An xRET instruction can be executed in privilege mode x or higher,
-                                        # > where executing a lower-privilege xRET instruction will pop
-                                        # > the relevant lower-privilege interrupt enable and privilege mode stack.
-                                        # > In addition to manipulating the privilege stack as described in Section 3.1.7,
-                                        # > xRET sets the pc to the value stored in the x epc register.
-
-                                        # 1.3 Privilege Levels, Table 1.1: RISC-V privilege levels.
-        .equ MODE_U,    (0b00 << 11)
-        .equ MODE_S,    (0b01 << 11)
-        .equ MODE_M,    (0b11 << 11)
-        .equ MODE_MASK, ~(0b11 << 11)
-
-                                        # use MRET instruction to switch privilege level from Machine (M-mode) to User (U-mode)
-                                        # MRET will change privilege to Machine Previous Privilege stored in mstatus CSR
-                                        # and jump to Machine Exception Program Counter specified by mepcs CSR
-
-                                        # privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01, Machine = 0b11
-                                        # and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
-        li      t1, MODE_U
-        li      t2, MODE_MASK           # mask to preserve all bits of mstatus except 11:12
-        csrr    t0, mstatus
-        and     t0, t0, t2              # mstatus.mpp &= 0
-        or      t0, t0, t1              # mstatus.mpp |= MODE_U
-        csrw    mstatus, t0
-
-        la      t0, user_entry_point
-        csrw    mepc, t0                # set the entry point address for User mode
-
-        mret                            # switch to User mode
+1:      wfi                             # after kinit() is done, halt this hart until the timer gets called, all the remaining
+        j       1b                      # kernel ops will be orchestrated from the timer
+                                        # parked hart will sleep waiting for interrupt
 
 
 ### Trap Tables & Dispatchers #################################################
@@ -224,7 +194,7 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
         j interrupt_timer               #  4: user timer interrupt
         j interrupt_timer               #  5: supervisor timer interrupt
         j interrupt_noop                #  6: reserved
-        j interrupt_timer               #  7: machine timer interrupt
+        j k_interrupt_timer             #  7: machine timer interrupt
         j interrupt_noop                #  8: user external interrupt
         j interrupt_noop                #  9: supervisor external interrupt
         j interrupt_noop                # 10: reserved
@@ -360,6 +330,10 @@ interrupt_noop:
 interrupt_timer:
         j       interrupt_epilogue
 
+k_interrupt_timer:
+        call    kernel_timer_tick
+        j       interrupt_epilogue
+
 syscall0:
         jal     poweroff
         j       syscall_epilogue
@@ -373,6 +347,14 @@ syscall4:
 test_func:
         ret
 
+.globl kprints
+kprints:
+        addi    sp, sp, -8
+        sx      ra, 8, (sp)
+        call    printf
+        lx      ra, 8, (sp)
+        addi    sp, sp, 8
+        ret
 
 ### User payload = code + readonly data for U-mode ############################
 #
@@ -393,6 +375,7 @@ test_func:
                                         # so store user payload part in its own section, which is aligned on 4KiB to make
                                         # the further experiments more predictable
 user_payload:
+.globl user_entry_point
 user_entry_point:
         nop                             # no-operation instructions here help to distinguish between
         nop                             # illegal instruction -vs- page fault due to missing e(X)ecute access flag
@@ -401,8 +384,18 @@ user_entry_point:
                                         # which makes instruction address easier to follow in case of an exception
 
         call u_main
+        ret
 
-        macro_sys_poweroff 0            # shutdown and exit QEMU, if possible
+.globl user_entry_point2
+user_entry_point2:
+        nop                             # no-operation instructions here help to distinguish between
+        nop                             # illegal instruction -vs- page fault due to missing e(X)ecute access flag
+        nop                             #
+        nop                             # 4 nops instead of one, to align the code below on 0x10
+                                        # which makes instruction address easier to follow in case of an exception
+
+        call u_main2
+        ret
 
 .globl sys_puts
 sys_puts:

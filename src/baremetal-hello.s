@@ -184,8 +184,8 @@ set_timer_for_current_hart:             # Set the timer: read current time from 
 
 .ifdef RISCV64
         ld      t0, 0(t5)               # read from mtime memory-mapped register
-        add     t0, t0, a0              # t2 = mtime + 5sec
-        sd      t0, 0(t6)               # write t2 to mtimecmp
+        add     t0, t0, a0              # t0 = mtime + a0
+        sd      t0, 0(t6)               # write t0 to mtimecmp
 .else
         lw      t0, 0(t5)               # read from mtime memory-mapped into t0:t1 pair
         lw      t1, 4(t5)
@@ -193,13 +193,13 @@ set_timer_for_current_hart:             # Set the timer: read current time from 
 
                                         # add and write t1:t0 + t2 => t1:t4 into mtimecmp
 
-                                        # unsigned int overlow detection based on example from RISC-V ISA section Integer Computational Instructions:
+                                        # unsigned int overflow detection based on example from RISC-V ISA section Integer Computational Instructions:
                                         #     add t0, t1, t2; bltu t0, t1, overflow.
         add     t4, t0, t2
         bgeu    t4, t0, 1f              # bgeu == !bltu
         addi    t1, t1, 1               # handle overflow
 1:
-                                        # mtimecmp write in RV32 based on example from RISC-V Priveleged ISA section Machine Timer Registers:
+                                        # mtimecmp write in RV32 based on example from RISC-V Privileged ISA section Machine Timer Registers:
                                         #     li t0, -1; sw t0, mtimecmp; sw a1, mtimecmp+4; sw a0, mtimecmp.
         li      t0, -1
         sw      t0, 0(t6)               # 1) write unsigned (-1) into low 32bits of mtimecmp = no smaller than old value
