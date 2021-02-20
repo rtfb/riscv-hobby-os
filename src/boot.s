@@ -344,9 +344,6 @@ syscall4:
         jal     prints
         j       syscall_epilogue
 
-test_func:
-        ret
-
 .globl kprints
 kprints:
         addi    sp, sp, -8
