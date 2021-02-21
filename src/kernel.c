@@ -11,7 +11,7 @@ int curr_proc = 0;
 
 void kinit() {
     kprints("kinit\n");
-    void *p = (void*)0xf10a;
+    void *p = (void*)0xf10a; // this is a random hex to test out kprintp()
     kprintp(p);
     init_process_table();
     set_timer_after(ONE_SECOND);

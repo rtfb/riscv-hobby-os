@@ -34,16 +34,12 @@ ifeq ($(wildcard $(RISCV_PK)),)
 endif
 
 OUT := out
-BINS := $(OUT)/hello_sifive_u \
-	$(OUT)/test_sifive_u \
+BINS := $(OUT)/test_sifive_u \
 	$(OUT)/user_sifive_u \
-	$(OUT)/hello_sifive_e \
 	$(OUT)/test_sifive_e \
 	$(OUT)/user_sifive_e \
-	$(OUT)/hello_sifive_e32 \
 	$(OUT)/test_sifive_e32 \
 	$(OUT)/user_sifive_e32 \
-	$(OUT)/hello_virt \
 	$(OUT)/test_virt \
 	$(OUT)/user_virt
 
@@ -62,20 +58,15 @@ runs: run-spike
 runl: run-linux
 
 TEST_DEPS = src/baremetal-fib.s src/baremetal-print.s src/baremetal-poweroff.s
-HELLO_DEPS = src/baremetal-hello.s src/baremetal-print.s
-USER_DEPS = src/baremetal-user.s src/baremetal-print.s \
+USER_DEPS = src/boot.s src/baremetal-print.s \
 			src/baremetal-poweroff.s src/userland.c src/kernel.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
-HELLO_SIFIVE_U_DEPS = $(HELLO_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
-HELLO_SIFIVE_E_DEPS = $(HELLO_DEPS)
 USER_SIFIVE_E_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
-HELLO_SIFIVE_E32_DEPS = $(HELLO_DEPS)
 USER_SIFIVE_E32_DEPS = $(USER_DEPS)
 TEST_VIRT_DEPS = $(TEST_DEPS)
-HELLO_VIRT_DEPS = $(HELLO_DEPS)
 USER_VIRT_DEPS = $(USER_DEPS)
 
 
@@ -91,27 +82,15 @@ $(OUT)/test-output.txt: $(OUT)/test_virt
 	@$(QEMU) -nographic -machine virt -bios none -kernel $< > $@
 
 .PHONY: run-baremetal
-run-baremetal: $(OUT)/hello_sifive_u
-	$(QEMU) -nographic -machine sifive_u -bios none -kernel $<
-
-.PHONY: run-baremetal-user
-run-baremetal-user: $(OUT)/user_sifive_u
+run-baremetal: $(OUT)/user_sifive_u
 	$(QEMU) -nographic -machine sifive_u -bios none -kernel $<
 
 .PHONY: run-baremetal32
-run-baremetal32: $(OUT)/hello_sifive_e32
-	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
-
-.PHONY: run-baremetal32-user
-run-baremetal32-user: $(OUT)/user_sifive_e32
+run-baremetal32: $(OUT)/user_sifive_e32
 	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
-          -Tsrc/baremetal.ld
-
-$(OUT)/hello_sifive_u: ${HELLO_SIFIVE_U_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		${HELLO_SIFIVE_U_DEPS} -o $@
+          -Tsrc/baremetal.ld -Iinclude
 
 $(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
@@ -120,11 +99,6 @@ $(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		${USER_SIFIVE_U_DEPS} -o $@
-
-$(OUT)/hello_sifive_e: ${HELLO_SIFIVE_E_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
-		${HELLO_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
@@ -135,12 +109,6 @@ $(OUT)/user_sifive_e: ${USER_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		${USER_SIFIVE_E_DEPS} -o $@
-
-$(OUT)/hello_sifive_e32: ${HELLO_SIFIVE_E32_DEPS}
-	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
-		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
-		-Wa,--defsym,XLEN=32 \
-		${HELLO_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
@@ -153,11 +121,6 @@ $(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		${USER_SIFIVE_E32_DEPS} -o $@
-
-$(OUT)/hello_virt: ${HELLO_VIRT_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
-		${HELLO_VIRT_DEPS} -o $@
 
 $(OUT)/test_virt: ${TEST_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
