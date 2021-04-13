@@ -1,7 +1,7 @@
 #include "sys.h"
 #include "userland.h"
 
-#define PRINT_FREQ 10*1000*1000
+#define PRINT_FREQ (10*1000*1000)
 
 uint64_t get_clock_cycles();
 int m_read_hart_id();
