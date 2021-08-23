@@ -69,10 +69,6 @@ USER_SIFIVE_E32_DEPS = $(USER_DEPS)
 TEST_VIRT_DEPS = $(TEST_DEPS)
 USER_VIRT_DEPS = $(USER_DEPS)
 
-
-# $ riscv64-linux-gnu-objdump -s -j .rodata out/test_virt
-
-
 .PHONY: test
 test: $(OUT)/test-output.txt
 	@diff -u testdata/want-output.txt $<
