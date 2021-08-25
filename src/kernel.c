@@ -14,7 +14,7 @@ void kinit() {
     void *p = (void*)0xf10a; // this is a random hex to test out kprintp()
     kprintp(p);
     init_process_table();
-    set_timer_after(ONE_SECOND);
+    set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     enable_interrupts();
 }
 
@@ -28,7 +28,7 @@ void kernel_timer_tick() {
     if (userland_pc && curr_proc >= 0) {
         proc_table[curr_proc].pc = userland_pc;
     }
-    set_timer_after(ONE_SECOND);
+    set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     schedule_user_process();
     enable_interrupts();
 }
