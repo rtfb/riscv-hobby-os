@@ -162,7 +162,7 @@ void kprintp(void* p) {
     static char hex_table[] = "0123456789abcdef";
     char buf[256];
     int i = 15;
-    unsigned long pp = (unsigned long)p;
+    uint64_t pp = (uint64_t)p;
     while (i >= 0) {
         char lowest_4_bits = pp & 0xf;
         buf[i] = hex_table[lowest_4_bits];
