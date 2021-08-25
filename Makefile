@@ -22,6 +22,10 @@ RISCV64_GCC ?= riscv64-linux-gnu-gcc
 ifeq (, $(shell which $(RISCV64_GCC)))
 	RISCV64_GCC = riscv64-unknown-elf-gcc
 endif
+RISCV64_OBJDUMP ?= riscv64-linux-gnu-objdump
+ifeq (, $(shell which $(RISCV64_OBJDUMP)))
+	RISCV64_OBJDUMP = riscv64-unknown-elf-objdump
+endif
 # Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
 SPIKE ?= ./riscv-isa-sim/build/build/bin/spike
 ifeq ($(wildcard $(SPIKE)),)
@@ -130,6 +134,12 @@ $(OUT)/user_virt: ${USER_VIRT_DEPS}
 
 $(OUT):
 	mkdir -p $(OUT)
+
+$(OUT)/user_sifive_u.s: $(OUT)/user_sifive_u
+	$(RISCV64_OBJDUMP) -D -j .text $< > $@
+
+$(OUT)/user_sifive_u.rodata: $(OUT)/user_sifive_u
+	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
 
 run-spike: elf
 	$(SPIKE) $(RISCV_PK) generic-elf/hello bbl loader
