@@ -40,7 +40,7 @@ int _userland u_main() {
     // causes Load access fault (mcause=5) in User mode:
     word = *msg_m_hello_ptr;
 
-    int64_t counter = 0;
+    int counter = 0;
     int flipper = 0;
     while (1) {
         counter++;
@@ -92,7 +92,7 @@ int _userland u_main2() {
     // causes Load access fault (mcause=5) in User mode:
     word = *msg_m_hello_ptr;
 
-    int64_t counter = 0;
+    int counter = 0;
     int flipper = 0;
     while (1) {
         counter++;
