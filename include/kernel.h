@@ -18,6 +18,8 @@
 // https://github.com/qemu/qemu/blob/master/include/hw/intc/sifive_clint.h
 #define ONE_SECOND        10*1000*1000
 
+#define KERNEL_SCHEDULER_TICK_TIME (ONE_SECOND)
+
 void init_process_table();
 void schedule_user_process();
 void set_user_mode();
