@@ -9,15 +9,17 @@ SECTIONS
   /* text: test code section */
   . = DEFINED(ROM_START) ? ROM_START : RAM_START;
   .text : { *(.text) }
+  . = ALIGN(PAGE_SIZE);
 
-  .user_text RAM_START + 0x1000 : { *(.user_text) }
-  . += PAGE_SIZE;
+  .user_text : { *(.user_text) }
+  . = ALIGN(PAGE_SIZE);
 
   /* data: Initialized data segment */
   .rodata : { *(.rodata) }
   /* build-id: Store after readonly data */
   build_id = .;
   .gnu_build_id : { *(.note.gnu.build-id) }
+
   . = DEFINED(ROM_START) ? RAM_START : .;
   .data : { *(.data) }
   .sdata : { *(.sdata) }
