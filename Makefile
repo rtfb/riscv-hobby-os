@@ -44,6 +44,8 @@ BINS := $(OUT)/test_sifive_u \
 	$(OUT)/user_sifive_e \
 	$(OUT)/test_sifive_e32 \
 	$(OUT)/user_sifive_e32 \
+	$(OUT)/test_sifive_u32 \
+	$(OUT)/user_sifive_u32 \
 	$(OUT)/test_virt \
 	$(OUT)/user_virt
 
@@ -70,6 +72,8 @@ TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
 USER_SIFIVE_E_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
 USER_SIFIVE_E32_DEPS = $(USER_DEPS)
+TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
+USER_SIFIVE_U32_DEPS = $(USER_DEPS)
 TEST_VIRT_DEPS = $(TEST_DEPS)
 USER_VIRT_DEPS = $(USER_DEPS)
 
@@ -99,6 +103,16 @@ $(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		${USER_SIFIVE_U_DEPS} -o $@
+
+$(OUT)/test_sifive_u32: ${TEST_SIFIVE_U32_DEPS}
+	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
+		-Wa,--defsym,XLEN=32 \
+		${TEST_SIFIVE_U32_DEPS} -o $@
+
+$(OUT)/user_sifive_u32: ${USER_SIFIVE_U32_DEPS}
+	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
+		-Wa,--defsym,XLEN=32 \
+		${USER_SIFIVE_U32_DEPS} -o $@
 
 $(OUT)/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
