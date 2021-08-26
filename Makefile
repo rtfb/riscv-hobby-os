@@ -150,9 +150,15 @@ $(OUT):
 	mkdir -p $(OUT)
 
 $(OUT)/user_sifive_u.s: $(OUT)/user_sifive_u
-	$(RISCV64_OBJDUMP) -D -j .text $< > $@
+	$(RISCV64_OBJDUMP) -D $< > $@
 
 $(OUT)/user_sifive_u.rodata: $(OUT)/user_sifive_u
+	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
+
+$(OUT)/user_sifive_e32.s: $(OUT)/user_sifive_e32
+	$(RISCV64_OBJDUMP) -D $< > $@
+
+$(OUT)/user_sifive_e32.rodata: $(OUT)/user_sifive_e32
 	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
 
 run-spike: elf
