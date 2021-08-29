@@ -330,11 +330,11 @@ k_interrupt_timer:
 
 .globl kprints
 kprints:
-        addi    sp, sp, -8
-        sx      ra, 8, (sp)
+        stackalloc_x 1
+        sx      ra, 1, (sp)
         call    printf
-        lx      ra, 8, (sp)
-        addi    sp, sp, 8
+        lx      ra, 1, (sp)
+        stackfree_x 1
         ret
 
 ### User payload = code + readonly data for U-mode ############################
@@ -380,11 +380,11 @@ user_entry_point2:
 
 .globl sys_puts
 sys_puts:
-        addi    sp, sp, -8
-        sx      ra, 8, (sp)
+        stackalloc_x 1
+        sx      ra, 1, (sp)
         macro_syscall 4
-        lx      ra, 8, (sp)
-        addi    sp, sp, 8
+        lx      ra, 1, (sp)
+        stackfree_x 1
         ret
 
 a_string_in_user_mem:
