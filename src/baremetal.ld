@@ -6,11 +6,12 @@ SECTIONS
   STACK_SIZE = DEFINED(STACK_SIZE) ? STACK_SIZE : 0x1000;
   PAGE_SIZE = 0x1000;
 
-  /* text: test code section */
+  /* text: kernel code section */
   . = DEFINED(ROM_START) ? ROM_START : RAM_START;
   .text : { *(.text) }
   . = ALIGN(PAGE_SIZE);
 
+  /* user_text: userland code section */
   .user_text : { *(.user_text) }
   . = ALIGN(PAGE_SIZE);
 
@@ -22,6 +23,12 @@ SECTIONS
 
   . = DEFINED(ROM_START) ? RAM_START : .;
   .data : { *(.data) }
+  .bss : {
+    . = ALIGN(16);
+    *(.sbss)
+    . = ALIGN(16);
+    *(.bss)
+  }
   .sdata : { *(.sdata) }
   .debug : { *(.debug) }
   stack_bottom = .;
