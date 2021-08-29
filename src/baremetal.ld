@@ -24,9 +24,7 @@ SECTIONS
   . = DEFINED(ROM_START) ? RAM_START : .;
   .data : { *(.data) }
   .bss : {
-    . = ALIGN(16);
     *(.sbss)
-    . = ALIGN(16);
     *(.bss)
   }
   .sdata : { *(.sdata) }
