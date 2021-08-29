@@ -11,11 +11,28 @@ int curr_proc = 0;
 
 void kinit() {
     kprints("kinit\n");
+    init_trap_vector();
     void *p = (void*)0xf10a; // this is a random hex to test out kprintp()
     kprintp(p);
     init_process_table();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     enable_interrupts();
+}
+
+// init_trap_vector initializes the exception, interrupt & syscall trap vector
+// in the mtvec register.
+//
+// 3.1.12 Machine Trap-Vector Base-Address Register (mtvec),
+// Table 3.5: Encoding of mtvec MODE field.
+// All exceptions set pc to BASE.
+// Exceptions set pc to BASE, interrupts set pc to BASE+4*cause.
+//
+// Trap vector mode is encoded in 2 bits: Direct = 0b00, Vectored = 0b01
+// and is stored in 0:1 bits of mtvect CSR (mtvec.mode)
+void init_trap_vector() {
+    extern void* trap_vector;  // defined in boot.s
+    unsigned long addr = (unsigned long)&trap_vector;
+    set_mtvec((void*)(addr | TRAP_VECTORED));
 }
 
 // kernel_timer_tick will be called from timer to give kernel time to do its
@@ -113,9 +130,9 @@ void* get_mepc() {
 
 void set_jump_address(void *func) {
     asm volatile (
-        "csrw   mepc, %0;"   // set mepc to userland function
-        :            // no output
-        : "r"(func)  // input in func
+        "csrw   mepc, %0;"  // set mepc to userland function
+        :                   // no output
+        : "r"(func)         // input in func
     );
 }
 
@@ -139,8 +156,8 @@ void set_timer_after(uint64_t delta) {
 void set_mie(unsigned int value) {
     asm volatile (
         "csrs   mie, %0;"   // set mie to the requested value
-        :            // no output
-        : "r"(value) // input in value
+        :                   // no output
+        : "r"(value)        // input in value
     );
 }
 
@@ -156,6 +173,14 @@ void enable_interrupts() {
 
     // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
     set_mie(1 << 7);
+}
+
+void set_mtvec(void *ptr) {
+    asm volatile (
+        "csrw   mtvec, %0;" // set mtvec to the requested value
+        :                   // no output
+        : "r"(ptr)          // input in ptr
+    );
 }
 
 void kprintp(void* p) {
