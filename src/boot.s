@@ -52,18 +52,6 @@ single_core:                            # only the 1st hart past this point
                                         # >      ... code that might fail due to lack of support in CPU
                                         # > 1:
 
-                                        # set up exception, interrupt & syscall trap vector
-        la      t0, trap_vector
-
-                                        # 3.1.12 Machine Trap-Vector Base-Address Register (mtvec), Table 3.5: Encoding of mtvec MODE field.
-        .equ TRAP_DIRECT,       0b00    # All exceptions set pc to BASE.
-        .equ TRAP_VECTORED,     0b01    # Exceptions set pc to BASE, interrupts set pc to BASE+4*cause.
-
-                                        # trap vector mode is encoded in 2 bits: Direct = 0b00, Vectored = 0b01
-                                        # and is stored in 0:1 bits of mtvect CSR (mtvec.mode)
-        ori     t0, t0, TRAP_VECTORED   # mtvec.mode |= 0b01; trap_vector in t0 is 4 byte aligned, last two bits are zero
-        csrw    mtvec, t0
-
                                         # 3.6.1 Physical Memory Protection CSRs
                                         # > PMP entries are described by an 8-bit configuration register AND one XLEN-bit address register.
                                         # > The PMP configuration registers are densely packed into CSRs to minimize context-switch time.
@@ -186,6 +174,7 @@ early_trap_vector:
                                         # > an independent thread. Therefore, there is only one reasonable solution for the return address:
                                         # > the first instruction that has not completed yet. Thus, when returning from the interrupt handler,
                                         # > the execution continues exactly where it was interrupted.
+.globl trap_vector
 trap_vector:                            # 3.1.20 Machine Cause Register (mcause), Table 3.6: Machine cause register (mcause) values after trap.
         j exception_dispatch            #  0: user software interrupt OR _exception_ (See note in 3.1.12: Machine Trap-Vector Base-Address Register)
         j interrupt_noop                #  1: supervisor software interrupt

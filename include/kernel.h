@@ -20,7 +20,11 @@
 
 #define KERNEL_SCHEDULER_TICK_TIME (ONE_SECOND)
 
+#define TRAP_DIRECT   0x00
+#define TRAP_VECTORED 0x01
+
 void init_process_table();
+void init_trap_vector();
 void schedule_user_process();
 void set_user_mode();
 void set_jump_address(void *func);
@@ -32,6 +36,7 @@ void set_timer();
 void disable_interrupts();
 void enable_interrupts();
 void set_mie(unsigned int value);
+void set_mtvec(void *ptr);
 void set_timer_after(uint64_t delta);
 void kprints(char const *msg);
 void kprintp(void* p);
