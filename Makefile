@@ -3,19 +3,10 @@ QEMU ?= ./qemu-build/bin/qemu-system-riscv64
 ifeq ($(wildcard $(QEMU)),)
 	QEMU = qemu-system-riscv64
 endif
-QEMU32 ?= ./qemu-build/bin/qemu-system-riscv32
-ifeq ($(wildcard $(QEMU32)),)
-	QEMU32 = qemu-system-riscv32
-endif
 
-DEBUG_FLAGS := ""
+QEMU_LAUNCHER := ./scripts/qemu-launcher.py
 ifeq ($(DBG),1)
-	# DEBUG_FLAGS are gdb-related flags to QEMU:
-	# -S only loads an image, but stops the CPU, giving a chance to attach gdb
-	# -s is a shorthand to listen for gdb on localhost:1234
-	DEBUG_FLAGS = -s -S
-	QEMU += $(DEBUG_FLAGS)
-	QEMU32 += $(DEBUG_FLAGS)
+	QEMU_LAUNCHER += --debug
 endif
 
 RISCV64_GCC ?= riscv64-linux-gnu-gcc
@@ -83,15 +74,15 @@ test: $(OUT)/test-output.txt
 	@echo "OK"
 
 $(OUT)/test-output.txt: $(OUT)/test_virt
-	@$(QEMU) -nographic -machine virt -bios none -kernel $< > $@
+	@$(QEMU_LAUNCHER) --machine=virt --binary=$< > $@
 
 .PHONY: run-baremetal
 run-baremetal: $(OUT)/user_sifive_u
-	$(QEMU) -nographic -machine sifive_u -bios none -kernel $<
+	$(QEMU_LAUNCHER) --binary=$<
 
 .PHONY: run-baremetal32
 run-baremetal32: $(OUT)/user_sifive_e32
-	$(QEMU32) -nographic -machine sifive_e -bios none -kernel $<
+	$(QEMU_LAUNCHER) --binary=$<
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -Tsrc/baremetal.ld -Iinclude
