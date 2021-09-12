@@ -12,6 +12,7 @@ int curr_proc = 0;
 void kinit() {
     kprints("kinit\n");
     init_trap_vector();
+    init_pmp();
     void *p = (void*)0xf10a; // this is a random hex to test out kprintp()
     kprintp(p);
     init_process_table();
@@ -19,6 +20,16 @@ void kinit() {
     enable_interrupts();
 }
 
+// 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)
+// > When MODE=Vectored, all synchronous exceptions into machine mode cause
+// > the pc to be set to the address in the BASE field, whereas interrupts
+// > cause the pc to be set to the address in the BASE field plus four times
+// > the interrupt cause number. When vectored interrupts are enabled,
+// > interrupt cause 0, which corresponds to user-mode software interrupts, are
+// > vectored to the same location as synchronous > exceptions. This ambiguity
+// > does not arise in practice, since user-mode software interrupts are either
+// > disabled or delegated to a less-privileged mode.
+//
 // init_trap_vector initializes the exception, interrupt & syscall trap vector
 // in the mtvec register.
 //
