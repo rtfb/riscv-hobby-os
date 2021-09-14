@@ -1,9 +1,3 @@
-# If local QEmu build does not exist, use system wide installed QEmu
-QEMU ?= ./qemu-build/bin/qemu-system-riscv64
-ifeq ($(wildcard $(QEMU)),)
-	QEMU = qemu-system-riscv64
-endif
-
 QEMU_LAUNCHER := ./scripts/qemu-launcher.py
 ifeq ($(DBG),1)
 	QEMU_LAUNCHER += --debug
@@ -52,7 +46,6 @@ run32: run-baremetal32
 runm: run-baremetal
 runb: run-baremetal
 runs: run-spike
-runl: run-linux
 
 TEST_DEPS = src/baremetal-fib.s src/baremetal-print.s src/baremetal-poweroff.s
 USER_DEPS = src/boot.s src/baremetal-print.s \
@@ -156,16 +149,8 @@ $(OUT)/user_sifive_e32.rodata: $(OUT)/user_sifive_e32
 run-spike: elf
 	$(SPIKE) $(RISCV_PK) generic-elf/hello bbl loader
 
-run-linux: initrd
-	$(QEMU) -nographic -machine virt \
-     -kernel linux/arch/riscv/boot/Image -append "root=/dev/vda ro console=ttyS0" \
-     -drive file=busybox/busybox,format=raw,id=hd0 \
-     -device virtio-blk-device,drive=hd0 \
-     -initrd initramfs-busybox-riscv64.cpio.gz
-
 clean:
 	rm -Rf $(OUT)
-	rm -Rf initramfs
 
 prereqs:
 	# OSX brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat
@@ -197,26 +182,12 @@ prereqs:
 
 clone:
 	git clone https://github.com/qemu/qemu
-	git clone https://github.com/torvalds/linux
-	git clone https://git.busybox.net/busybox
 	git clone https://github.com/riscv/riscv-isa-sim
 	git clone https://github.com/riscv/riscv-pk
 
 .PHONY: qemu
 qemu:
 	./scripts/build-qemu.sh
-
-.PHONY: busybox
-busybox:
-	./scripts/build-busybox.sh
-
-.PHONY: linux
-linux:
-	./scripts/build-linux.sh
-
-.PHONY: initrd
-initrd:
-	./scripts/build-initrd.sh
 
 $(OUT)/generic-elf/hello:
 	@mkdir -p $(OUT)/generic-elf
