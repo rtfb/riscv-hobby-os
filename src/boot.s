@@ -34,15 +34,6 @@ _start:
 single_core:                            # only the 1st hart past this point
         la      sp, stack_top           # setup stack pointer
 
-                                        # 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)
-                                        # > When MODE=Vectored, all synchronous exceptions into machine mode cause
-                                        # > the pc to be set to the address in the BASE field, whereas interrupts cause
-                                        # > the pc to be set to the address in the BASE field plus four times the interrupt cause number.
-                                        # > When vectored interrupts are enabled, interrupt cause 0, which corresponds to user-mode
-                                        # > software interrupts, are vectored to the same location as synchronous exceptions.
-                                        # > This ambiguity does not arise in practice, since user-mode software interrupts are
-                                        # > either disabled or delegated to a less-privileged mode.
-
                                         # @TODO: check if user mode is supported
                                         # see: https://github.com/riscv/riscv-tests/blob/master/isa/rv64si/csr.S
                                         # OR alternatively use the trick of setting exception handler trailing the operation
@@ -51,75 +42,6 @@ single_core:                            # only the 1st hart past this point
                                         # >      csrw mtvec, t0
                                         # >      ... code that might fail due to lack of support in CPU
                                         # > 1:
-
-                                        # 3.6.1 Physical Memory Protection CSRs
-                                        # > PMP entries are described by an 8-bit configuration register AND one XLEN-bit address register.
-                                        # > The PMP configuration registers are densely packed into CSRs to minimize context-switch time.
-                                        # >
-                                        # > For RV32, pmpcfg0..pmpcfg3, hold the configurations pmp0cfg..pmp15cfg for the 16 PMP entries.
-                                        # > For RV64, pmpcfg0 and pmpcfg2 hold the configurations for the 16 PMP entries; pmpcfg1 and pmpcfg3 are illegal.
-                                        # > For RV32, each PMP address register encodes bits 33:2 of a 34-bit physical address.
-                                        # > For RV64, each PMP address register encodes bits 55:2 of a 56-bit physical address.
-                                        # >
-                                        # > The R, W, and X bits, when set, indicate that the PMP entry permits read, write, and instruction execution.
-                                        # >
-                                        # > If PMP entry i's A field is set to TOR, the associated address register forms the top of the address range,
-                                        # > the entry matches any address a such that pmpaddr[i-1] <= a < pmpaddr[i]. If PMP entry 0's A field
-                                        # > is set to TOR, zero is used for the lower bound, and so it matches any address a < pmpaddr0.
-                                        # >
-                                        # > PMP entries are statically prioritized. The lowest-numbered PMP entry that matches any byte
-                                        # > of an access determines whether that access succeeds or fails.
-
-                                        # define 4 memory address ranges for Physical Memory Protection
-                                        # 0 :: [0 .. user_payload]
-                                        # 1 :: [user_payload .. .rodata]
-                                        # 2 :: [.rodata .. stack_bottom]
-                                        # 3 :: [stack_bottom .. stack_top]
-        la      t0, user_payload
-        la      t1, .rodata
-        la      t2, stack_bottom
-        la      t3, stack_top
-        srli    t0, t0, 2               # store only the highest [XLEN-2:2] bits of the address in the PMP address register
-        srli    t1, t1, 2               # as required by specification in 3.6.1 Physical Memory Protection CSRs
-        srli    t2, t2, 2
-        srli    t3, t3, 2
-        csrw    pmpaddr0, t0
-        csrw    pmpaddr1, t1
-        csrw    pmpaddr2, t2
-        csrw    pmpaddr3, t3
-
-                                        # 3.6.1 Physical Memory Protection CSRs, Table 3.8: Encoding of A field in PMP configuration registers.
-                                        # 3.6.1 Physical Memory Protection CSRs, Figure 3.27: PMP configuration register format.
-        .equ PMP_LOCK,  (1<<7)
-        .equ PMP_NAPOT, (3<<3)          # Address Mode: Naturally aligned power-of-two region, >=8 bytes
-        .equ PMP_NA4,   (2<<3)          # Address Mode: Naturally aligned four-byte region
-        .equ PMP_TOR,   (1<<3)          # Address Mode: Top of range, address register forms the top of the address range,
-                                        # such that PMP entry i matches any a address that pmpaddr[i-1] <= a < pmpaddr[i]
-        .equ PMP_X,     (1<<2)          # Access Mode: Executable
-        .equ PMP_W,     (1<<1)          # Access Mode: Writable
-        .equ PMP_R,     (1<<0)          # Access Mode: Readable
-        .equ PMP_0,     (1<<0)          # [0..8]   1st PMP entry in pmpcfgX register
-        .equ PMP_1,     (1<<8)          # [8..16]  2nd PMP entry in pmpcfgX register
-        .equ PMP_2,     (1<<16)         # [16..24] 3rd PMP entry in pmpcfgX register
-        .equ PMP_3,     (1<<24)         # [24..32] 4th PMP entry in pmpcfgX register
-
-                                        # set 4 PMP entries to TOR (Top Of the address Range) addressing mode so that the associated
-                                        # address register forms the top of the address range per entry,
-                                        # the type of PMP entry is encoded in 2 bits: OFF = 0, TOR = 1, NA4 = 2, NAPOT = 3
-                                        # and stored in 3:4 bits of every PMP entry
-        li      t0, PMP_TOR*(PMP_0|PMP_1|PMP_2|PMP_3)
-
-                                        # set access flags for 4 PMP entries:
-                                        # 0 :: [0 .. user_payload]                      000  M-mode kernel code, no access in U-mode
-                                        # 1 :: [user_payload .. .rodata]                X0R  user code, executable, non-modifiable in U-mode
-                                        # 2 :: [.rodata .. stack_bottom]                000  no access in U-mode
-                                        # 3 :: [stack_bottom .. stack_top]              0WR  user stack, modifiable, but no executable in U-mode
-                                        # access (R)ead, (W)rite and e(X)ecute are 1 bit flags and stored in 0:2 bits of every PMP entry
-        li      t1, (PMP_X|PMP_R)*PMP_1 | (PMP_W|PMP_R)*PMP_3
-
-        or      t0, t0, t1              # combine addressing modes and access flags into the single packed configuration register
-        csrw    pmpcfg0, t0             # pmpcfg0 = PMPs.AddressMode | PMPs.XWR; pmpcfg0 contains at least 4 (8 in RV64) first PMP entries
-
 
         la      a0, msg_m_hello         # DEBUG print
         call    printf                  # DEBUG print
@@ -344,6 +266,7 @@ kprints:
 .section .user_text                     # at least in QEMU 5.1 memory protection seems to work on 4KiB page boundaries,
                                         # so store user payload part in its own section, which is aligned on 4KiB to make
                                         # the further experiments more predictable
+.globl user_payload
 user_payload:
 .globl user_entry_point
 user_entry_point:
@@ -392,6 +315,8 @@ msg_call_printf:
 #
 
 .section .rodata
+.globl rodata
+rodata:
 msg_m_hello:
         .string "Hello from M-mode!\n"
 msg_exception:
