@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pylint: disable=invalid-name,missing-function-docstring,unused-argument
+
 from datetime import datetime, timedelta
 
 import argparse
@@ -8,11 +10,10 @@ import os
 import signal
 import subprocess
 import sys
-import time
 
 
 def mkdelta(deltavalue):
-    _units = dict(d=60*60*24, h=60*60, m=60, s=1)
+    _units = dict(d=60 * 60 * 24, h=60 * 60, m=60, s=1)
     seconds = 0
     defaultunit = unit = _units['s']  # default to seconds
     value = ''
@@ -72,12 +73,12 @@ def make_qemu_command(args):
     if os.path.isdir('qemu-build'):
         qemu = os.path.join('qemu-build/bin', qemu)
     cmd = [qemu, '-nographic', '-machine', machine, '-bios', 'none',
-        '-kernel', binary,
-    ]
+           '-kernel', binary,
+           ]
     if args.debug:
         cmd.extend([
-            '-S', # only loads an image, but stops the CPU, giving a chance to attach gdb
-            '-s', # a shorthand to listen for gdb on localhost:1234
+            '-S',  # only loads an image, but stops the CPU, giving a chance to attach gdb
+            '-s',  # a shorthand to listen for gdb on localhost:1234
         ])
     return cmd
 
@@ -104,9 +105,9 @@ def run(args):
     filename = 'out/test-run-{}.log'.format(os.path.basename(args.binary))
     with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
         p = subprocess.Popen(make_qemu_command(args),
-            stdin=subprocess.PIPE,
-            stdout=writer, stderr=writer,
-        )
+                             stdin=subprocess.PIPE,
+                             stdout=writer, stderr=writer,
+                             )
         signal.signal(signal.SIGINT, make_signal_handler(p))
         start = datetime.now()
         while p.poll() is None:
