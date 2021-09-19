@@ -1,0 +1,8 @@
+Hello from M-mode!
+kinit
+Reading FDT...
+FDT ok
+bootargs: dry-run
+0000f10a
+KKKK
+qemu-launcher: killing qemu due to timeout

@@ -1,16 +1,18 @@
 #include "sys.h"
 #include "kernel.h"
+#include "proc.h"
+#include "fdt.h"
 
-typedef struct process_s {
-    int pid;
-    void *pc;
-} process_t;
-
-process_t proc_table[2];
+process_t proc_table[MAX_PROCS];
 int curr_proc = 0;
+int num_procs = 0;
 
-void kinit() {
+void kinit(uintptr_t fdt_header_addr) {
     kprints("kinit\n");
+    fdt_init(fdt_header_addr);
+    kprints("bootargs: ");
+    kprints(fdt_get_bootargs());
+    kprints("\n");
     init_trap_vector();
     init_pmp();
     void *p = (void*)0xf10a; // this is a random hex to test out kprintp()
@@ -84,18 +86,19 @@ void kernel_timer_tick() {
 // called in interrupt_epilogue, after kernel_timer_tick() exits.
 void schedule_user_process() {
     curr_proc++;
-    if (curr_proc > 1) {
+    if (curr_proc >= num_procs) {
+        return;
+    }
+    if (curr_proc > MAX_PROCS-1) {
         curr_proc = 0;
     }
     set_jump_address(proc_table[curr_proc].pc);
     set_user_mode();
 }
 
+// TODO: move to proc.c
 void init_process_table() {
-    proc_table[0].pid = 0;
-    proc_table[0].pc = user_entry_point;
-    proc_table[1].pid = 1;
-    proc_table[1].pc = user_entry_point2;
+    init_test_processes();
     // init curr_proc to -1, it will get incremented to 0 on the first
     // scheduler run. This will also help to identify the very first call to
     // kernel_timer_tick, which will happen from the kernel land. We want to
