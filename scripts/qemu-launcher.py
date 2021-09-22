@@ -5,11 +5,16 @@
 from datetime import datetime, timedelta
 
 import argparse
+import contextlib
 import io
 import os
 import signal
 import subprocess
 import sys
+
+
+DEBUG_SESSION_FILE = '.debug-session'
+GDBINIT_FILE = '.gdbinit'
 
 
 def mkdelta(deltavalue):
@@ -50,6 +55,21 @@ def pipe_bytes(r, w):
         w.flush()
 
 
+def write_gdb_files(binary, is_32bit):
+    with open(DEBUG_SESSION_FILE, 'w') as f:
+        f.write(binary)
+    with open(GDBINIT_FILE, 'w') as f:
+        if is_32bit:
+            f.write('set arch riscv:rv32\n')
+        f.write('target remote localhost:1234\n')
+
+
+def cleanup_gdb_files():
+    with contextlib.suppress(FileNotFoundError):
+        os.unlink(DEBUG_SESSION_FILE)
+        os.unlink(GDBINIT_FILE)
+
+
 def make_qemu_command(args):
     binary = args.binary
 
@@ -80,7 +100,7 @@ def make_qemu_command(args):
             '-S',  # only loads an image, but stops the CPU, giving a chance to attach gdb
             '-s',  # a shorthand to listen for gdb on localhost:1234
         ])
-    return cmd
+    return cmd, binary, qemu.endswith('riscv32')
 
 
 def run(args):
@@ -102,9 +122,12 @@ def run(args):
     timeout = None
     if args.timeout is not None:
         timeout = mkdelta(args.timeout)
+    cmd, binary, is_32bit = make_qemu_command(args)
+    if args.debug:
+        write_gdb_files(binary, is_32bit)
     filename = 'out/test-run-{}.log'.format(os.path.basename(args.binary))
     with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
-        p = subprocess.Popen(make_qemu_command(args),
+        p = subprocess.Popen(cmd,
                              stdin=subprocess.PIPE,
                              stdout=writer, stderr=writer,
                              )
@@ -119,6 +142,7 @@ def run(args):
                     break
         # write the remainder:
         pipe_bytes(reader, sys.stdout)
+    cleanup_gdb_files()
 
 
 def main():
