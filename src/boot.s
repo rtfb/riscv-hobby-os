@@ -46,6 +46,7 @@ single_core:                            # only the 1st hart past this point
         la      a0, msg_m_hello         # DEBUG print
         call    printf                  # DEBUG print
 
+        mv      a0, a1                  # a1 contains the address of FDT header, pass it to kinit
         call    kinit                   # kinit() will set up the kernel for further operations and return
 
 1:      wfi                             # after kinit() is done, halt this hart until the timer gets called, all the remaining

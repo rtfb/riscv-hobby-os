@@ -100,6 +100,8 @@ def make_qemu_command(args):
             '-S',  # only loads an image, but stops the CPU, giving a chance to attach gdb
             '-s',  # a shorthand to listen for gdb on localhost:1234
         ])
+    if args.bootargs:
+        cmd.extend(['-append', args.bootargs])
     return cmd, binary, qemu.endswith('riscv32')
 
 
@@ -154,6 +156,7 @@ def main():
                         default='out/user_sifive_u')
     parser.add_argument('--debug', help='stop to wait for gdb before executing binary',
                         action='store_true')
+    parser.add_argument('--bootargs', help='pass this as bootargs to the kernel')
     args = parser.parse_args()
     run(args)
 

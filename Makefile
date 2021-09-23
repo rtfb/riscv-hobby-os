@@ -62,7 +62,7 @@ runs: run-spike
 TEST_DEPS = src/baremetal-fib.s src/baremetal-print.s src/baremetal-poweroff.s
 USER_DEPS = src/boot.s src/baremetal-print.s \
 			src/baremetal-poweroff.s src/userland.c src/kernel.c src/syscalls.c \
-			src/pmp.c src/riscv.c
+			src/pmp.c src/riscv.c src/fdt.c src/string.c src/proc_test.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
@@ -82,12 +82,30 @@ test: $(OUT)/test-output.txt
 $(OUT)/test-output.txt: $(OUT)/test_virt
 	@$(QEMU_LAUNCHER) --machine=virt --binary=$< > $@
 
+$(OUT)/test-output-u64.txt: $(OUT)/user_sifive_u
+	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
+	@diff -u testdata/want-output-u64.txt $@
+	@echo "OK"
+
+$(OUT)/test-output-u32.txt: $(OUT)/user_sifive_u32
+	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
+	@diff -u testdata/want-output-u32.txt $@
+	@echo "OK"
+
 .PHONY: run-baremetal
 run-baremetal: $(OUT)/user_sifive_u
 	$(QEMU_LAUNCHER) --binary=$<
 
+.PHONY: run-baremetale64
+run-baremetale64: $(OUT)/user_sifive_e
+	$(QEMU_LAUNCHER) --binary=$<
+
 .PHONY: run-baremetal32
 run-baremetal32: $(OUT)/user_sifive_e32
+	$(QEMU_LAUNCHER) --binary=$<
+
+.PHONY: run-baremetalu32
+run-baremetalu32: $(OUT)/user_sifive_u32
 	$(QEMU_LAUNCHER) --binary=$<
 
 # Note:
@@ -104,6 +122,7 @@ gdb:
 		$(shell cat .debug-session)
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
+          -ffreestanding \
           -Tsrc/baremetal.ld -Iinclude
 
 $(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}

@@ -11,6 +11,7 @@
 
 #define KERNEL_SCHEDULER_TICK_TIME (ONE_SECOND)
 
+void kinit(uintptr_t fdt_header_addr);
 void init_process_table();
 void init_trap_vector();
 void schedule_user_process();
