@@ -8,3 +8,6 @@ initramfs
 initramfs-busybox-riscv64.cpio.gz
 generic-elf
 out
+/sifive-freedom-toolchain
+/.debug-session
+/.gdbinit

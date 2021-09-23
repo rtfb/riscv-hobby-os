@@ -22,11 +22,10 @@ Make targets
 Debugging with gdb
 ------------------
 
-1. You will need to download toolchain from SiFive. Download GNU Embedded
-   Toolchain from [here][sifive-toolchain] and extract it to `~/some/path/`.
-2. Run as usual with and extra `DBG=1` argument, e.g. `make run-baremetal-user DBG=1`
-3. In a separate terminal, run `~/some/path/bin/riscv64-unknown-elf-gdb`
-4. When in gdb, attach with `target remote localhost:1234`
+1. `make download-sifive-toolchain` to download SiFive version of toolchain, as
+   the regular apt-gettable toolchain won't work
+2. Run as usual with and extra `DBG=1` argument, e.g. `make run-baremetal DBG=1`
+3. In a separate terminal, run `make gdb`
 
 RISC-V Linux in QEMU
 ====================

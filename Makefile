@@ -22,6 +22,18 @@ ifeq ($(wildcard $(RISCV_PK)),)
 	RISCV_PK = pk
 endif
 
+FREEDOM_SDK_TOOLCHAIN_PATH := ./sifive-freedom-toolchain/$(shell ls sifive-freedom-toolchain)
+
+# If the links below get outdated, head to https://www.sifive.com/software and
+# download GNU Embedded Toolchain.
+UNAME := $(shell uname)
+ifeq ($(UNAME), Linux)
+	SIFIVE_TOOLCHAIN_URL := https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.12/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14.tar.gz
+endif
+ifeq ($(UNAME), Darwin)
+	SIFIVE_TOOLCHAIN_URL := https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.12/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-apple-darwin.tar.gz
+endif
+
 OUT := out
 BINS := $(OUT)/test_sifive_u \
 	$(OUT)/user_sifive_u \
@@ -95,6 +107,19 @@ run-baremetal32: $(OUT)/user_sifive_e32
 .PHONY: run-baremetalu32
 run-baremetalu32: $(OUT)/user_sifive_u32
 	$(QEMU_LAUNCHER) --binary=$<
+
+# Note:
+# * if this target complains that it can't find riscv64-unknown-elf-gdb,
+#   run make download-sifive-toolchain
+# * .debug-session file is not there permanently; it's being created by
+#   qemu-launcher for the duration of the session and is being cleaned up on
+#   exit. The file contains the name of the binary to debug
+# * qemu-launcher also creates a .gbdinit file so that gdb sets the correct
+#   arch and automatically attaches to the target
+.PHONY: gdb
+gdb:
+	$(FREEDOM_SDK_TOOLCHAIN_PATH)/bin/riscv64-unknown-elf-gdb \
+		$(shell cat .debug-session)
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
@@ -172,7 +197,7 @@ clean:
 	rm -Rf $(OUT)
 
 prereqs:
-	# OSX brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat
+	# OSX brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat wget
 	# OSX brew install riscv-tools qemu
 	sudo apt --yes install \
 		autoconf \
@@ -197,7 +222,13 @@ prereqs:
 		patchutils \
 		pkg-config \
 		texinfo gperf \
+		wget \
 		zlib1g-dev
+
+.PHONY: download-sifive-toolchain
+download-sifive-toolchain:
+	mkdir -p sifive-freedom-toolchain
+	wget -qO- "$(SIFIVE_TOOLCHAIN_URL)" | tar xzv -C "sifive-freedom-toolchain"
 
 clone:
 	git clone https://github.com/qemu/qemu
