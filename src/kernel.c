@@ -86,10 +86,10 @@ void kernel_timer_tick() {
 // called in interrupt_epilogue, after kernel_timer_tick() exits.
 void schedule_user_process() {
     curr_proc++;
-    if (curr_proc >= num_procs) {
+    if (num_procs == 0) {
         return;
     }
-    if (curr_proc > MAX_PROCS-1) {
+    if ((curr_proc >= MAX_PROCS) || (curr_proc >= num_procs)) {
         curr_proc = 0;
     }
     set_jump_address(proc_table[curr_proc].pc);
