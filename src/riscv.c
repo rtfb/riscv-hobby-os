@@ -1,5 +1,14 @@
 #include "kernel.h"
 
+unsigned int get_mhartid() {
+    register unsigned int a0 asm ("a0");
+    asm volatile (
+        "csrr a0, mhartid"
+        : "=r"(a0)   // output in a0
+    );
+    return a0;
+}
+
 void* shift_right_addr(void* addr, int bits) {
     unsigned long iaddr = (unsigned long)addr;
     return (void*)(iaddr >> bits);

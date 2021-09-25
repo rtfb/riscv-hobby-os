@@ -18,6 +18,7 @@
 #define TRAP_DIRECT   0x00
 #define TRAP_VECTORED 0x01
 
+unsigned int get_mhartid();
 unsigned int get_mstatus();
 void set_mstatus(unsigned int mstatus);
 void* get_mepc();
@@ -29,5 +30,8 @@ void set_pmpaddr1(void* addr);
 void set_pmpaddr2(void* addr);
 void set_pmpaddr3(void* addr);
 void set_pmpcfg0(unsigned long value);
+
+// implemented in boot.s
+void park_hart();
 
 #endif // ifndef _RISCV_H_
