@@ -1,6 +1,8 @@
 #ifndef _USERLAND_H_
 #define _USERLAND_H_
 
+#include "usyscalls.h"
+
 #define _userland __attribute__((__section__(".user_text")))
 
 extern void push_pop_stack();
