@@ -34,13 +34,13 @@ _start:
 single_core:                            # only the 1st hart past this point
         la      sp, stack_top           # setup stack pointer
 
-        la      a0, bss_start
-        la      a1, bss_end
-        bgeu    a0, a1, init
+        la      t0, bss_start
+        la      t1, bss_end
+        bgeu    t0, t1, init
 clean_bss_loop:
-        sw      zero, (a0)
-        addi    a0, a0, 4
-        bltu    a0, a1, clean_bss_loop
+        sw      zero, (t0)
+        addi    t0, t0, 4
+        bltu    t0, t1, clean_bss_loop
 init:
 
                                         # @TODO: check if user mode is supported
