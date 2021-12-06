@@ -23,10 +23,12 @@ SECTIONS
 
   . = DEFINED(ROM_START) ? RAM_START : .;
   .data : { *(.data) }
+  bss_start = .;
   .bss : {
     *(.sbss)
     *(.bss)
   }
+  bss_end = .;
   .sdata : { *(.sdata) }
   .debug : { *(.debug) }
   stack_bottom = .;

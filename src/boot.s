@@ -34,6 +34,15 @@ _start:
 single_core:                            # only the 1st hart past this point
         la      sp, stack_top           # setup stack pointer
 
+        la      a0, bss_start
+        la      a1, bss_end
+        bgeu    a0, a1, init
+clean_bss_loop:
+        sw      zero, (a0)
+        addi    a0, a0, 4
+        bltu    a0, a1, clean_bss_loop
+init:
+
                                         # @TODO: check if user mode is supported
                                         # see: https://github.com/riscv/riscv-tests/blob/master/isa/rv64si/csr.S
                                         # OR alternatively use the trick of setting exception handler trailing the operation
