@@ -22,8 +22,13 @@ void set_timer();
 void disable_interrupts();
 void enable_interrupts();
 void set_timer_after(uint64_t delta);
-void kprints(char const *msg);
+
+// implemented in boot.s
+void kprints(char const *msg, ...);
+
+// implemented in kernel.c
 void kprintp(void* p);
+void kprintul(unsigned long i);
 
 extern void user_entry_point();
 extern void user_entry_point2();

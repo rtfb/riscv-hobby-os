@@ -1,5 +1,6 @@
 #include "sys.h"
 #include "kernel.h"
+#include "spinlock.h"
 #include "proc.h"
 #include "fdt.h"
 
@@ -7,8 +8,20 @@ process_t proc_table[MAX_PROCS];
 int curr_proc = 0;
 int num_procs = 0;
 
+spinlock init_lock = 0;
+
 void kinit(uintptr_t fdt_header_addr) {
-    kprints("kinit\n");
+    acquire(&init_lock);
+    unsigned int cpu_id = get_mhartid();
+    if (cpu_id > 0) {
+        kprints("cpu parked: ");
+        kprintul(cpu_id);
+        release(&init_lock);
+        // TODO: support multi-core
+        park_hart();
+    }
+    kprints("kinit: cpu ");
+    kprintul(cpu_id);
     fdt_init(fdt_header_addr);
     kprints("bootargs: ");
     kprints(fdt_get_bootargs());
@@ -20,6 +33,11 @@ void kinit(uintptr_t fdt_header_addr) {
     init_process_table();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     enable_interrupts();
+    release(&init_lock);
+
+    // after kinit() is done, halt this hart until the timer gets called, all
+    // the remaining kernel ops will be orchestrated from the timer
+    park_hart();
 }
 
 // 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)
@@ -150,17 +168,8 @@ void set_jump_address(void *func) {
     );
 }
 
-unsigned int get_hart_id() {
-    register int a0 asm ("a0");
-    asm volatile (
-        "csrr a0, mhartid"
-        : "=r"(a0)   // output in a0
-    );
-    return a0;
-}
-
 void set_timer_after(uint64_t delta) {
-    unsigned int hart_id = get_hart_id();
+    unsigned int hart_id = get_mhartid();
     uint64_t *mtime = (uint64_t*)MTIME;
     uint64_t *mtimecmp = (uint64_t*)(MTIMECMP_BASE) + 8*hart_id;
     uint64_t now = *mtime;
@@ -198,19 +207,23 @@ void set_mtvec(void *ptr) {
 }
 
 void kprintp(void* p) {
+    unsigned long pp = (unsigned long)p;
+    kprintul(pp);
+}
+
+void kprintul(unsigned long i) {
     static char hex_table[] = "0123456789abcdef";
     static char buf[64];
-    int i = sizeof(p)*2 + 1;
-    buf[i] = '\0';
-    i--;
-    buf[i] = '\n';
-    i--;
-    unsigned long pp = (unsigned long)p;
-    while (i >= 0) {
-        char lowest_4_bits = pp & 0xf;
-        buf[i] = hex_table[lowest_4_bits];
-        i--;
-        pp >>= 4;
+    int j = sizeof(i)*2 + 1;
+    buf[j] = '\0';
+    j--;
+    buf[j] = '\n';
+    j--;
+    while (j >= 0) {
+        char lowest_4_bits = i & 0xf;
+        buf[j] = hex_table[lowest_4_bits];
+        j--;
+        i >>= 4;
     }
     kprints(buf);
 }

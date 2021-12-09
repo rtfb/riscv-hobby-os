@@ -25,14 +25,13 @@ _start:
                                         # > In systems with two privilege modes (M/U), setting a bit in medeleg or mideleg
                                         # > will delegate the corresponding trap in U-mode to the U-mode trap handler.
 
-                                        # @TODO: support multi-core
-        csrr    a0, mhartid             # read hardware thread id (`hart` stands for `hardware thread`)
-        beqz    a0, single_core         # park all harts except the 1st one
-1:      wfi                             # parked hart will sleep waiting for interrupt
-        j       1b
-
-single_core:                            # only the 1st hart past this point
-        la      sp, stack_top           # setup stack pointer
+                                        # setup stack pointer:
+        la      t0, stack_top           # set it at stack_top for hart0,
+        csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
+        li      t2, 512
+        mul     t1, t1, t2
+        add     t0, t0, t1
+        mv      sp, t0
 
         la      a0, bss_start
         la      a1, bss_end
@@ -52,15 +51,11 @@ init:
                                         # >      ... code that might fail due to lack of support in CPU
                                         # > 1:
 
-        la      a0, msg_m_hello         # DEBUG print
-        call    printf                  # DEBUG print
-
         mv      a0, a1                  # a1 contains the address of FDT header, pass it to kinit
-        call    kinit                   # kinit() will set up the kernel for further operations and return
+        call    kinit                   # kinit() will set up the kernel for
+                                        # further operations and never return.
 
-1:      wfi                             # after kinit() is done, halt this hart until the timer gets called, all the remaining
-        j       1b                      # kernel ops will be orchestrated from the timer
-                                        # parked hart will sleep waiting for interrupt
+        j exception                     # jump to exception here, just in case
 
 
 ### Trap Tables & Dispatchers #################################################
@@ -257,6 +252,11 @@ kprints:
         lx      ra, 1, (sp)
         stackfree_x 1
         ret
+
+.globl park_hart
+park_hart:
+loop:      wfi                  # parked hart will sleep waiting for interrupt
+           j       loop
 
 ### User payload = code + readonly data for U-mode ############################
 #
