@@ -33,6 +33,17 @@ _start:
         add     t0, t0, t1
         mv      sp, t0
 
+        # The loop below (clean_bss_loop) zeroes out the BSS section. Note that
+        # it should only run once, otherwise subsequent harts may re-initialize
+        # some variables that we already started using. Therefore, we declare a
+        # lock variable, bss_zero_loop_lock, and atomically set it to 1. Only
+        # the first hart to succeed in that, will have a chance to run the
+        # cleaning loop; other harts will jump over it to continue initializing.
+        li     t0, 1                  # store swap value in t0
+        la     t1, bss_zero_loop_lock # store the address of a lock variable in t1
+        amoswap.w.aq  t0, t0, (t1)    # attempt to acquire a lock
+        bnez          t0, init        # if failed, another hart is already in the loop, so proceed straight to init
+
         la      t0, bss_start
         la      t1, bss_end
         bgeu    t0, t1, init
@@ -40,6 +51,7 @@ clean_bss_loop:
         sw      zero, (t0)
         addi    t0, t0, 4
         bltu    t0, t1, clean_bss_loop
+
 init:
 
                                         # @TODO: check if user mode is supported
@@ -331,3 +343,8 @@ msg_m_hello:
         .string "Hello from M-mode!\n"
 msg_exception:
         .string "Exception occurred, mcause:%p mepc:%p mtval:%p (user payload at:%p, stack top:%p).\n"
+
+.section .data
+.globl data
+bss_zero_loop_lock:
+        .word 0
