@@ -57,18 +57,19 @@ def pipe_bytes(r, w):
 
 # Contents of .gdbinit are taken from here:
 # https://wiki.qemu.org/Documentation/Platforms/RISCV#Attaching_GDB
-def write_gdb_files(binary, is_32bit, machine):
+def write_gdb_files(binary, is_32bit, is_multicore):
     with open(DEBUG_SESSION_FILE, 'w') as f:
         f.write(binary)
     with open(GDBINIT_FILE, 'w') as f:
         if is_32bit:
             f.write('set arch riscv:rv32\n')
         f.write('target extended-remote localhost:1234\n')
-        if machine == 'sifive_u':
+        if is_multicore:
             f.write('add-inferior\n')
             f.write('inferior 2\n')
             f.write('attach 2\n')
             f.write('set schedule-multiple\n')
+            f.write('set scheduler-locking on\n')
             f.write('thread 1.1\n')
 
 
@@ -134,7 +135,8 @@ def run(args):
         timeout = mkdelta(args.timeout)
     cmd, machine, binary, is_32bit = make_qemu_command(args)
     if args.debug:
-        write_gdb_files(binary, is_32bit, machine)
+        is_multicore = machine == 'sifive_u'
+        write_gdb_files(binary, is_32bit, is_multicore)
     filename = 'out/test-run-{}.log'.format(os.path.basename(args.binary))
     with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
         p = subprocess.Popen(cmd,
