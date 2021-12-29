@@ -11,6 +11,10 @@ RISCV64_OBJDUMP ?= riscv64-linux-gnu-objdump
 ifeq (, $(shell which $(RISCV64_OBJDUMP)))
 	RISCV64_OBJDUMP = riscv64-unknown-elf-objdump
 endif
+RISCV64_OBJCOPY ?= riscv64-linux-gnu-objcopy
+ifeq (, $(shell which $(RISCV64_OBJCOPY)))
+	RISCV64_OBJCOPY = riscv64-unknown-elf-objcopy
+endif
 # Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
 SPIKE ?= ./riscv-isa-sim/build/build/bin/spike
 ifeq ($(wildcard $(SPIKE)),)
@@ -23,6 +27,7 @@ ifeq ($(wildcard $(RISCV_PK)),)
 endif
 
 FREEDOM_SDK_TOOLCHAIN_PATH := ./sifive-freedom-toolchain/$(shell ls sifive-freedom-toolchain)
+GDB := $(FREEDOM_SDK_TOOLCHAIN_PATH)/bin/riscv64-unknown-elf-gdb
 
 # If the links below get outdated, head to https://www.sifive.com/software and
 # download GNU Embedded Toolchain.
@@ -43,6 +48,7 @@ BINS := $(OUT)/test_sifive_u \
 	$(OUT)/user_sifive_e32 \
 	$(OUT)/test_sifive_u32 \
 	$(OUT)/user_sifive_u32 \
+	$(OUT)/user_hifive1_revb \
 	$(OUT)/test_virt \
 	$(OUT)/user_virt
 
@@ -119,8 +125,7 @@ run-baremetalu32: $(OUT)/user_sifive_u32
 #   arch and automatically attaches to the target
 .PHONY: gdb
 gdb:
-	$(FREEDOM_SDK_TOOLCHAIN_PATH)/bin/riscv64-unknown-elf-gdb \
-		$(shell cat .debug-session)
+	$(GDB) $(shell cat .debug-session)
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
@@ -176,6 +181,12 @@ $(OUT)/user_virt: ${USER_VIRT_DEPS}
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
 		${USER_VIRT_DEPS} -o $@
 
+$(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
+	$(RISCV64_GCC) -march=rv32imac -mabi=ilp32 $(GCC_FLAGS) \
+		-Wl,--defsym,ROM_START=0x20010000 -Wa,--defsym,UART=0x10013000 \
+		-Wa,--defsym,XLEN=32 -Wa,--defsym,NO_S_MODE=1 \
+		${USER_SIFIVE_E32_DEPS} -o $@
+
 $(OUT):
 	mkdir -p $(OUT)
 
@@ -190,6 +201,24 @@ $(OUT)/user_sifive_e32.s: $(OUT)/user_sifive_e32
 
 $(OUT)/user_sifive_e32.rodata: $(OUT)/user_sifive_e32
 	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
+
+$(OUT)/user_hifive1_revb.hex: $(OUT)/user_hifive1_revb
+	$(RISCV64_OBJCOPY) -O ihex $< $@
+
+$(OUT)/user_hifive1_revb.s: $(OUT)/user_hifive1_revb
+	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
+
+# This target assumes a Segger J-Link software is installed on the system. Get it at
+# https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
+.PHONY: flash-hifive1-revb
+flash-hifive1-revb: $(OUT)/user_hifive1_revb.hex $(OUT)/user_hifive1_revb.s
+	echo "loadfile $<\nrnh\nexit" \
+		| JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1
+
+.PHONY: debug-board
+debug-board: $(OUT)/user_hifive1_revb
+	JLinkGDBServer -device RISC-V -port 1234 &
+	$(GDB) $< -ex "set remotetimeout 240" -ex "target extended-remote localhost:1234"
 
 run-spike: elf
 	$(SPIKE) $(RISCV_PK) generic-elf/hello bbl loader
