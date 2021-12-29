@@ -212,7 +212,6 @@ void kprintp(void* p) {
 }
 
 void kprintul(unsigned long i) {
-    static char hex_table[] = "0123456789abcdef";
     static char buf[64];
     int j = sizeof(i)*2 + 1;
     buf[j] = '\0';
@@ -221,7 +220,11 @@ void kprintul(unsigned long i) {
     j--;
     while (j >= 0) {
         char lowest_4_bits = i & 0xf;
-        buf[j] = hex_table[lowest_4_bits];
+        if (lowest_4_bits < 10) {
+            buf[j] = '0' + lowest_4_bits;
+        } else {
+            buf[j] = 'a' + lowest_4_bits - 10;
+        }
         j--;
         i >>= 4;
     }
