@@ -184,7 +184,7 @@ $(OUT)/user_virt: ${USER_VIRT_DEPS}
 $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32imac -mabi=ilp32 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20010000 -Wa,--defsym,UART=0x10013000 \
-		-Wa,--defsym,XLEN=32 \
+		-Wa,--defsym,XLEN=32 -Wa,--defsym,NO_S_MODE=1 \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
 $(OUT):
