@@ -1,6 +1,8 @@
 .include "src/machine-word.inc"
 .equ STACK_PER_HART,    64 * REGBYTES
 .equ HALT_ON_EXCEPTION, 0
+.equ CLINT0_BASE_ADDRESS, 0x2000000
+.equ BOOT_HART_ID, 0
 
 .balign 4
 .section .text
@@ -35,24 +37,87 @@ _start:
         add     t0, t0, t1
         mv      sp, t0
 
-        # The loop below (clean_bss_loop) zeroes out the BSS section. Note that
-        # it should only run once, otherwise subsequent harts may re-initialize
-        # some variables that we already started using. Therefore, we declare a
-        # lock variable, bss_zero_loop_lock, and atomically set it to 1. Only
-        # the first hart to succeed in that, will have a chance to run the
-        # cleaning loop; other harts will jump over it to continue initializing.
-        li     t0, 1                  # store swap value in t0
-        la     t1, bss_zero_loop_lock # store the address of a lock variable in t1
-        amoswap.w.aq  t0, t0, (t1)    # attempt to acquire a lock
-        bnez          t0, init        # if failed, another hart is already in the loop, so proceed straight to init
+        # only allow mhartid==BOOT_HART_ID to jump to the init_segments code;
+        # all other harts continue to run hart_sync_code, then unconditionally
+        # jump to init.
+        li      t0, BOOT_HART_ID
+        csrr    t1, mhartid
+        beq     t0, t1, init_segments
+
+hart_sync_code:
+        # Only non-boot harts run this code:
+        # Step 1: every non-boot hart writes 1 to MSIP register:
+        csrr    t2, mhartid   # t2 = hart ID
+        li      t0, 1
+        li      t1, CLINT0_BASE_ADDRESS  # t1 = Core-Local Interrupt Controller base address
+        slli    t2, t2, 2     # t2 = hartID*4
+        add     t1, t1, t2    # t1 = address of MSIP mem-mapped register
+        sw      t0, (t1)      # MSIP is 32 bits wide on all XLENs, so use sw
+        fence   w,rw
+
+        # Step 2: now busy-wait until the boot hart will clear that bit. When
+        # it does, we're safe to proceed:
+1:
+        lw      t0, (t1)
+        bnez    t0, 1b
+
+        # now that we've gone through hart sync dance, continue to higher level
+        # init code where each hart is allowed to run:
+        j       init
+
+init_segments:
+
+        # This section of code between init_segments and synchronize_harts will
+        # only be executed by a hart with id==BOOT_HART_ID. This ensures that
+        # the .bss and .data segments (and other, as may become necessary) are
+        # initialized once only.
 
         la      t0, bss_start
         la      t1, bss_end
-        bgeu    t0, t1, init
+        bgeu    t0, t1, synchronize_harts
 clean_bss_loop:
         sw      zero, (t0)
         addi    t0, t0, 4
         bltu    t0, t1, clean_bss_loop
+
+        # Now that the memory segments are init'ed, the boot hart will
+        # synchronize all other harts: loop from 1 to NUM_HARTS, and for all of
+        # them do the following: read its MSIP register, wait until they all
+        # are 1. When all 1s are read from all harts, write 0s back to all of
+        # them, allowing them all to proceed.
+synchronize_harts:
+        li      t0, 0                   # t0 = hart ID
+        li      t1, CLINT0_BASE_ADDRESS # t1 = Core-Local Interrupt Controller base address
+        li      t5, NUM_HARTS           # t4 = NUM_HARTS
+        li      t6, BOOT_HART_ID        # t6 = boot hart ID, so that we can skip over it
+
+        # if we're running on a single-harted machine, there's nothing to sync,
+        # so jump over:
+        beq     t0, t5, init
+
+        # Read loop: wait for MSIP=1 from each hart
+per_hart_read_loop:
+        beq     t0, t6, skip_boot_hart
+        slli    t2, t0, 2               # t2 = hartID*4
+        add     t3, t1, t2              # t3 = address of MSIP mem-mapped register
+        lw      t4, (t3)                # MSIP is 32 bits wide on all XLENs, so use lw
+        beq     t4, zero, per_hart_read_loop
+
+skip_boot_hart:
+        addi    t0, t0, 1
+        blt     t0, t5, per_hart_read_loop    # jump if hartID < NUM_HARTS
+
+        # Write loop: write MSIP=0 for each hart
+        li      t0, 0                   # t0 = hart ID
+per_hart_write_loop:
+        beq     t0, t6, skip_boot_hart2
+        slli    t2, t0, 2               # t2 = hartID*4
+        add     t3, t1, t2              # t3 = address of MSIP mem-mapped register
+        sw      zero, (t3)
+
+skip_boot_hart2:
+        addi    t0, t0, 1
+        blt     t0, t5, per_hart_write_loop  # jump if hartID < NUM_HARTS
 
 init:
 
