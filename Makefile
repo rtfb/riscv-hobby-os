@@ -129,6 +129,7 @@ gdb:
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
+          -fno-plt -fno-pic \
           -Tsrc/baremetal.ld -Iinclude
 
 $(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
