@@ -1,7 +1,7 @@
 #include "sys.h"
 #include "userland.h"
 
-#define PRINT_FREQ (10*1000*1000)
+#define PRINT_FREQ ONE_SECOND
 
 uint64_t get_clock_cycles();
 int m_read_hart_id();
@@ -13,6 +13,7 @@ int _userland u_main() {
     uint64_t clock_cycles = get_clock_cycles();
     sys_puts("OK\n");
 
+    /*
     sys_puts("Read from memory: ");
     int word = *a_string_in_user_mem_ptr;
     sys_puts("OK\n");
@@ -39,6 +40,7 @@ int _userland u_main() {
     sys_puts("Illegal read from protected memory: ");
     // causes Load access fault (mcause=5) in User mode:
     word = *msg_m_hello_ptr;
+    */
 
     int counter = 0;
     int flipper = 0;
@@ -65,6 +67,7 @@ int _userland u_main2() {
     uint64_t clock_cycles = get_clock_cycles();
     sys_puts("OK\n");
 
+    /*
     sys_puts("Read from memory: ");
     int word = *a_string_in_user_mem_ptr;
     sys_puts("OK\n");
@@ -91,6 +94,7 @@ int _userland u_main2() {
     sys_puts("Illegal read from protected memory: ");
     // causes Load access fault (mcause=5) in User mode:
     word = *msg_m_hello_ptr;
+    */
 
     int counter = 0;
     int flipper = 0;

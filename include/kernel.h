@@ -4,11 +4,6 @@
 #include "riscv.h"
 #include "pmp.h"
 
-// Based on SIFIVE_CLINT_TIMEBASE_FREQ = 10000000 value from QEMU SiFive CLINT
-// implementation:
-// https://github.com/qemu/qemu/blob/master/include/hw/intc/sifive_clint.h
-#define ONE_SECOND        10*1000*1000
-
 #define KERNEL_SCHEDULER_TICK_TIME (ONE_SECOND)
 
 void kinit(uintptr_t fdt_header_addr);
