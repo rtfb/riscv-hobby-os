@@ -3,6 +3,9 @@
 
 #include "sys.h"
 
+// An arbitrary limit, as of now:
+#define MAX_HARTS 4
+
 // 1.3 Privilege Levels, Table 1.1: RISC-V privilege levels.
 #define MODE_U      0 << 11
 #define MODE_S      1 << 11
@@ -30,6 +33,9 @@ void set_pmpaddr1(void* addr);
 void set_pmpaddr2(void* addr);
 void set_pmpaddr3(void* addr);
 void set_pmpcfg0(unsigned long value);
+
+void set_user_mode();
+void set_jump_address(void *func);
 
 // implemented in boot.s
 void park_hart();

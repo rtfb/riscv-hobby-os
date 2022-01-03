@@ -57,3 +57,46 @@ void set_pmpcfg0(unsigned long value) {
         : "r"(value)            // input in value
     );
 }
+
+unsigned int get_mstatus() {
+    register unsigned int a0 asm ("a0");
+    asm volatile (
+        "csrr a0, mstatus"
+        : "=r"(a0)   // output in a0
+    );
+    return a0;
+}
+
+void set_mstatus(unsigned int value) {
+    asm volatile (
+        "csrw mstatus, %0"
+        :            // no output
+        : "r"(value) // input in value
+    );
+}
+
+void* get_mepc() {
+    register void* a0 asm ("a0");
+    asm volatile (
+        "csrr a0, mepc"
+        : "=r"(a0)   // output in a0
+    );
+    return a0;
+}
+
+void set_jump_address(void *func) {
+    asm volatile (
+        "csrw   mepc, %0;"  // set mepc to userland function
+        :                   // no output
+        : "r"(func)         // input in func
+    );
+}
+
+// Privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01,
+// Machine = 0b11 and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
+void set_user_mode() {
+    unsigned int mstatus = get_mstatus();
+    mstatus &= MODE_MASK;   // zero out mode bits 11:12
+    mstatus |= MODE_U;      // set them to user mode
+    set_mstatus(mstatus);
+}
