@@ -181,38 +181,68 @@ early_trap_vector:
                                         # > the first instruction that has not completed yet. Thus, when returning from the interrupt handler,
                                         # > the execution continues exactly where it was interrupted.
 .globl trap_vector
+.balign 64
 trap_vector:                            # 3.1.20 Machine Cause Register (mcause), Table 3.6: Machine cause register (mcause) values after trap.
         j exception_dispatch            #  0: user software interrupt OR _exception_ (See note in 3.1.12: Machine Trap-Vector Base-Address Register)
+.balign 4
         j interrupt_noop                #  1: supervisor software interrupt
+.balign 4
         j interrupt_noop                #  2: reserved
+.balign 4
         j interrupt_noop                #  3: machine software interrupt
+.balign 4
         j interrupt_timer               #  4: user timer interrupt
+.balign 4
         j interrupt_timer               #  5: supervisor timer interrupt
+.balign 4
         j interrupt_noop                #  6: reserved
+.balign 4
         j k_interrupt_timer             #  7: machine timer interrupt
+.balign 4
         j interrupt_noop                #  8: user external interrupt
+.balign 4
         j interrupt_noop                #  9: supervisor external interrupt
+.balign 4
         j interrupt_noop                # 10: reserved
+.balign 4
         j interrupt_noop                # 11: machine external interrupt
 
 exception_vector:                       # 3.1.20 Machine Cause Register (mcause), Table 3.6: Machine cause register (mcause) values after trap.
+.balign 4
         j exception                     #  0: instruction address misaligned
+.balign 4
         j exception                     #  1: instruction access fault
+.balign 4
         j exception                     #  2: illegal instruction
+.balign 4
         j exception                     #  3: breakpoint
+.balign 4
         j exception                     #  4: load address misaligned
+.balign 4
         j exception                     #  5: load access fault
+.balign 4
         j exception                     #  6: store/AMO address misaligned
+.balign 4
         j exception                     #  7: store/AMO access fault
+.balign 4
         j syscall_dispatch              #  8: environment call from U-mode
+.balign 4
         j syscall_dispatch              #  9: environment call from S-mode
+.balign 4
         j exception                     # 10: reserved
+.balign 4
         j syscall_dispatch              # 11: environment call from M-mode
+.balign 4
         j exception                     # 12: instruction page fault
+.balign 4
         j exception                     # 13: load page fault
+.balign 4
         j exception                     # 14: reserved
+.balign 4
         j exception                     # 15: store/AMO page fault
+.balign 4
         j exception                     # 16: reserved
+.balign 4
 exception_vector_end:
 
 exception_dispatch:
