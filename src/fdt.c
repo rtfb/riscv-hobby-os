@@ -77,27 +77,23 @@ void fdt_parse(uint32_t *tree, char const *strings) {
 }
 
 void fdt_init(uintptr_t header_addr) {
-    kprints("Reading FDT...\n");
+    kprintf("Reading FDT...\n");
     fdt_header *header = (fdt_header*)header_addr;
     if (!header) {
-        kprints("FDT is NULL, nothing to do\n");
+        kprintf("FDT is NULL, nothing to do\n");
         return;
     }
     if (bswap(header->magic) != FDT_MAGIC) {
         // TODO: change that into a return value
-        kprints("bad FDT magic\n");
-        uintptr_t m = header->magic;
-        kprintp((void*)m);
+        kprintf("bad FDT magic: %x\n", header->magic);
         return;
     }
     if (bswap(header->last_comp_version) > FDT_VERSION) {
-        kprints("unknown FDT version\n");
-        uintptr_t v = header->version;
-        kprintp((void*)v);
+        kprintf("unknown FDT version: %x\n", header->version);
         return;
     }
     uint32_t *tree = (uint32_t*)(header_addr + bswap(header->off_dt_struct));
     char const* strings = (char const*)(header_addr + bswap(header->off_dt_strings));
     fdt_parse(tree, strings);
-    kprints("FDT ok\n");
+    kprintf("FDT ok\n");
 }

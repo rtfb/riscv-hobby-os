@@ -14,22 +14,19 @@ void kinit(uintptr_t fdt_header_addr) {
     acquire(&init_lock);
     unsigned int cpu_id = get_mhartid();
     if (cpu_id > 0) {
-        kprints("cpu parked: ");
-        kprintul(cpu_id);
+        kprintf("cpu parked: %d\n", cpu_id);
         release(&init_lock);
         // TODO: support multi-core
         park_hart();
     }
-    kprints("kinit: cpu ");
-    kprintul(cpu_id);
+    kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
-    kprints("bootargs: ");
-    kprints(fdt_get_bootargs());
-    kprints("\n");
+    kprintf("bootargs: %s\n", fdt_get_bootargs());
     init_trap_vector();
     init_pmp();
-    void *p = (void*)0xf10a; // this is a random hex to test out kprintp()
-    kprintp(p);
+    char const* str = "foo"; // this is a random string to test out %s in kprintf()
+    void *p = (void*)0xf10a; // this is a random hex to test out %p in kprintf()
+    kprintf("kprintf test several params: %s, %p, %d\n", str, p, cpu_id);
     init_process_table();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     enable_interrupts();
@@ -71,7 +68,7 @@ void init_trap_vector() {
 // run.
 void kernel_timer_tick() {
     disable_interrupts();
-    kprints("K");
+    kprintf("K");
     void* userland_pc = (void*)get_mepc();
     if (userland_pc && curr_proc >= 0) {
         proc_table[curr_proc].pc = userland_pc;
@@ -204,29 +201,4 @@ void set_mtvec(void *ptr) {
         :                   // no output
         : "r"(ptr)          // input in ptr
     );
-}
-
-void kprintp(void* p) {
-    unsigned long pp = (unsigned long)p;
-    kprintul(pp);
-}
-
-void kprintul(unsigned long i) {
-    static char buf[64];
-    int j = sizeof(i)*2 + 1;
-    buf[j] = '\0';
-    j--;
-    buf[j] = '\n';
-    j--;
-    while (j >= 0) {
-        char lowest_4_bits = i & 0xf;
-        if (lowest_4_bits < 10) {
-            buf[j] = '0' + lowest_4_bits;
-        } else {
-            buf[j] = 'a' + lowest_4_bits - 10;
-        }
-        j--;
-        i >>= 4;
-    }
-    kprints(buf);
 }

@@ -1,8 +1,8 @@
-kinit: cpu 00000000
+kinit: cpu 0
 Reading FDT...
 FDT ok
 bootargs: dry-run
-0000f10a
-cpu parked: 00000001
+kprintf test several params: foo, 0xF10A, 0
+cpu parked: 1
 KKKK
 qemu-launcher: killing qemu due to timeout
