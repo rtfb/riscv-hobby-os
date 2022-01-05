@@ -7,11 +7,7 @@
 #define KERNEL_SCHEDULER_TICK_TIME (ONE_SECOND)
 
 void kinit(uintptr_t fdt_header_addr);
-void init_process_table();
 void init_trap_vector();
-void schedule_user_process();
-void set_user_mode();
-void set_jump_address(void *func);
 void kernel_timer_tick();
 void set_timer();
 void disable_interrupts();
