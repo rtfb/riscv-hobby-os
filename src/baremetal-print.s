@@ -14,7 +14,7 @@ MACHINE NOT SUPPORTED!
 .section .text
 .global printf                          # C-like print formatted string. Supports formatting: %s, %c, %d, %i, %u, %x, %o, %p
                                         # @param[in] a0 address of NULL terminated formatted string,
-                                        # @param[in] a1 address of argmuments
+                                        # @param[in] a1 address of arguments
 
 .global prints                          # Print string.
                                         # @param[in] a0 address of NULL terminated string
@@ -63,7 +63,7 @@ printf:
 3:      lw      t1, UART_REG_TXFIFO(t2) # read from serial
         bltz    t1, 3b                  # until >= 0
         sw      t0, UART_REG_TXFIFO(t2) # write to serial
-        addi    a0, a0, 1               # increment a6
+        addi    a0, a0, 1               # increment a0
         j       0b                      # continue
 
 10:     addi    a0, a0, 2
