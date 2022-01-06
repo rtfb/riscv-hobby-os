@@ -379,6 +379,8 @@ park_hart:
 loop:      wfi                  # parked hart will sleep waiting for interrupt
            j       loop
 
+### User payload = code + readonly data for U-mode ############################
+#
 .section .user_text                     # at least in QEMU 5.1 memory protection seems to work on 4KiB page boundaries,
                                         # so store user payload part in its own section, which is aligned on 4KiB to make
                                         # the further experiments more predictable
