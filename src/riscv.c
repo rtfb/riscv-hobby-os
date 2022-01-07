@@ -100,3 +100,11 @@ void set_user_mode() {
     mstatus |= MODE_U;      // set them to user mode
     set_mstatus(mstatus);
 }
+
+void set_mscratch(void* ptr) {
+    asm volatile (
+        "csrw mscratch, %0"
+        :            // no output
+        : "r"(ptr)   // input in value
+    );
+}

@@ -3,6 +3,7 @@
 
 #include "riscv.h"
 #include "pmp.h"
+#include "proc.h"
 
 #define KERNEL_SCHEDULER_TICK_TIME (ONE_SECOND)
 
