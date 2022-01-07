@@ -261,7 +261,7 @@ exception_dispatch:
 
 syscall_dispatch:                       # a7 contains syscall index
         la      t0, syscall_vector
-        li      t1, 5                   # TODO: 5 is the number of entries in syscall_vector. We need to find a way to
+        li      t1, 21                  # TODO: 21 is the number of entries in syscall_vector. We need to find a way to
                                         # unhardcode this number and derive it from the actual table
         bgeu    a7, t1, syscall_epilogue
         slli    t1, a7, LOG2_SIZEOF_PTR
@@ -381,19 +381,6 @@ loop:      wfi                  # parked hart will sleep waiting for interrupt
 
 ### User payload = code + readonly data for U-mode ############################
 #
-.macro  macro_syscall nr
-        li      a7, \nr                 # for fun let's pretend syscall is kinda like Linux: syscall nr in a7, other arguments in a0..a6
-        ecall
-.endm
-.macro  macro_sys_poweroff exit_code
-        li      a0, \exit_code
-        macro_syscall 0
-.endm
-.macro  macro_sys_print addr
-        la      a0, \addr
-        macro_syscall 4
-.endm
-
 .section .user_text                     # at least in QEMU 5.1 memory protection seems to work on 4KiB page boundaries,
                                         # so store user payload part in its own section, which is aligned on 4KiB to make
                                         # the further experiments more predictable
@@ -419,15 +406,6 @@ user_entry_point2:
                                         # which makes instruction address easier to follow in case of an exception
 
         call u_main2
-        ret
-
-.globl sys_puts
-sys_puts:
-        stackalloc_x 1
-        sx      ra, 1, (sp)
-        macro_syscall 4
-        lx      ra, 1, (sp)
-        stackfree_x 1
         ret
 
 a_string_in_user_mem:

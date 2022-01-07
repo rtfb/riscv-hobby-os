@@ -21,6 +21,4 @@
 
 #define ARRAY_LENGTH(a) (sizeof(a) / sizeof(a[0]))
 
-extern void sys_puts(char const* msg);
-
 #endif // ifndef _SYS_H_

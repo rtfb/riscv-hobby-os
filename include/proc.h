@@ -2,11 +2,12 @@
 #define _PROC_H_
 
 #include "riscv.h"
+#include "sys.h"
 
 #define MAX_PROCS 2
 
 typedef struct process_s {
-    int pid;
+    uint32_t pid;
     void *pc;
 } process_t;
 
