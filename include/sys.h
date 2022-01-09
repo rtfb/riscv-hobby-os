@@ -9,12 +9,14 @@
     #define uint64_t unsigned long long
     #define uint32_t unsigned long
     #define uintptr_t unsigned long
+    #define regsize_t uint32_t
 #elif __riscv_xlen == 64
     #define XLEN 64
     #define int64_t long
     #define uint64_t unsigned long
     #define uint32_t unsigned int
     #define uintptr_t unsigned long
+    #define regsize_t uint64_t
 #else
     #error Unknown xlen
 #endif

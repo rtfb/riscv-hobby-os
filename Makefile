@@ -69,7 +69,7 @@ TEST_DEPS = src/baremetal-fib.s src/baremetal-print.s src/baremetal-poweroff.s
 USER_DEPS = src/boot.s src/baremetal-print.s \
 			src/baremetal-poweroff.s src/userland.c src/kernel.c src/syscalls.c \
 			src/pmp.c src/riscv.c src/fdt.c src/string.c src/proc_test.c \
-			src/spinlock.c src/proc.c src/usyscalls.s
+			src/spinlock.c src/proc.c src/usyscalls.s src/pagealloc.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
@@ -203,6 +203,7 @@ $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32imac -mabi=ilp32 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20010000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 -Wa,--defsym,NO_S_MODE=1 -Wa,--defsym,NUM_HARTS=1 \
+		-Wl,--defsym,RAM_SIZE=0x4000 \
 		-include include/machine/hifive1-revb.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
