@@ -20,11 +20,11 @@ void kinit(uintptr_t fdt_header_addr) {
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());
     init_trap_vector();
-    init_pmp();
+    void* paged_mem_end = init_pmp();
     char const* str = "foo"; // this is a random string to test out %s in kprintf()
     void *p = (void*)0xf10a; // this is a random hex to test out %p in kprintf()
     kprintf("kprintf test several params: %s, %p, %d\n", str, p, cpu_id);
-    init_paged_memory();
+    init_paged_memory(paged_mem_end);
     init_process_table();
     init_global_trap_frame();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);

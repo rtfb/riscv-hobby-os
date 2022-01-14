@@ -3,16 +3,8 @@
 
 paged_mem_t paged_memory;
 
-// defined in baremetal.ld:
-extern void* data_start;
-extern void* RAM_START;
-extern void* RAM_SIZE;
-
-void init_paged_memory() {
-    regsize_t ram_start = (regsize_t)&RAM_START;
-    regsize_t ram_size = (regsize_t)&RAM_SIZE;
+void init_paged_memory(void* paged_mem_end) {
     regsize_t paged_mem_start = (regsize_t)&stack_top;
-    regsize_t paged_mem_end = ram_start + ram_size;
     paged_memory.lock = 0;
     regsize_t mem = paged_mem_start;
     // up-align at page size to avoid the last page being incomplete:
@@ -21,7 +13,7 @@ void init_paged_memory() {
         mem += PAGE_SIZE;
     }
     int i = 0;
-    while (mem < paged_mem_end && i < MAX_PAGES) {
+    while (mem < (regsize_t)paged_mem_end && i < MAX_PAGES) {
         paged_memory.pages[i].ptr = (void*)mem;
         paged_memory.pages[i].flags = PAGE_FREE;
         mem += PAGE_SIZE;

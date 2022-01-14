@@ -22,6 +22,7 @@ extern void* rodata;
 extern void* stack_bottom;
 extern void* stack_top;
 
-void init_pmp();
+// Returns the end of RAM address, which is then passed to init_paged_memory.
+void* init_pmp();
 
 #endif // ifndef _PMP_H
