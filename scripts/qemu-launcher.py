@@ -69,7 +69,7 @@ def write_gdb_files(binary, is_32bit, is_multicore):
             f.write('inferior 2\n')
             f.write('attach 2\n')
             f.write('set schedule-multiple\n')
-            f.write('set scheduler-locking on\n')
+            # f.write('set scheduler-locking on\n')
             f.write('thread 1.1\n')
 
 
