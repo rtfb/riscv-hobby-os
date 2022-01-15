@@ -1,8 +1,6 @@
 #include "proc.h"
 
-process_t proc_table[MAX_PROCS];
-int curr_proc = 0;
-int num_procs = 0;
+proc_table_t proc_table;
 trap_frame_t trap_frame;
 
 void init_process_table() {
@@ -12,7 +10,7 @@ void init_process_table() {
     // kernel_timer_tick, which will happen from the kernel land. We want to
     // know that so we can discard the kernel code pc that we get on that first
     // call.
-    curr_proc = -1;
+    proc_table.curr_proc = -1;
 }
 
 void init_global_trap_frame() {
@@ -41,21 +39,25 @@ void init_global_trap_frame() {
 // schedule_user_process() is only called from kernel_timer_tick(), and MRET is
 // called in interrupt_epilogue, after kernel_timer_tick() exits.
 void schedule_user_process() {
-    if (curr_proc < 0) {
+    acquire(&proc_table.lock);
+    if (proc_table.curr_proc < 0) {
         // compensate for curr_proc being initialized to -1 for the benefit of
         // identifying the very first kernel_timer_tick(), which gets a mepc
         // pointing to the kernel land, which we want to discard.
-        curr_proc = 0;
+        proc_table.curr_proc = 0;
     }
-    if (num_procs == 0) {
+    if (proc_table.num_procs == 0) {
+        release(&proc_table.lock);
         return;
     }
-    process_t *last_proc = &proc_table[curr_proc];
+    int curr_proc = proc_table.curr_proc;
+    process_t *last_proc = &proc_table.procs[curr_proc];
     curr_proc++;
-    if ((curr_proc >= MAX_PROCS) || (curr_proc >= num_procs)) {
+    if ((curr_proc >= MAX_PROCS) || (curr_proc >= proc_table.num_procs)) {
         curr_proc = 0;
     }
-    process_t *proc = &proc_table[curr_proc];
+    proc_table.curr_proc = curr_proc;
+    process_t *proc = &proc_table.procs[curr_proc];
     if (last_proc->pid != proc->pid) {
         // the user process has changed: save the descending process's context
         // and load the ascending one's
@@ -66,4 +68,5 @@ void schedule_user_process() {
     }
     set_jump_address(proc->pc);
     set_user_mode();
+    release(&proc_table.lock);
 }

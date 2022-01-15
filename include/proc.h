@@ -3,6 +3,7 @@
 
 #include "riscv.h"
 #include "sys.h"
+#include "spinlock.h"
 
 #define MAX_PROCS 2
 
@@ -20,9 +21,14 @@ typedef struct process_s {
     trap_frame_t context;
 } process_t;
 
-extern process_t proc_table[MAX_PROCS];
-extern int num_procs;
-extern int curr_proc;
+typedef struct proc_table_s {
+    spinlock lock;
+    process_t procs[MAX_PROCS];
+    int num_procs;
+    int curr_proc;
+} proc_table_t;
+
+extern proc_table_t proc_table;
 
 // trap_frame is the piece of memory to hold all user registers when we enter
 // the trap. When the scheduler picks the new process to run, it will save

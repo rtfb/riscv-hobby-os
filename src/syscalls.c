@@ -55,7 +55,10 @@ void sys_write() {
 }
 
 uint32_t sys_getpid() {
-    return proc_table[curr_proc].pid;
+    acquire(&proc_table.lock);
+    uint32_t pid = proc_table.procs[proc_table.curr_proc].pid;
+    release(&proc_table.lock);
+    return pid;
 }
 
 void sys_placeholder() {

@@ -69,9 +69,11 @@ void kernel_timer_tick() {
     disable_interrupts();
     kprintf("K");
     void* userland_pc = (void*)get_mepc();
-    if (userland_pc && curr_proc >= 0) {
-        proc_table[curr_proc].pc = userland_pc;
+    acquire(&proc_table.lock);
+    if (userland_pc && proc_table.curr_proc >= 0) {
+        proc_table.procs[proc_table.curr_proc].pc = userland_pc;
     }
+    release(&proc_table.lock);
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     schedule_user_process();
     enable_interrupts();
