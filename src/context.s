@@ -46,6 +46,14 @@ k_interrupt_timer:
         csrrw   t6, mscratch, t6
         sx      t6, 30, (a0)
 
+        # set kernel stack pointer:
+        la      t0, stack_top           # set it at stack_top for hart0,
+        csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
+        li      t2, 512
+        mul     t1, t1, t2
+        sub     t0, t0, t1
+        mv      sp, t0
+
         # kernel_timer_tick will run the scheduler and will have populated
         # trap_frame with the context of the target user process.
         # ret_to_user will restore the registers from it.

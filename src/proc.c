@@ -1,16 +1,21 @@
 #include "proc.h"
+#include "pagealloc.h"
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;
 
 void init_process_table() {
-    init_test_processes();
     // init curr_proc to -1, it will get incremented to 0 on the first
     // scheduler run. This will also help to identify the very first call to
     // kernel_timer_tick, which will happen from the kernel land. We want to
     // know that so we can discard the kernel code pc that we get on that first
     // call.
     proc_table.curr_proc = -1;
+    proc_table.pid_counter = 0;
+    for (int i = 0; i < MAX_PROCS; i++) {
+        proc_table.procs[i].state = PROC_STATE_AVAILABLE;
+    }
+    init_test_processes();
 }
 
 void init_global_trap_frame() {
@@ -40,33 +45,124 @@ void init_global_trap_frame() {
 // called in interrupt_epilogue, after kernel_timer_tick() exits.
 void schedule_user_process() {
     acquire(&proc_table.lock);
-    if (proc_table.curr_proc < 0) {
+    int curr_proc = proc_table.curr_proc;
+    process_t *last_proc = 0;
+    if (curr_proc < 0) {
         // compensate for curr_proc being initialized to -1 for the benefit of
         // identifying the very first kernel_timer_tick(), which gets a mepc
         // pointing to the kernel land, which we want to discard.
-        proc_table.curr_proc = 0;
+        curr_proc = 0;
+    } else {
+        last_proc = &proc_table.procs[curr_proc];
     }
     if (proc_table.num_procs == 0) {
         release(&proc_table.lock);
         return;
     }
-    int curr_proc = proc_table.curr_proc;
-    process_t *last_proc = &proc_table.procs[curr_proc];
+
+    // TODO: move that section to a separate func that iterates all procs and
+    // looks for a slot with PROC_STATE_READY
     curr_proc++;
     if ((curr_proc >= MAX_PROCS) || (curr_proc >= proc_table.num_procs)) {
         curr_proc = 0;
     }
+
     proc_table.curr_proc = curr_proc;
     process_t *proc = &proc_table.procs[curr_proc];
-    if (last_proc->pid != proc->pid) {
+    if (last_proc == 0) {
+        copy_context(&trap_frame, &proc->context);
+    } else if (last_proc->pid != proc->pid) {
         // the user process has changed: save the descending process's context
         // and load the ascending one's
-        for (int i = 0; i < 32; i++) {
-            last_proc->context.regs[i] = trap_frame.regs[i];
-            trap_frame.regs[i] = proc->context.regs[i];
-        }
+        copy_context(&last_proc->context, &trap_frame);
+        copy_context(&trap_frame, &proc->context);
     }
     set_jump_address(proc->pc);
     set_user_mode();
     release(&proc_table.lock);
+}
+
+uint32_t proc_fork() {
+    // allocate stack. Fail early if we're out of memory:
+    void* sp = allocate_page();
+    if (!sp) {
+        // TODO: set errno
+        return -1;
+    }
+
+    process_t* parent = current_proc();
+    acquire(&parent->lock);
+    parent->pc = get_mepc();
+    parent->pc += 4; // TODO: shouldn't this be +=2 on a compressed ISA? But it
+                     // works fine, though... Need to step this through with a
+                     // debugger.
+    copy_context(&parent->context, &trap_frame);
+
+    process_t* child = alloc_process();
+    if (!child) {
+        release(&parent->lock);
+        return -1;
+    }
+    child->pid = alloc_pid();
+    child->parent_pid = parent->pid;
+    child->pc = parent->pc;
+    child->stack_page = sp;
+    copy_page(child->stack_page, parent->stack_page);
+    copy_context(&child->context, &parent->context);
+
+    // overwrite the sp with the same offset as parent->sp, but within the child stack:
+    // regsize_t offset = (regsize_t)(parent->stack_page - parent->context.regs[REG_SP]);
+    regsize_t offset = parent->context.regs[REG_SP] - (regsize_t)parent->stack_page;
+    // regsize_t offset = trap_frame.regs[REG_SP] - (regsize_t)parent->stack_page;
+    child->context.regs[REG_SP] = (regsize_t)(sp + offset);
+    offset = parent->context.regs[REG_FP] - (regsize_t)parent->stack_page;
+    child->context.regs[REG_FP] = (regsize_t)(sp + offset);
+    // child's return value should be a 0 pid:
+    child->context.regs[REG_A0] = 0;
+    release(&parent->lock);
+    release(&child->lock);
+    trap_frame.regs[REG_A0] = child->pid;
+    return child->pid;
+}
+
+// Let's start with a trivial implementation: a forever increasing counter.
+uint32_t alloc_pid() {
+    acquire(&proc_table.lock);
+    uint32_t pid = proc_table.pid_counter;
+    proc_table.pid_counter++;
+    release(&proc_table.lock);
+    return pid;
+}
+
+process_t* alloc_process() {
+    acquire(&proc_table.lock);
+    for (int i = 0; i < MAX_PROCS; i++) {
+        if (i == proc_table.curr_proc) {
+            continue;
+        }
+        if (proc_table.procs[i].state == PROC_STATE_AVAILABLE) {
+            process_t* proc = &proc_table.procs[i];
+            acquire(&proc->lock);
+            proc->state = PROC_STATE_READY;
+            proc_table.num_procs++;
+            release(&proc_table.lock);
+            return proc;
+        }
+    }
+    // TODO: set errno
+    release(&proc_table.lock);
+    return 0;
+}
+
+process_t* current_proc() {
+    acquire(&proc_table.lock);
+    process_t* proc = &proc_table.procs[proc_table.curr_proc];
+    release(&proc_table.lock);
+    return proc;
+}
+
+void copy_context(trap_frame_t* dst, trap_frame_t* src) {
+    for (int i = 0; i < 32; i++) {
+        dst->regs[i] = src->regs[i];
+    }
 }

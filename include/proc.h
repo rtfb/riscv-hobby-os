@@ -5,20 +5,45 @@
 #include "sys.h"
 #include "spinlock.h"
 
-#define MAX_PROCS 2
+#define MAX_PROCS 4
 
 // REG_* constants are indexes into trap_frame_t.regs. (Add here as needed)
 #define REG_RA 0
 #define REG_SP 1
+#define REG_FP 7
+#define REG_A0 9
+
+// PROC_STATE_AVAILABLE signifies an unoccupied slot in the process table, it's
+// available for use by a new process.
+#define PROC_STATE_AVAILABLE 0
+
+// PROC_STATE_READY means the process is ready to be scheduled.
+#define PROC_STATE_READY 1
+
+// PROC_STATE_RUNNING means this process was given the time to run by the
+// scheduler.
+// #define PROC_STATE_RUNNING 2
 
 typedef struct trap_frame_s {
     regsize_t regs[32];
 } trap_frame_t;
 
 typedef struct process_s {
+    spinlock lock;
     uint32_t pid;
+    uint32_t parent_pid;
     void *pc;
     trap_frame_t context;
+
+    // stack_page points to the base of the page allocated for stack (i.e. it's
+    // the value returned by allocate_page()). We need to save it so that we
+    // can later pass it to release_page(), as well as when copying the entire
+    // stack around, e.g. during fork().
+    void *stack_page;
+
+    // state contains the state of the process, as well as the process table
+    // slot itself (e.g. signifying the availability of the slot).
+    uint32_t state;
 } process_t;
 
 typedef struct proc_table_s {
@@ -26,6 +51,7 @@ typedef struct proc_table_s {
     process_t procs[MAX_PROCS];
     int num_procs;
     int curr_proc;
+    uint32_t pid_counter;
 } proc_table_t;
 
 extern proc_table_t proc_table;
@@ -53,5 +79,27 @@ void schedule_user_process();
 // init_global_trap_frame makes sure that mscratch contains a pointer to
 // trap_frame before the first userland process gets scheduled.
 void init_global_trap_frame();
+
+// proc_fork implements the fork syscall. It will create a new entry in the
+// process table, prepare it for being scheduled and return to the parent
+// process the pid of the child.
+uint32_t proc_fork();
+
+// alloc_process finds an available slot in the process table and returns its
+// address. It will immediately acquire the process lock when it finds the
+// slot. It is the caller's responsibility to release it when it's done with
+// it.
+process_t* alloc_process();
+
+// alloc_pid returns a unique process identifier suitable to assign to a newly
+// created process.
+uint32_t alloc_pid();
+
+// current_proc returns the userland process that's currently scheduled for
+// running.
+process_t* current_proc();
+
+// copy_context copies the contents for src into dst.
+void copy_context(trap_frame_t* dst, trap_frame_t* src);
 
 #endif // ifndef _PROC_H_

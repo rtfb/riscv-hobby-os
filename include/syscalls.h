@@ -5,7 +5,7 @@
 
 void sys_restart();
 void sys_exit();
-void sys_fork();
+uint32_t sys_fork();
 void sys_read();
 void sys_write();
 

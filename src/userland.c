@@ -44,6 +44,7 @@ int _userland u_main() {
 
     int counter = 0;
     int flipper = 0;
+    int num_flips = 0;
     char pidstr[2];
     uint32_t pid = getpid();
     pidstr[0] = '0' + (char)pid;
@@ -56,6 +57,24 @@ int _userland u_main() {
                 sys_puts(pidstr);
             } else {
                 sys_puts("|");
+                num_flips++;
+            }
+        }
+        if (num_flips == 3) {
+            uint32_t pid = fork();
+            if (pid == -1) {
+                sys_puts("ERROR!\n");
+                // don't fork again:
+                num_flips++;
+            } else if (pid == 0) { // child
+                // don't fork again:
+                num_flips++;
+                // replace the pid to be printed:
+                pid = getpid();
+                pidstr[0] = '0' + (char)pid;
+            } else { // parent
+                // don't fork again:
+                num_flips++;
             }
         }
     }

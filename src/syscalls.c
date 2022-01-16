@@ -42,8 +42,8 @@ void sys_exit() {
     // TODO: implement
 }
 
-void sys_fork() {
-    // TODO: implement
+uint32_t sys_fork() {
+    return proc_fork();
 }
 
 void sys_read() {
@@ -58,6 +58,7 @@ uint32_t sys_getpid() {
     acquire(&proc_table.lock);
     uint32_t pid = proc_table.procs[proc_table.curr_proc].pid;
     release(&proc_table.lock);
+    trap_frame.regs[REG_A0] = pid;
     return pid;
 }
 

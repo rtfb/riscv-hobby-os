@@ -56,3 +56,11 @@ void release_page(void *ptr) {
     release(&paged_memory.lock);
     // TODO: panic here: can't find such page
 }
+
+void copy_page(void* dst, void* src) {
+    regsize_t* pdst = (regsize_t*)dst;
+    regsize_t* psrc = (regsize_t*)src;
+    for (int i = 0; i < PAGE_SIZE/sizeof(regsize_t); i++) {
+        *pdst++ = *psrc++;
+    }
+}

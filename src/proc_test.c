@@ -9,20 +9,27 @@ void init_test_processes() {
         return;
     }
     proc_table.num_procs = 2;
-    proc_table.procs[0].pid = 0;
-    proc_table.procs[0].pc = user_entry_point;
+    process_t* p0 = &proc_table.procs[0];
+    p0->pid = alloc_pid();
+    p0->pc = user_entry_point;
+    p0->state = PROC_STATE_READY;
     void* sp = allocate_page();
     if (!sp) {
         // TODO: panic
         return;
     }
-    proc_table.procs[0].context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
-    proc_table.procs[1].pid = 1;
-    proc_table.procs[1].pc = user_entry_point2;
+    p0->stack_page = sp;
+    p0->context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
+
+    process_t* p1 = &proc_table.procs[1];
+    p1->pid = alloc_pid();
+    p1->pc = user_entry_point2;
+    p1->state = PROC_STATE_READY;
     sp = allocate_page();
     if (!sp) {
         // TODO: panic
         return;
     }
-    proc_table.procs[1].context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
+    p1->stack_page = sp;
+    p1->context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
 }
