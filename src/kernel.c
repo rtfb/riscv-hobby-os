@@ -58,8 +58,7 @@ void kinit(uintptr_t fdt_header_addr) {
 // and is stored in 0:1 bits of mtvect CSR (mtvec.mode)
 void init_trap_vector() {
     extern void* trap_vector;  // defined in boot.s
-    unsigned long addr = (unsigned long)&trap_vector;
-    set_mtvec((void*)(addr | TRAP_VECTORED));
+    set_mtvec(&trap_vector);
 }
 
 // kernel_timer_tick will be called from timer to give kernel time to do its

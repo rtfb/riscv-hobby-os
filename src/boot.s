@@ -183,6 +183,66 @@ early_trap_vector:
 .globl trap_vector
 .balign 64
 trap_vector:                            # 3.1.20 Machine Cause Register (mcause), Table 3.6: Machine cause register (mcause) values after trap.
+        # swap t6 and mscratch. t6 now points to trap_frame and the
+        # actual value of t6 is saved in mscratch until we can restore it a bit
+        # later:
+        csrrw   t6, mscratch, t6
+
+        # save all user registers in trap_frame:
+        sx       x1,  0, (t6)
+        sx       x2,  1, (t6)
+        sx       x3,  2, (t6)
+        sx       x4,  3, (t6)
+        sx       x5,  4, (t6)
+        sx       x6,  5, (t6)
+        sx       x7,  6, (t6)
+        sx       x8,  7, (t6)
+        sx       x9,  8, (t6)
+        sx      x10,  9, (t6)
+        sx      x11, 10, (t6)
+        sx      x12, 11, (t6)
+        sx      x13, 12, (t6)
+        sx      x14, 13, (t6)
+        sx      x15, 14, (t6)
+        sx      x16, 15, (t6)
+        sx      x17, 16, (t6)
+        sx      x18, 17, (t6)
+        sx      x19, 18, (t6)
+        sx      x20, 19, (t6)
+        sx      x21, 20, (t6)
+        sx      x22, 21, (t6)
+        sx      x23, 22, (t6)
+        sx      x24, 23, (t6)
+        sx      x25, 24, (t6)
+        sx      x26, 25, (t6)
+        sx      x27, 26, (t6)
+        sx      x28, 27, (t6)
+        sx      x29, 28, (t6)
+        sx      x30, 29, (t6)
+
+        # x31 is the same as t6, so store it below with a bit of juggling:
+        mv      t0, t6
+        csrrw   t6, mscratch, t6
+        sx      t6, 30, (t0)
+
+        # set kernel stack pointer:
+        la      t0, stack_top           # set it at stack_top for hart0,
+        csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
+        li      t2, 512
+        mul     t1, t1, t2
+        sub     t0, t0, t1
+        mv      sp, t0
+
+        csrr    t0, mcause
+        bgez    t0, exception_dispatch
+
+        slli    t0, t0, 2               # clears the top bit and multiplies the interrupt index by 4 at the same time
+        la      t1, interrupt_vector
+        add     t0, t1, t0
+        jalr    t0
+
+interrupt_vector:
+.balign 4
         j exception_dispatch            #  0: user software interrupt OR _exception_ (See note in 3.1.12: Machine Trap-Vector Base-Address Register)
 .balign 4
         j interrupt_noop                #  1: supervisor software interrupt
@@ -246,60 +306,6 @@ exception_vector:                       # 3.1.20 Machine Cause Register (mcause)
 exception_vector_end:
 
 exception_dispatch:
-        # swap t6 and mscratch. t6 now points to trap_frame and the
-        # actual value of t6 is saved in mscratch until we can restore it a bit
-        # later:
-        csrrw   t6, mscratch, t6
-
-        # save all user registers in trap_frame:
-        sx       x1,  0, (t6)
-        sx       x2,  1, (t6)
-        sx       x3,  2, (t6)
-        sx       x4,  3, (t6)
-        sx       x5,  4, (t6)
-        sx       x6,  5, (t6)
-        sx       x7,  6, (t6)
-        sx       x8,  7, (t6)
-        sx       x9,  8, (t6)
-        sx      x10,  9, (t6)
-        sx      x11, 10, (t6)
-        sx      x12, 11, (t6)
-        sx      x13, 12, (t6)
-        sx      x14, 13, (t6)
-        sx      x15, 14, (t6)
-        sx      x16, 15, (t6)
-        sx      x17, 16, (t6)
-        sx      x18, 17, (t6)
-        sx      x19, 18, (t6)
-        sx      x20, 19, (t6)
-        sx      x21, 20, (t6)
-        sx      x22, 21, (t6)
-        sx      x23, 22, (t6)
-        sx      x24, 23, (t6)
-        sx      x25, 24, (t6)
-        sx      x26, 25, (t6)
-        sx      x27, 26, (t6)
-        sx      x28, 27, (t6)
-        sx      x29, 28, (t6)
-        sx      x30, 29, (t6)
-
-        # x31 is the same as t6, so store it below with a bit of juggling:
-        mv      t0, t6
-        csrrw   t6, mscratch, t6
-        sx      t6, 30, (t0)
-
-        # set kernel stack pointer:
-        la      t0, stack_top           # set it at stack_top for hart0,
-        csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
-        li      t2, 512
-        mul     t1, t1, t2
-        sub     t0, t0, t1
-        mv      sp, t0
-
-        # stackalloc_x 32                 # allocate enough space to potentially store _all_ registers
-                                        # in case the following handlers would need to save clobbered state
-        # sx      x5, 5, (sp)             # t0 :: x5
-        # sx      x6, 6, (sp)             # t1 :: x6
         la      t0, exception_vector
         csrr    t1, mcause
         slli    t1, t1, 2
@@ -319,10 +325,6 @@ syscall_dispatch:                       # a7 contains syscall index
         lx      t1, 0, (t0)             # dereference that pointer into a function address
         jalr    t1                      # call a function at that address
         j       syscall_epilogue
-        # csrr    t0, mepc                # mepc points to the instruction that raised an exception
-        # addi    t0, t0, 4               # move mepc by the size of a single RISC-V instruction (always 4 bytes in RV32, RV64, RV128)
-        # csrw    mepc, t0                # to point to the next instruction in order to continue execution.
-        # j ret_to_user
 
 exception_epilogue:
 .if HALT_ON_EXCEPTION == 1
@@ -332,11 +334,6 @@ syscall_epilogue:
         csrr    t0, mepc                # mepc points to the instruction that raised an exception
         addi    t0, t0, 4               # move mepc by the size of a single RISC-V instruction (always 4 bytes in RV32, RV64, RV128)
         csrw    mepc, t0                # to point to the next instruction in order to continue execution.
-
-        # lx      x5, 5, (sp)             # t0 :: x5
-        # lx      x6, 6, (sp)             # t1 :: x6
-        # stackfree_x 32                  # see exception_dispatch, where we allocated 32 for _all_ registers
-        # mret
         j ret_to_user
 
 interrupt_epilogue:
