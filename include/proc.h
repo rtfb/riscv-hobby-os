@@ -22,7 +22,7 @@
 
 // PROC_STATE_RUNNING means this process was given the time to run by the
 // scheduler.
-// #define PROC_STATE_RUNNING 2
+#define PROC_STATE_RUNNING 2
 
 typedef struct trap_frame_s {
     regsize_t regs[32];
@@ -75,6 +75,14 @@ extern trap_frame_t trap_frame;
 void init_test_processes();
 void init_process_table();
 void schedule_user_process();
+
+// find_ready_proc iterates over the proc table looking for the first available
+// proc that's in a PROC_STATE_READY state. Wraps around and starts from zero
+// until reaches the same index it started with, in which case it returns the
+// same process. Sets curr_proc to its index and returns the process.
+//
+// MUST be called with proc_table.lock held.
+process_t* find_ready_proc(int curr_proc);
 
 // init_global_trap_frame makes sure that mscratch contains a pointer to
 // trap_frame before the first userland process gets scheduled.

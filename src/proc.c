@@ -60,26 +60,40 @@ void schedule_user_process() {
         return;
     }
 
-    // TODO: move that section to a separate func that iterates all procs and
-    // looks for a slot with PROC_STATE_READY
-    curr_proc++;
-    if ((curr_proc >= MAX_PROCS) || (curr_proc >= proc_table.num_procs)) {
-        curr_proc = 0;
-    }
+    process_t *proc = find_ready_proc(curr_proc);
+    acquire(&proc->lock);
+    proc->state = PROC_STATE_RUNNING;
 
-    proc_table.curr_proc = curr_proc;
-    process_t *proc = &proc_table.procs[curr_proc];
     if (last_proc == 0) {
         copy_context(&trap_frame, &proc->context);
     } else if (last_proc->pid != proc->pid) {
         // the user process has changed: save the descending process's context
         // and load the ascending one's
+        acquire(&last_proc->lock);
         copy_context(&last_proc->context, &trap_frame);
+        last_proc->state = PROC_STATE_READY;
+        release(&last_proc->lock);
         copy_context(&trap_frame, &proc->context);
     }
     set_jump_address(proc->pc);
-    set_user_mode();
+    release(&proc->lock);
     release(&proc_table.lock);
+    set_user_mode();
+}
+
+process_t* find_ready_proc(int curr_proc) {
+    int orig_curr_proc = curr_proc;
+    do {
+        curr_proc++;
+        if (curr_proc >= MAX_PROCS) {
+            curr_proc = 0;
+        }
+        if (proc_table.procs[curr_proc].state == PROC_STATE_READY) {
+            break;
+        }
+    } while (curr_proc != orig_curr_proc);
+    proc_table.curr_proc = curr_proc;
+    return &proc_table.procs[curr_proc];
 }
 
 uint32_t proc_fork() {
