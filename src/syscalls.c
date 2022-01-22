@@ -39,7 +39,7 @@ void sys_restart() {
 }
 
 void sys_exit() {
-    // TODO: implement
+    proc_exit();
 }
 
 uint32_t sys_fork() {

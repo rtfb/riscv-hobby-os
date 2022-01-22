@@ -121,6 +121,7 @@ int _userland u_main2() {
 
     int counter = 0;
     int flipper = 0;
+    int num_flips = 0;
     char pidstr[2];
     uint32_t pid = getpid();
     pidstr[0] = '0' + (char)pid;
@@ -133,7 +134,13 @@ int _userland u_main2() {
                 sys_puts(pidstr);
             } else {
                 sys_puts("o");
+                num_flips++;
             }
+        }
+        if (num_flips == 31) {
+            sys_puts("31");
+            num_flips++;
+            exit();
         }
     }
 

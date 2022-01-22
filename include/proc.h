@@ -93,6 +93,11 @@ void init_global_trap_frame();
 // process the pid of the child.
 uint32_t proc_fork();
 
+// proc_exit implements the exit syscall. It will remove the process from the
+// table, release all the resources taken by the process and call the
+// scheduler.
+void proc_exit();
+
 // alloc_process finds an available slot in the process table and returns its
 // address. It will immediately acquire the process lock when it finds the
 // slot. It is the caller's responsibility to release it when it's done with

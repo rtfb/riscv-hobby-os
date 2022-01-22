@@ -54,6 +54,12 @@ void schedule_user_process() {
         curr_proc = 0;
     } else {
         last_proc = &proc_table.procs[curr_proc];
+        if (last_proc->state == PROC_STATE_AVAILABLE) {
+            // schedule_user_process may have been called from proc_exit, which
+            // kills the process in curr_proc slot, so if that's the case,
+            // pretend there wasn't any last_proc:
+            last_proc = 0;
+        }
     }
     if (proc_table.num_procs == 0) {
         release(&proc_table.lock);
@@ -105,6 +111,11 @@ uint32_t proc_fork() {
     }
 
     process_t* parent = current_proc();
+    if (parent == 0) {
+        // this should never happen, some process called us, right?
+        // TODO: panic
+        return -1;
+    }
     acquire(&parent->lock);
     parent->pc = get_mepc();
     parent->pc += 4; // TODO: shouldn't this be +=2 on a compressed ISA? But it
@@ -170,6 +181,9 @@ process_t* alloc_process() {
 
 process_t* current_proc() {
     acquire(&proc_table.lock);
+    if (proc_table.num_procs == 0) {
+        return 0;
+    }
     process_t* proc = &proc_table.procs[proc_table.curr_proc];
     release(&proc_table.lock);
     return proc;
@@ -179,4 +193,22 @@ void copy_context(trap_frame_t* dst, trap_frame_t* src) {
     for (int i = 0; i < 32; i++) {
         dst->regs[i] = src->regs[i];
     }
+}
+
+void proc_exit() {
+    process_t* proc = current_proc();
+    if (proc == 0) {
+        // this should never happen, some process called us, right?
+        // TODO: panic
+        return;
+    }
+    acquire(&proc->lock);
+    release_page(proc->stack_page);
+    proc->state = PROC_STATE_AVAILABLE;
+    release(&proc->lock);
+
+    acquire(&proc_table.lock);
+    proc_table.num_procs--;
+    release(&proc_table.lock);
+    schedule_user_process();
 }

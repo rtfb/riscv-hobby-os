@@ -7,6 +7,15 @@
 
 .balign 4
 .section .user_text
+.globl exit
+exit:
+        stackalloc_x 1
+        sx      ra, 0, (sp)
+        macro_syscall 1
+        lx      ra, 0, (sp)
+        stackfree_x 1
+        ret
+
 .globl fork
 fork:
         stackalloc_x 1
