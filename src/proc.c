@@ -174,7 +174,7 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     }
     acquire(&proc->lock);
     proc->pc = userland_main_funcs[prog_num];
-    proc->stack_page = sp;
+    proc->stack_page = sp; // XXX: release the proc->stack_page before assigning the new one?
     proc->context.regs[REG_RA] = (regsize_t)proc->pc;
     proc->context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
     proc->context.regs[REG_FP] = (regsize_t)(sp + PAGE_SIZE);

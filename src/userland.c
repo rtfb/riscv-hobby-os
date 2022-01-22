@@ -7,44 +7,29 @@ uint64_t get_clock_cycles();
 int m_read_hart_id();
 
 int _userland u_main_init(int argc, char* argv[]) {
+    sys_puts("\nInit userland!\n");
+    uint32_t pid = fork();
+    if (pid == -1) {
+        sys_puts("ERROR!\n");
+    } else if (pid == 0) { // child
+        uint32_t code = execv("1", 0); // "1" == u_main
+        // normally exec doesn't return, but if it did, it's an error:
+        sys_puts("ERROR: execv\n");
+    } else { // parent
+        uint32_t pid = fork();
+        if (pid == -1) {
+            sys_puts("ERROR!\n");
+        } else if (pid == 0) { // child
+            uint32_t code = execv("2", 0); // "2" == u_main2
+            // normally exec doesn't return, but if it did, it's an error:
+            sys_puts("ERROR: execv\n");
+        } else { // parent
+            exit();
+        }
+    }
 }
 
 int _userland u_main() {
-    sys_puts("Hello from U-mode!\n");
-
-    sys_puts("Read user CSR: ");
-    uint64_t clock_cycles = get_clock_cycles();
-    sys_puts("OK\n");
-
-    /*
-    sys_puts("Read from memory: ");
-    int word = *a_string_in_user_mem_ptr;
-    sys_puts("OK\n");
-
-    sys_puts("Read from unaligned memory: ");
-    char *cptr = (char*)a_string_in_user_mem_ptr;
-    cptr++;
-    char c = *cptr;
-    sys_puts("OK\n");
-
-    sys_puts("Read/write stack: ");
-    push_pop_stack();
-    sys_puts("OK\n");
-
-    sys_puts("Illegal write to read-only memory: ");
-    // XXX: this ought to fail, but succeeds in QEMU for some reason:
-    *a_string_in_user_mem_ptr = 7;
-    sys_puts("OK\n");
-
-    sys_puts("Illegal read from protected CSR: ");
-    // causes Illegal instruction (mcause=2) in User mode:
-    int hart_id = m_read_hart_id();
-
-    sys_puts("Illegal read from protected memory: ");
-    // causes Load access fault (mcause=5) in User mode:
-    word = *msg_m_hello_ptr;
-    */
-
     int counter = 0;
     int flipper = 0;
     int num_flips = 0;
@@ -75,7 +60,9 @@ int _userland u_main() {
                 // replace the pid to be printed:
                 pid = getpid();
                 pidstr[0] = '0' + (char)pid;
-                execv("3", 0); // "3" == u_main3
+                uint32_t code = execv("3", 0); // "3" == u_main3
+                // normally exec doesn't return, but if it did, it's an error:
+                sys_puts("ERROR: execv\n");
             } else { // parent
                 // don't fork again:
                 num_flips++;
@@ -88,41 +75,6 @@ int _userland u_main() {
 }
 
 int _userland u_main2() {
-    sys_puts("Hello from U-mode 2!\n");
-
-    sys_puts("Read user CSR: ");
-    uint64_t clock_cycles = get_clock_cycles();
-    sys_puts("OK\n");
-
-    /*
-    sys_puts("Read from memory: ");
-    int word = *a_string_in_user_mem_ptr;
-    sys_puts("OK\n");
-
-    sys_puts("Read from unaligned memory: ");
-    char *cptr = (char*)a_string_in_user_mem_ptr;
-    cptr++;
-    char c = *cptr;
-    sys_puts("OK\n");
-
-    sys_puts("Read/write stack: ");
-    push_pop_stack();
-    sys_puts("OK\n");
-
-    sys_puts("Illegal write to read-only memory: ");
-    // XXX: this ought to fail, but succeeds in QEMU for some reason:
-    *a_string_in_user_mem_ptr = 7;
-    sys_puts("OK\n");
-
-    sys_puts("Illegal read from protected CSR: ");
-    // causes Illegal instruction (mcause=2) in User mode:
-    int hart_id = m_read_hart_id();
-
-    sys_puts("Illegal read from protected memory: ");
-    // causes Load access fault (mcause=5) in User mode:
-    word = *msg_m_hello_ptr;
-    */
-
     int counter = 0;
     int flipper = 0;
     int num_flips = 0;
