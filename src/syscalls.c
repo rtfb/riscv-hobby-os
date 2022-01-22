@@ -22,7 +22,7 @@ void __attribute__((__section__(".text#"))) *syscall_vector[] = {
 /*  8 */     sys_placeholder,
 /*  9 */     sys_placeholder,
 /* 10 */     sys_placeholder,
-/* 11 */     sys_placeholder,
+/* 11 */     sys_execv,
 /* 12 */     sys_placeholder,
 /* 13 */     sys_placeholder,
 /* 14 */     sys_placeholder,
@@ -52,6 +52,10 @@ void sys_read() {
 
 void sys_write() {
     prints();
+}
+
+uint32_t sys_execv(char const* filename, char const* argv[]) {
+    return proc_execv(filename, argv);
 }
 
 uint32_t sys_getpid() {

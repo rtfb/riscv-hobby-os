@@ -34,6 +34,15 @@ sys_puts:
         stackfree_x 1
         ret
 
+.globl execv
+execv:
+        stackalloc_x 1
+        sx      ra, 0, (sp)
+        macro_syscall 11
+        lx      ra, 0, (sp)
+        stackfree_x 1
+        ret
+
 .globl getpid
 getpid:
         stackalloc_x 1

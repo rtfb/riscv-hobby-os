@@ -6,6 +6,9 @@
 uint64_t get_clock_cycles();
 int m_read_hart_id();
 
+int _userland u_main_init(int argc, char* argv[]) {
+}
+
 int _userland u_main() {
     sys_puts("Hello from U-mode!\n");
 
@@ -72,6 +75,7 @@ int _userland u_main() {
                 // replace the pid to be printed:
                 pid = getpid();
                 pidstr[0] = '0' + (char)pid;
+                execv("3", 0); // "3" == u_main3
             } else { // parent
                 // don't fork again:
                 num_flips++;
@@ -141,6 +145,29 @@ int _userland u_main2() {
             sys_puts("31");
             num_flips++;
             exit();
+        }
+    }
+
+    sys_puts("C Done.\n");
+    return 0;
+}
+
+int _userland u_main3() {
+    int counter = 0;
+    int flipper = 0;
+    char pidstr[2];
+    uint32_t pid = getpid();
+    pidstr[0] = '0' + (char)pid;
+    pidstr[1] = 0;
+    while (1) {
+        counter++;
+        if (counter % PRINT_FREQ == 0) {
+            flipper++;
+            if ((flipper & 1) == 0) {
+                sys_puts(pidstr);
+            } else {
+                sys_puts(".");
+            }
         }
     }
 

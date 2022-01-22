@@ -12,6 +12,7 @@
 #define REG_SP 1
 #define REG_FP 7
 #define REG_A0 9
+#define REG_A1 10
 
 // PROC_STATE_AVAILABLE signifies an unoccupied slot in the process table, it's
 // available for use by a new process.
@@ -23,6 +24,14 @@
 // PROC_STATE_RUNNING means this process was given the time to run by the
 // scheduler.
 #define PROC_STATE_RUNNING 2
+
+
+#define MAX_USERLAND_PROGS 10
+
+// defined in proc_test.c:
+extern void* userland_main_funcs[MAX_USERLAND_PROGS];
+extern int num_userland_progs;
+
 
 typedef struct trap_frame_s {
     regsize_t regs[32];
@@ -97,6 +106,14 @@ uint32_t proc_fork();
 // table, release all the resources taken by the process and call the
 // scheduler.
 void proc_exit();
+
+// proc_execv implements the exec system call. The 'v' suffix means the
+// arguments are passed vectorized, in an array of pointers to strings. The
+// last element in argv must be a NULL pointer.
+//
+// For now, the filename argument is expected to contain a one-digit number as
+// a single character, specifying the index into userland_main_funcs.
+uint32_t proc_execv(char const* filename, char const* argv[]);
 
 // alloc_process finds an available slot in the process table and returns its
 // address. It will immediately acquire the process lock when it finds the

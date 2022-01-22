@@ -8,6 +8,7 @@ extern void exit();
 extern uint32_t fork();
 // TODO: rename sys_puts to write()
 extern void sys_puts(char const* msg);
+extern uint32_t execv(char const* filename, char const* argv[]);
 extern uint32_t getpid();
 
 #endif // ifndef _USYSCALLS_H_

@@ -150,6 +150,42 @@ uint32_t proc_fork() {
     return child->pid;
 }
 
+uint32_t proc_execv(char const* filename, char const* argv[]) {
+    if (filename == 0) {
+        // TODO: set errno
+        return -1;
+    }
+    int prog_num = filename[0] - '0';
+    if (prog_num >= num_userland_progs) {
+        // TODO: set errno
+        return -1;
+    }
+    // allocate stack. Fail early if we're out of memory:
+    void* sp = allocate_page();
+    if (!sp) {
+        // TODO: set errno
+        return -1;
+    }
+    process_t* proc = current_proc();
+    if (proc == 0) {
+        // this should never happen, some process called us, right?
+        // TODO: panic
+        return -1;
+    }
+    acquire(&proc->lock);
+    proc->pc = userland_main_funcs[prog_num];
+    proc->stack_page = sp;
+    proc->context.regs[REG_RA] = (regsize_t)proc->pc;
+    proc->context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
+    proc->context.regs[REG_FP] = (regsize_t)(sp + PAGE_SIZE);
+    proc->context.regs[REG_A0] = 7; // TODO: set it to len(argv)
+    proc->context.regs[REG_A1] = (regsize_t)argv; // TODO: make a copy of it at some point?
+    copy_context(&trap_frame, &proc->context);
+    set_jump_address(proc->pc - 4); // set it to -4 because syscall_epilogue will add 4 to it
+    release(&proc->lock);
+    return 0;
+}
+
 // Let's start with a trivial implementation: a forever increasing counter.
 uint32_t alloc_pid() {
     acquire(&proc_table.lock);

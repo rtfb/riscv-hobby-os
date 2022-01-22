@@ -434,27 +434,6 @@ loop:      wfi                  # parked hart will sleep waiting for interrupt
                                         # the further experiments more predictable
 .globl user_payload
 user_payload:
-.globl user_entry_point
-user_entry_point:
-        nop                             # no-operation instructions here help to distinguish between
-        nop                             # illegal instruction -vs- page fault due to missing e(X)ecute access flag
-        nop                             #
-        nop                             # 4 nops instead of one, to align the code below on 0x10
-                                        # which makes instruction address easier to follow in case of an exception
-
-        call u_main
-        ret
-
-.globl user_entry_point2
-user_entry_point2:
-        nop                             # no-operation instructions here help to distinguish between
-        nop                             # illegal instruction -vs- page fault due to missing e(X)ecute access flag
-        nop                             #
-        nop                             # 4 nops instead of one, to align the code below on 0x10
-                                        # which makes instruction address easier to follow in case of an exception
-
-        call u_main2
-        ret
 
 a_string_in_user_mem:
         .string "This is a test string in user memory"
