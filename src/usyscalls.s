@@ -28,8 +28,8 @@ getpid:
 .globl fork
 fork:
         stackalloc_x 1
-        sx      ra, 1, (sp)
+        sx      ra, 0, (sp)
         macro_syscall 2
-        lx      ra, 1, (sp)
+        lx      ra, 0, (sp)
         stackfree_x 1
         ret
