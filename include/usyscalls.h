@@ -4,9 +4,9 @@
 // Declarations for userland end of the system calls. Implemented in
 // usyscalls.s.
 
+extern uint32_t fork();
 // TODO: rename sys_puts to write()
 extern void sys_puts(char const* msg);
 extern uint32_t getpid();
-extern uint32_t fork();
 
 #endif // ifndef _USYSCALLS_H_

@@ -7,6 +7,15 @@
 
 .balign 4
 .section .user_text
+.globl fork
+fork:
+        stackalloc_x 1
+        sx      ra, 0, (sp)
+        macro_syscall 2
+        lx      ra, 0, (sp)
+        stackfree_x 1
+        ret
+
 .globl sys_puts
 sys_puts:
         stackalloc_x 1
@@ -21,15 +30,6 @@ getpid:
         stackalloc_x 1
         sx      ra, 0, (sp)
         macro_syscall 20
-        lx      ra, 0, (sp)
-        stackfree_x 1
-        ret
-
-.globl fork
-fork:
-        stackalloc_x 1
-        sx      ra, 0, (sp)
-        macro_syscall 2
         lx      ra, 0, (sp)
         stackfree_x 1
         ret
