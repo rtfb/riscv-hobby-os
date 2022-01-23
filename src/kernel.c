@@ -4,6 +4,7 @@
 #include "proc.h"
 #include "fdt.h"
 #include "pagealloc.h"
+#include "uart.h"
 
 spinlock init_lock = 0;
 
@@ -16,6 +17,7 @@ void kinit(uintptr_t fdt_header_addr) {
         // TODO: support multi-core
         park_hart();
     }
+    uart_init();
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());
@@ -30,7 +32,6 @@ void kinit(uintptr_t fdt_header_addr) {
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     enable_interrupts();
     release(&init_lock);
-
     // after kinit() is done, halt this hart until the timer gets called, all
     // the remaining kernel ops will be orchestrated from the timer
     park_hart();
@@ -66,7 +67,7 @@ void init_trap_vector() {
 // run.
 void kernel_timer_tick() {
     disable_interrupts();
-    kprintf("K");
+    // kprintf("K");
     void* userland_pc = (void*)get_mepc();
     acquire(&proc_table.lock);
     if (userland_pc && proc_table.curr_proc >= 0) {

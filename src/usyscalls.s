@@ -25,6 +25,15 @@ fork:
         stackfree_x 1
         ret
 
+.globl read
+read:
+        stackalloc_x 1
+        sx      ra, 0, (sp)
+        macro_syscall 3
+        lx      ra, 0, (sp)
+        stackfree_x 1
+        ret
+
 .globl sys_puts
 sys_puts:
         stackalloc_x 1

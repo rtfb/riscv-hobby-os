@@ -2,6 +2,7 @@
 
 #include "syscalls.h"
 #include "proc.h"
+#include "uart.h"
 
 // for fun let's pretend syscall table is kinda like 32bit Linux on x86,
 // /usr/include/asm/unistd_32.h: __NR_restart_syscall 0, __NR_exit 1, _NR_fork 2, __NR_read 3, __NR_write 4
@@ -46,8 +47,24 @@ uint32_t sys_fork() {
     return proc_fork();
 }
 
-void sys_read() {
-    // TODO: implement
+int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize) {
+    // ignore fd and default to reading from UART for now, as there's nowhere
+    // else to read from
+    int32_t nread = 0;
+    for (;;) {
+        if (nread >= bufsize) {
+            break;
+        }
+        char ch = uart_readchar();
+        buf[nread] = ch;
+        nread++;
+        uart_writechar(ch); // echo back to console
+        if (ch == '\r') {
+            break;
+        }
+    }
+    trap_frame.regs[REG_A0] = nread;
+    return nread;
 }
 
 void sys_write() {

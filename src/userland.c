@@ -1,5 +1,6 @@
 #include "sys.h"
 #include "userland.h"
+#include "string.h"
 
 #define PRINT_FREQ ONE_SECOND
 
@@ -124,6 +125,83 @@ int _userland u_main3() {
     }
 
     sys_puts("C Done.\n");
+    return 0;
+}
+
+int min(int a, int b) {
+    if (a < b) {
+        return a;
+    }
+    return b;
+}
+
+int _userland u_main_shell(int argc, char* argv[]) {
+    sys_puts("\nInit userland!\n");
+    /*
+    sys_puts("Type something: ");
+    char buf[16];
+    int32_t nread = read(1, buf, 15);
+    if (nread < 0) {
+        sys_puts("ERROR: read\n");
+    } else {
+        buf[nread] = 0;
+        sys_puts("\ngot: ");
+        sys_puts(buf);
+        sys_puts("\n");
+    }
+    for (;;)
+        ;
+    */
+    char buf[16];
+    for (;;) {
+        sys_puts("> ");
+        int32_t nread = read(1, buf, 15);
+        if (nread < 0) {
+            sys_puts("ERROR: read\n");
+        } else {
+            buf[nread] = 0;
+            // if (strncmp(buf, "hello1", min(nread, ARRAY_LENGTH("hello1"))) == 0) {
+            if (buf[5] == '1') {
+                uint32_t pid = fork();
+                if (pid == -1) {
+                    sys_puts("ERROR: fork!\n");
+                } else if (pid == 0) { // child
+                    uint32_t code = execv("5", 0); // "5" == u_main_hello1
+                    // normally exec doesn't return, but if it did, it's an error:
+                    sys_puts("ERROR: execv\n");
+                } else { // parent
+                    // TODO: wait for child somehow?..
+                }
+            // } else if (strncmp(buf, "hello2", min(nread, ARRAY_LENGTH("hello2"))) == 0) {
+            } else if (buf[5] == '2') {
+                uint32_t pid = fork();
+                if (pid == -1) {
+                    sys_puts("ERROR: fork!\n");
+                } else if (pid == 0) { // child
+                    uint32_t code = execv("6", 0); // "6" == u_main_hello2
+                    // normally exec doesn't return, but if it did, it's an error:
+                    sys_puts("ERROR: execv\n");
+                } else { // parent
+                    // TODO: wait for child somehow?..
+                }
+            } else {
+                sys_puts("\ninput not understood: ");
+                sys_puts(buf);
+                sys_puts("\n");
+            }
+        }
+    }
+}
+
+int _userland u_main_hello1() {
+    sys_puts("Hello from hellosayer 1\n");
+    exit();
+    return 0;
+}
+
+int _userland u_main_hello2() {
+    sys_puts("Very welcome from hellosayer 2\n");
+    exit();
     return 0;
 }
 

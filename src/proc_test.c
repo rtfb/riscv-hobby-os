@@ -9,6 +9,9 @@ extern int u_main_init();
 extern int u_main();
 extern int u_main2();
 extern int u_main3();
+extern int u_main_shell();
+extern int u_main_hello1();
+extern int u_main_hello2();
 
 void* userland_main_funcs[MAX_USERLAND_PROGS];
 int num_userland_progs;
@@ -22,12 +25,16 @@ void init_test_processes() {
     userland_main_funcs[1] = &u_main;
     userland_main_funcs[2] = &u_main2;
     userland_main_funcs[3] = &u_main3;
-    num_userland_progs = 4;
+    userland_main_funcs[4] = &u_main_shell;
+    userland_main_funcs[5] = &u_main_hello1;
+    userland_main_funcs[6] = &u_main_hello2;
+    num_userland_progs = 7;
 
     proc_table.num_procs = 1;
     process_t* p0 = &proc_table.procs[0];
     p0->pid = alloc_pid();
-    p0->pc = &u_main_init;
+    // p0->pc = &u_main_init;
+    p0->pc = &u_main_shell;
     p0->state = PROC_STATE_READY;
     void* sp = allocate_page();
     if (!sp) {

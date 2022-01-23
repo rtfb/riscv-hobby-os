@@ -6,6 +6,7 @@
 
 extern void exit();
 extern uint32_t fork();
+extern int32_t read(uint32_t fd, char* buf, uint32_t bufsize);
 // TODO: rename sys_puts to write()
 extern void sys_puts(char const* msg);
 extern uint32_t execv(char const* filename, char const* argv[]);

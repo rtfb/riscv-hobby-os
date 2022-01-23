@@ -17,6 +17,45 @@ DEBUG_SESSION_FILE = '.debug-session'
 GDBINIT_FILE = '.gdbinit'
 
 
+class _Getch:
+    """Gets a single character from standard input. Does not echo to the screen."""
+    def __init__(self):
+        try:
+            self.impl = _GetchWindows()
+        except ImportError:
+            self.impl = _GetchUnix()
+
+    def __call__(self): return self.impl()
+
+
+class _GetchUnix:
+    def __init__(self):
+        import tty, sys
+
+    def __call__(self):
+        import sys, tty, termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+
+class _GetchWindows:
+    def __init__(self):
+        import msvcrt
+
+    def __call__(self):
+        import msvcrt
+        return msvcrt.getch()
+
+
+getch = _Getch()
+
+
 def mkdelta(deltavalue):
     _units = dict(d=60 * 60 * 24, h=60 * 60, m=60, s=1)
     seconds = 0
@@ -140,7 +179,7 @@ def run(args):
     filename = 'out/test-run-{}.log'.format(os.path.basename(args.binary))
     with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
         p = subprocess.Popen(cmd,
-                             stdin=subprocess.PIPE,
+                             # stdin=subprocess.PIPE,
                              stdout=writer, stderr=writer,
                              )
         signal.signal(signal.SIGINT, make_signal_handler(p))
@@ -168,6 +207,9 @@ def main():
                         action='store_true')
     parser.add_argument('--bootargs', help='pass this as bootargs to the kernel')
     args = parser.parse_args()
+    # c = getch()
+    # print(c)
+    # return
     run(args)
 
 
