@@ -8,6 +8,7 @@ void sys_exit();
 uint32_t sys_fork();
 int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize);
 void sys_write();
+int32_t sys_wait();
 uint32_t sys_execv();
 uint32_t sys_getpid();
 

@@ -19,7 +19,7 @@ void __attribute__((__section__(".text#"))) *syscall_vector[] = {
 /*  4 */     sys_write,
 /*  5 */     sys_placeholder,
 /*  6 */     sys_placeholder,
-/*  7 */     sys_placeholder,
+/*  7 */     sys_wait,
 /*  8 */     sys_placeholder,
 /*  9 */     sys_placeholder,
 /* 10 */     sys_placeholder,
@@ -60,6 +60,7 @@ int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize) {
         nread++;
         uart_writechar(ch); // echo back to console
         if (ch == '\r') {
+            uart_writechar('\n'); // echo back to console
             break;
         }
     }
@@ -69,6 +70,10 @@ int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize) {
 
 void sys_write() {
     prints();
+}
+
+int32_t sys_wait() {
+    return proc_wait();
 }
 
 uint32_t sys_execv(char const* filename, char const* argv[]) {

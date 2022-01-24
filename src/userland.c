@@ -128,40 +128,60 @@ int _userland u_main3() {
     return 0;
 }
 
-int min(int a, int b) {
-    if (a < b) {
-        return a;
+int _userland ustrncmp(char const *a, char const *b, unsigned int num) {
+    unsigned int i = 0;
+    do {
+        if (!*a && !*b) {
+            return 0;
+        }
+        if (!*a) {
+            return -1;
+        }
+        if (!*b) {
+            return 1;
+        }
+        if (*a != *b) {
+            break;
+        }
+        i++;
+        a++;
+        b++;
+    } while(i < num);
+    return *a - *b;
+}
+
+// trimright finds the end of the provided string and trims any trailing
+// whitespace characters (\n,\r,\t,' ') by overwriting them with 0. Returns the
+// new length of the string.
+int _userland trimright(char *str) {
+    int i = 0;
+    while (str[i] != 0) i++;
+    i--;
+    while (i > 0) {
+        char ch = str[i];
+        if (ch != '\r' && ch != '\n' && ch != '\t' && ch != ' ')
+            break;
+        str[i] = 0;
+        i--;
     }
-    return b;
+    return i;
 }
 
 int _userland u_main_shell(int argc, char* argv[]) {
     sys_puts("\nInit userland!\n");
-    /*
-    sys_puts("Type something: ");
-    char buf[16];
-    int32_t nread = read(1, buf, 15);
-    if (nread < 0) {
-        sys_puts("ERROR: read\n");
-    } else {
-        buf[nread] = 0;
-        sys_puts("\ngot: ");
-        sys_puts(buf);
-        sys_puts("\n");
-    }
-    for (;;)
-        ;
-    */
+    char h1[] = "hello1";
+    char h2[] = "hello2";
     char buf[16];
     for (;;) {
+        buf[0] = 0;
         sys_puts("> ");
         int32_t nread = read(1, buf, 15);
         if (nread < 0) {
             sys_puts("ERROR: read\n");
         } else {
             buf[nread] = 0;
-            // if (strncmp(buf, "hello1", min(nread, ARRAY_LENGTH("hello1"))) == 0) {
-            if (buf[5] == '1') {
+            trimright(buf);
+            if (ustrncmp(buf, h1, ARRAY_LENGTH(h1)) == 0) {
                 uint32_t pid = fork();
                 if (pid == -1) {
                     sys_puts("ERROR: fork!\n");
@@ -170,10 +190,9 @@ int _userland u_main_shell(int argc, char* argv[]) {
                     // normally exec doesn't return, but if it did, it's an error:
                     sys_puts("ERROR: execv\n");
                 } else { // parent
-                    // TODO: wait for child somehow?..
+                    wait();
                 }
-            // } else if (strncmp(buf, "hello2", min(nread, ARRAY_LENGTH("hello2"))) == 0) {
-            } else if (buf[5] == '2') {
+            } else if (ustrncmp(buf, h2, ARRAY_LENGTH(h2)) == 0) {
                 uint32_t pid = fork();
                 if (pid == -1) {
                     sys_puts("ERROR: fork!\n");
@@ -182,10 +201,10 @@ int _userland u_main_shell(int argc, char* argv[]) {
                     // normally exec doesn't return, but if it did, it's an error:
                     sys_puts("ERROR: execv\n");
                 } else { // parent
-                    // TODO: wait for child somehow?..
+                    wait();
                 }
             } else {
-                sys_puts("\ninput not understood: ");
+                sys_puts("unknown command: ");
                 sys_puts(buf);
                 sys_puts("\n");
             }

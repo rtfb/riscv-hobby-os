@@ -25,6 +25,12 @@
 // scheduler.
 #define PROC_STATE_RUNNING 2
 
+// PROC_STATE_SLEEPING means this process has yielded execution via sleep() or
+// wait() system calls. It will not be scheduled until either enough time has
+// elapsed (in case of sleep()) or until the child process exits (in case of
+// wait()).
+#define PROC_STATE_SLEEPING 3
+
 
 #define MAX_USERLAND_PROGS 10
 
@@ -40,7 +46,7 @@ typedef struct trap_frame_s {
 typedef struct process_s {
     spinlock lock;
     uint32_t pid;
-    uint32_t parent_pid;
+    struct process_s* parent;
     void *pc;
     trap_frame_t context;
 
@@ -114,6 +120,9 @@ void proc_exit();
 // For now, the filename argument is expected to contain a one-digit number as
 // a single character, specifying the index into userland_main_funcs.
 uint32_t proc_execv(char const* filename, char const* argv[]);
+
+// proc_wait implements the wait system call.
+int32_t proc_wait();
 
 // alloc_process finds an available slot in the process table and returns its
 // address. It will immediately acquire the process lock when it finds the

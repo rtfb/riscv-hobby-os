@@ -129,7 +129,7 @@ uint32_t proc_fork() {
         return -1;
     }
     child->pid = alloc_pid();
-    child->parent_pid = parent->pid;
+    child->parent = parent;
     child->pc = parent->pc;
     child->stack_page = sp;
     copy_page(child->stack_page, parent->stack_page);
@@ -241,10 +241,27 @@ void proc_exit() {
     acquire(&proc->lock);
     release_page(proc->stack_page);
     proc->state = PROC_STATE_AVAILABLE;
+    acquire(&proc->parent->lock);
+    proc->parent->state = PROC_STATE_READY;
+    release(&proc->parent->lock);
     release(&proc->lock);
 
     acquire(&proc_table.lock);
     proc_table.num_procs--;
     release(&proc_table.lock);
     schedule_user_process();
+}
+
+int32_t proc_wait() {
+    process_t* proc = current_proc();
+    if (proc == 0) {
+        // this should never happen, some process called us, right?
+        // TODO: panic
+        return -1;
+    }
+    acquire(&proc->lock);
+    proc->state = PROC_STATE_SLEEPING;
+    release(&proc->lock);
+    schedule_user_process();
+    return 0;
 }
