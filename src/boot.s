@@ -315,15 +315,8 @@ exception_dispatch:
         bgeu    t0, t1, exception_epilogue
         jr      t0
 
-syscall_dispatch:                       # a7 contains syscall index
-        la      t0, syscall_vector
-        li      t1, 21                  # TODO: 21 is the number of entries in syscall_vector. We need to find a way to
-                                        # unhardcode this number and derive it from the actual table
-        bgeu    a7, t1, syscall_epilogue
-        slli    t1, a7, LOG2_SIZEOF_PTR
-        add     t0, t0, t1              # read a pointer from syscall_vector + a7 * sizeof(ptr)
-        lx      t1, 0, (t0)             # dereference that pointer into a function address
-        jalr    t1                      # call a function at that address
+syscall_dispatch:
+        call    syscall
         j       syscall_epilogue
 
 exception_epilogue:

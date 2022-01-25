@@ -1,4 +1,5 @@
 .include "src/machine-word.inc"
+#include "syscallnums.h"
 
 .macro  macro_syscall nr
         li      a7, \nr                 # for fun let's pretend syscall is kinda like Linux: syscall nr in a7, other arguments in a0..a6
@@ -11,7 +12,7 @@
 exit:
         stackalloc_x 1
         sx      ra, 0, (sp)
-        macro_syscall 1
+        macro_syscall SYS_NR_exit
         lx      ra, 0, (sp)
         stackfree_x 1
         ret
@@ -20,7 +21,7 @@ exit:
 fork:
         stackalloc_x 1
         sx      ra, 0, (sp)
-        macro_syscall 2
+        macro_syscall SYS_NR_fork
         lx      ra, 0, (sp)
         stackfree_x 1
         ret
@@ -29,7 +30,7 @@ fork:
 read:
         stackalloc_x 1
         sx      ra, 0, (sp)
-        macro_syscall 3
+        macro_syscall SYS_NR_read
         lx      ra, 0, (sp)
         stackfree_x 1
         ret
@@ -38,7 +39,7 @@ read:
 sys_puts:
         stackalloc_x 1
         sx      ra, 0, (sp)
-        macro_syscall 4
+        macro_syscall SYS_NR_write
         lx      ra, 0, (sp)
         stackfree_x 1
         ret
@@ -47,7 +48,7 @@ sys_puts:
 wait:
         stackalloc_x 1
         sx      ra, 0, (sp)
-        macro_syscall 7
+        macro_syscall SYS_NR_wait
         lx      ra, 0, (sp)
         stackfree_x 1
         ret
@@ -56,7 +57,7 @@ wait:
 execv:
         stackalloc_x 1
         sx      ra, 0, (sp)
-        macro_syscall 11
+        macro_syscall SYS_NR_execv
         lx      ra, 0, (sp)
         stackfree_x 1
         ret
@@ -65,7 +66,7 @@ execv:
 getpid:
         stackalloc_x 1
         sx      ra, 0, (sp)
-        macro_syscall 20
+        macro_syscall SYS_NR_getpid
         lx      ra, 0, (sp)
         stackfree_x 1
         ret

@@ -2,6 +2,7 @@
 #define _SYSCALLS_H_
 
 #include "sys.h"
+#include "syscallnums.h"
 
 void sys_restart();
 void sys_exit();

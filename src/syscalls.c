@@ -1,5 +1,6 @@
 // Entry points for all the syscalls here
 
+#include "kernel.h"
 #include "syscalls.h"
 #include "proc.h"
 #include "uart.h"
@@ -12,28 +13,26 @@
 // trailing # in order to avoid a warning from GCC, see this answer:
 // https://stackoverflow.com/a/58455496/6763
 void __attribute__((__section__(".text#"))) *syscall_vector[] = {
-/*  0 */     sys_restart,
-/*  1 */     sys_exit,
-/*  2 */     sys_fork,
-/*  3 */     sys_read,
-/*  4 */     sys_write,
-/*  5 */     sys_placeholder,
-/*  6 */     sys_placeholder,
-/*  7 */     sys_wait,
-/*  8 */     sys_placeholder,
-/*  9 */     sys_placeholder,
-/* 10 */     sys_placeholder,
-/* 11 */     sys_execv,
-/* 12 */     sys_placeholder,
-/* 13 */     sys_placeholder,
-/* 14 */     sys_placeholder,
-/* 15 */     sys_placeholder,
-/* 16 */     sys_placeholder,
-/* 17 */     sys_placeholder,
-/* 18 */     sys_placeholder,
-/* 19 */     sys_placeholder,
-/* 20 */     sys_getpid,
+    [SYS_NR_restart]   sys_restart,
+    [SYS_NR_exit]      sys_exit,
+    [SYS_NR_fork]      sys_fork,
+    [SYS_NR_read]      sys_read,
+    [SYS_NR_write]     sys_write,
+    [SYS_NR_wait]      sys_wait,
+    [SYS_NR_execv]     sys_execv,
+    [SYS_NR_getpid]    sys_getpid,
 };
+
+void syscall() {
+    int nr = trap_frame.regs[REG_A7];
+    if (nr >= 0 && nr < ARRAY_LENGTH(syscall_vector) && syscall_vector[nr] != 0) {
+        int32_t (*funcPtr)(void) = syscall_vector[nr];
+        trap_frame.regs[REG_A0] = (*funcPtr)();
+    } else {
+        kprintf("BAD sycall %d\n", nr);
+        trap_frame.regs[REG_A0] = -1;
+    }
+}
 
 void sys_restart() {
     poweroff();
@@ -64,7 +63,6 @@ int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize) {
             break;
         }
     }
-    trap_frame.regs[REG_A0] = nread;
     return nread;
 }
 
@@ -84,9 +82,5 @@ uint32_t sys_getpid() {
     acquire(&proc_table.lock);
     uint32_t pid = proc_table.procs[proc_table.curr_proc].pid;
     release(&proc_table.lock);
-    trap_frame.regs[REG_A0] = pid;
     return pid;
-}
-
-void sys_placeholder() {
 }
