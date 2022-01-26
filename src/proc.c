@@ -118,9 +118,6 @@ uint32_t proc_fork() {
     }
     acquire(&parent->lock);
     parent->pc = get_mepc();
-    parent->pc += 4; // TODO: shouldn't this be +=2 on a compressed ISA? But it
-                     // works fine, though... Need to step this through with a
-                     // debugger.
     copy_context(&parent->context, &trap_frame);
 
     process_t* child = alloc_process();
