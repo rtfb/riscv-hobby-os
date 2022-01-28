@@ -1,6 +1,7 @@
 #include "sys.h"
 #include "userland.h"
 #include "string.h"
+#include "syscalls.h"
 
 #define PRINT_FREQ ONE_SECOND
 
@@ -171,6 +172,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
     sys_puts("\nInit userland!\n");
     char h1[] = "hello1";
     char h2[] = "hello2";
+    char si[] = "sysinfo";
     char buf[16];
     for (;;) {
         buf[0] = 0;
@@ -203,6 +205,17 @@ int _userland u_main_shell(int argc, char* argv[]) {
                 } else { // parent
                     wait();
                 }
+            } else if (ustrncmp(buf, si, ARRAY_LENGTH(h2)) == 0) {
+                uint32_t pid = fork();
+                if (pid == -1) {
+                    sys_puts("ERROR: fork!\n");
+                } else if (pid == 0) { // child
+                    uint32_t code = execv("7", 0); // "7" == u_main_sysinfo
+                    // normally exec doesn't return, but if it did, it's an error:
+                    sys_puts("ERROR: execv\n");
+                } else { // parent
+                    wait();
+                }
             } else {
                 sys_puts("unknown command: ");
                 sys_puts(buf);
@@ -220,6 +233,20 @@ int _userland u_main_hello1() {
 
 int _userland u_main_hello2() {
     sys_puts("Very welcome from hellosayer 2\n");
+    exit();
+    return 0;
+}
+
+int _userland u_main_sysinfo() {
+    sysinfo_t info;
+    sysinfo(&info);
+    char buf[4];
+    buf[0] = '0' + info.freeram/10;
+    buf[1] = '0' + info.freeram%10;
+    buf[2] = '\n';
+    buf[3] = 0;
+    sys_puts("Free RAM pages: ");
+    sys_puts(buf);
     exit();
     return 0;
 }

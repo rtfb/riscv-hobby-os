@@ -42,3 +42,8 @@ execv:
 getpid:
         macro_syscall SYS_NR_getpid
         ret
+
+.globl sysinfo
+sysinfo:
+        macro_syscall SYS_NR_sysinfo
+        ret

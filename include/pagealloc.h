@@ -27,9 +27,13 @@ typedef struct paged_mem_s {
     uint32_t num_pages;
 } paged_mem_t;
 
+// defined in pagealloc.c
+extern paged_mem_t paged_memory;
+
 void init_paged_memory(void* paged_mem_end);
 void* allocate_page();
 void release_page(void *ptr);
+uint32_t count_free_pages();
 void copy_page(void* dst, void* src);
 
 #endif // ifndef _PAGEALLOC_H_

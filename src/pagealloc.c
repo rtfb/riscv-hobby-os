@@ -57,6 +57,17 @@ void release_page(void *ptr) {
     // TODO: panic here: can't find such page
 }
 
+uint32_t count_free_pages() {
+    uint32_t num = 0;
+    for (int i = 0; i < paged_memory.num_pages; i++) {
+        page_t* page = &paged_memory.pages[i];
+        if (page->flags == PAGE_FREE) {
+            num++;
+        }
+    }
+    return num;
+}
+
 void copy_page(void* dst, void* src) {
     regsize_t* pdst = (regsize_t*)dst;
     regsize_t* psrc = (regsize_t*)src;

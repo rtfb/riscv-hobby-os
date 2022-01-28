@@ -12,6 +12,7 @@ extern int u_main3();
 extern int u_main_shell();
 extern int u_main_hello1();
 extern int u_main_hello2();
+extern int u_main_sysinfo();
 
 void* userland_main_funcs[MAX_USERLAND_PROGS];
 int num_userland_progs;
@@ -28,7 +29,8 @@ void init_test_processes() {
     userland_main_funcs[4] = &u_main_shell;
     userland_main_funcs[5] = &u_main_hello1;
     userland_main_funcs[6] = &u_main_hello2;
-    num_userland_progs = 7;
+    userland_main_funcs[7] = &u_main_sysinfo;
+    num_userland_progs = 8;
 
     proc_table.num_procs = 1;
     process_t* p0 = &proc_table.procs[0];

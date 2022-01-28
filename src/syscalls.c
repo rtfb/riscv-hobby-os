@@ -4,6 +4,7 @@
 #include "syscalls.h"
 #include "proc.h"
 #include "uart.h"
+#include "pagealloc.h"
 
 // for fun let's pretend syscall table is kinda like 32bit Linux on x86,
 // /usr/include/asm/unistd_32.h: __NR_restart_syscall 0, __NR_exit 1, _NR_fork 2, __NR_read 3, __NR_write 4
@@ -21,6 +22,7 @@ void __attribute__((__section__(".text#"))) *syscall_vector[] = {
     [SYS_NR_wait]      sys_wait,
     [SYS_NR_execv]     sys_execv,
     [SYS_NR_getpid]    sys_getpid,
+    [SYS_NR_sysinfo]   sys_sysinfo,
 };
 
 void syscall() {
@@ -83,4 +85,17 @@ uint32_t sys_getpid() {
     uint32_t pid = proc_table.procs[proc_table.curr_proc].pid;
     release(&proc_table.lock);
     return pid;
+}
+
+uint32_t sys_sysinfo() {
+    sysinfo_t* info = (sysinfo_t*)trap_frame.regs[REG_A0];
+    acquire(&proc_table.lock);
+    info->procs = proc_table.num_procs;
+    release(&proc_table.lock);
+
+    acquire(&paged_memory.lock);
+    info->totalram = paged_memory.num_pages;
+    info->freeram = count_free_pages();
+    release(&paged_memory.lock);
+    return 0;
 }

@@ -9,3 +9,8 @@
 #define SYS_NR_wait            7
 #define SYS_NR_execv          11
 #define SYS_NR_getpid         20
+
+// The numbers below differ from Linux, may need to renumber one day if we ever
+// want to achieve ABI compatibility. But for now, I don't want to make
+// trap_vector too big while very sparsely populated.
+#define SYS_NR_sysinfo        30  // __NR_sysinfo is 116 on Linux
