@@ -14,7 +14,10 @@ SECTIONS
   . = ALIGN(PAGE_SIZE);
 
   /* user_text: userland code section */
-  .user_text : { *(.user_text) }
+  .user_text : {
+      *(.user_text)
+      *(.user_rodata)
+  }
   . = ALIGN(PAGE_SIZE);
 
   /* data: Initialized data segment */

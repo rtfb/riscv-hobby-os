@@ -173,6 +173,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
     char h1[] = "hello1";
     char h2[] = "hello2";
     char si[] = "sysinfo";
+    char fmt[] = "fmt";
     char buf[16];
     for (;;) {
         buf[0] = 0;
@@ -216,6 +217,17 @@ int _userland u_main_shell(int argc, char* argv[]) {
                 } else { // parent
                     wait();
                 }
+            } else if (ustrncmp(buf, fmt, ARRAY_LENGTH(h2)) == 0) {
+                uint32_t pid = fork();
+                if (pid == -1) {
+                    sys_puts("ERROR: fork!\n");
+                } else if (pid == 0) { // child
+                    uint32_t code = execv("8", 0); // "8" == u_main_fmt
+                    // normally exec doesn't return, but if it did, it's an error:
+                    sys_puts("ERROR: execv\n");
+                } else { // parent
+                    wait();
+                }
             } else {
                 sys_puts("unknown command: ");
                 sys_puts(buf);
@@ -233,6 +245,17 @@ int _userland u_main_hello1() {
 
 int _userland u_main_hello2() {
     sys_puts("Very welcome from hellosayer 2\n");
+    exit();
+    return 0;
+}
+
+char fmt[] _user_rodata = "formatted string: num=%d, zero=%d, char=%c, hex=0x%x, str=%s\n";
+char fmt2[] _user_rodata = "only groks 7 args: %d %d %d %d %d %d %d %d %d\n";
+
+int _userland u_main_fmt() {
+    char foo[] = "foo";
+    printf(fmt, 387, 0, 'X', 0xaddbeef, foo);
+    printf(fmt2, 11, 12, 13, 14, 15, 16, 17, 18, 19);
     exit();
     return 0;
 }
