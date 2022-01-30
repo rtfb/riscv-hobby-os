@@ -168,6 +168,22 @@ int _userland trimright(char *str) {
     return i;
 }
 
+void _userland run_program(int prognum) {
+    uint32_t pid = fork();
+    if (pid == -1) {
+        sys_puts("ERROR: fork!\n");
+    } else if (pid == 0) { // child
+        char buf[2] = {'0'+prognum, 0};
+        uint32_t code = execv(buf, 0);
+        // normally exec doesn't return, but if it did, it's an error:
+        sys_puts("ERROR: execv\n");
+    } else { // parent
+        wait();
+    }
+}
+
+char unknown_cmd_fmt[] _user_rodata = "unknown command: %s\n";
+
 int _userland u_main_shell(int argc, char* argv[]) {
     sys_puts("\nInit userland!\n");
     char h1[] = "hello1";
@@ -185,53 +201,15 @@ int _userland u_main_shell(int argc, char* argv[]) {
             buf[nread] = 0;
             trimright(buf);
             if (ustrncmp(buf, h1, ARRAY_LENGTH(h1)) == 0) {
-                uint32_t pid = fork();
-                if (pid == -1) {
-                    sys_puts("ERROR: fork!\n");
-                } else if (pid == 0) { // child
-                    uint32_t code = execv("5", 0); // "5" == u_main_hello1
-                    // normally exec doesn't return, but if it did, it's an error:
-                    sys_puts("ERROR: execv\n");
-                } else { // parent
-                    wait();
-                }
+                run_program(5);  // 5 == u_main_hello1
             } else if (ustrncmp(buf, h2, ARRAY_LENGTH(h2)) == 0) {
-                uint32_t pid = fork();
-                if (pid == -1) {
-                    sys_puts("ERROR: fork!\n");
-                } else if (pid == 0) { // child
-                    uint32_t code = execv("6", 0); // "6" == u_main_hello2
-                    // normally exec doesn't return, but if it did, it's an error:
-                    sys_puts("ERROR: execv\n");
-                } else { // parent
-                    wait();
-                }
+                run_program(6);  // 6 == u_main_hello2
             } else if (ustrncmp(buf, si, ARRAY_LENGTH(h2)) == 0) {
-                uint32_t pid = fork();
-                if (pid == -1) {
-                    sys_puts("ERROR: fork!\n");
-                } else if (pid == 0) { // child
-                    uint32_t code = execv("7", 0); // "7" == u_main_sysinfo
-                    // normally exec doesn't return, but if it did, it's an error:
-                    sys_puts("ERROR: execv\n");
-                } else { // parent
-                    wait();
-                }
+                run_program(7);  // 7 == u_main_sysinfo
             } else if (ustrncmp(buf, fmt, ARRAY_LENGTH(h2)) == 0) {
-                uint32_t pid = fork();
-                if (pid == -1) {
-                    sys_puts("ERROR: fork!\n");
-                } else if (pid == 0) { // child
-                    uint32_t code = execv("8", 0); // "8" == u_main_fmt
-                    // normally exec doesn't return, but if it did, it's an error:
-                    sys_puts("ERROR: execv\n");
-                } else { // parent
-                    wait();
-                }
+                run_program(8);  // 8 == u_main_fmt
             } else {
-                sys_puts("unknown command: ");
-                sys_puts(buf);
-                sys_puts("\n");
+                uprintf(unknown_cmd_fmt, buf);
             }
         }
     }
