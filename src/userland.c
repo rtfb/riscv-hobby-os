@@ -260,16 +260,12 @@ int _userland u_main_fmt() {
     return 0;
 }
 
+char sysinfo_fmt[] _user_rodata = "Total RAM: %d\nFree RAM: %d\nNum procs: %d\n";
+
 int _userland u_main_sysinfo() {
     sysinfo_t info;
     sysinfo(&info);
-    char buf[4];
-    buf[0] = '0' + info.freeram/10;
-    buf[1] = '0' + info.freeram%10;
-    buf[2] = '\n';
-    buf[3] = 0;
-    sys_puts("Free RAM pages: ");
-    sys_puts(buf);
+    uprintf(sysinfo_fmt, info.totalram, info.freeram, info.procs);
     exit();
     return 0;
 }
