@@ -35,7 +35,7 @@ char const* _userland print_radix(regsize_t num, int radix, char *buf, unsigned 
     return &buf[dsti];
 }
 
-// uprintfvec does formatted output. It formats the output into an internal
+// printfvec does formatted output. It formats the output into an internal
 // buffer and then calls sys_puts with it. The buffer is limited to 96
 // characters, which, together with other stack variables is more than 1/4th of
 // our entire stack frame, we can't afford more.
@@ -43,7 +43,7 @@ char const* _userland print_radix(regsize_t num, int radix, char *buf, unsigned 
 // Returns the size of the resulting formatted string.
 //
 // It supports the following verbs: %c, %d, %s, %x.
-int _userland uprintfvec(char const* fmt, regsize_t* args) {
+int _userland printfvec(char const* fmt, regsize_t* args) {
     int argnum = 0;
     char buf[96];
     int srci = 0;

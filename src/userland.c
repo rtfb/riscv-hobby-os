@@ -209,7 +209,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
             } else if (ustrncmp(buf, fmt, ARRAY_LENGTH(h2)) == 0) {
                 run_program(8);  // 8 == u_main_fmt
             } else {
-                uprintf(unknown_cmd_fmt, buf);
+                printf(unknown_cmd_fmt, buf);
             }
         }
     }
@@ -243,7 +243,7 @@ char sysinfo_fmt[] _user_rodata = "Total RAM: %d\nFree RAM: %d\nNum procs: %d\n"
 int _userland u_main_sysinfo() {
     sysinfo_t info;
     sysinfo(&info);
-    uprintf(sysinfo_fmt, info.totalram, info.freeram, info.procs);
+    printf(sysinfo_fmt, info.totalram, info.freeram, info.procs);
     exit();
     return 0;
 }

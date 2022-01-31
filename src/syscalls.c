@@ -68,8 +68,11 @@ int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize) {
     return nread;
 }
 
+// implemented in uart-print.s
+extern void uart_prints();
+
 void sys_write() {
-    prints();
+    uart_prints();
 }
 
 int32_t sys_wait() {

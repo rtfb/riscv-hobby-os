@@ -30,7 +30,6 @@ uint32_t sys_getpid();
 uint32_t sys_sysinfo();
 
 // These are implemented in assembler as of now:
-extern void prints();
 extern void poweroff();
 
 #endif // ifndef _SYSCALLS_H_

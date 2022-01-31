@@ -12,21 +12,42 @@ MACHINE NOT SUPPORTED!
 .equ UART_REG_TXFIFO,   0
 
 .section .text
-.global printf                          # C-like print formatted string. Supports formatting: %s, %c, %d, %i, %u, %x, %o, %p
+.global uart_printf                     # C-like print formatted string. Supports formatting: %s, %c, %d, %i, %u, %x, %o, %p
                                         # @param[in] a0 address of NULL terminated formatted string,
                                         # @param[in] a1 address of arguments
 
-.global prints                          # Print string.
+.global uart_prints                     # Print string.
                                         # @param[in] a0 address of NULL terminated string
 
-.global printd                          # Print signed decimal number.
+.global uart_printd                     # Print signed decimal number.
                                         # @param[in] a0 decimal number
 
-.global printu                          # Print unsigned decimal number.
+.global uart_printu                     # Print unsigned decimal number.
                                         # @param[in] a0 decimal number
 
-.global printc                          # Print single character.
+.global uart_printc                     # Print single character.
                                         # @param[in] a0 char
+
+# kprintf is called with args in a0..a7, but uart_printf expects to get fmt
+# string in a0 and a pointer to the rest of args in a1. So push a1..a7 to stack
+# and pass a pointer to that location in a1.
+.globl kprintf
+kprintf:
+        stackalloc_x 8
+        mv      t0, sp
+        sx      a1, 0, (sp)
+        sx      a2, 1, (sp)
+        sx      a3, 2, (sp)
+        sx      a4, 3, (sp)
+        sx      a5, 4, (sp)
+        sx      a6, 5, (sp)
+        sx      a7, 6, (sp)
+        sx      ra, 7, (sp)
+        mv      a1, t0
+        call    uart_printf
+        lx      ra, 7, (sp)
+        stackfree_x 8
+        ret
 
 .macro  push_printf_state
         stackalloc_x 3
@@ -52,7 +73,7 @@ MACHINE NOT SUPPORTED!
         addi    a1, a1, \size           # advance arg pointer
 .endm
 
-printf:
+uart_printf:
 0:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         bnez    t0, 1f
         ret                             # while not null
@@ -79,7 +100,7 @@ printf:
                                         # load char from a1
                                         # a1 += sizeof(char)
                                         # print char
-        call_printf_arg_handler printc, load_op32=lbu, load_op64=lbu, size=1
+        call_printf_arg_handler uart_printc, load_op32=lbu, load_op64=lbu, size=1
         j       0b                      # continue
 
 10:     li      t1, 's'                 # if %s
@@ -87,7 +108,7 @@ printf:
                                         # load string pointer from a1
                                         # a1 += sizeof(char*)
                                         # print null-terminated string
-        call_printf_arg_handler prints, load_op32=lw, load_op64=ld, size=REGBYTES
+        call_printf_arg_handler uart_prints, load_op32=lw, load_op64=ld, size=REGBYTES
         j       0b                      # continue
 
 10:     li      t1, 'd'                 # if %d
@@ -97,7 +118,7 @@ printf:
 1:                                      # load int from a1
                                         # a1 += sizeof(int)
                                         # print int
-        call_printf_arg_handler printd, load_op32=lw, load_op64=lw, size=4
+        call_printf_arg_handler uart_printd, load_op32=lw, load_op64=lw, size=4
         j       0b                      # continue
 
 10:     li      t1, 'u'                 # if %u
@@ -105,7 +126,7 @@ printf:
                                         # load unsigned int from a1
                                         # a1 += sizeof(unsigned)
                                         # print unsigned
-        call_printf_arg_handler printu, load_op32=lw, load_op64=lwu, size=4
+        call_printf_arg_handler uart_printu, load_op32=lw, load_op64=lwu, size=4
         j       0b                      # continue
 
 10:     li      t1, 'o'                 # if %o
@@ -131,9 +152,9 @@ printf:
 
         push_printf_state
         li      a0, '0'
-        jal     printc
+        jal     uart_printc
         li      a0, 'x'
-        jal     printc                  # print '0x' in front of the address
+        jal     uart_printc             # print '0x' in front of the address
         pop_printf_state
                                         # load void* pointer from a1
                                         # a1 += sizeof(void*)
@@ -145,16 +166,16 @@ printf:
         lbu     t0, (a0)                # go back and print as characters
         j       2b
 
-.global printc
-printc:                                 # @param[in] a0 char
+.global uart_printc
+uart_printc:                            # @param[in] a0 char
         li      a1, UART_BASE
 1:      lw      t1, UART_REG_TXFIFO(a1) # read from serial
         bltz    t1, 1b                  # until >= 0
         sw      a0, UART_REG_TXFIFO(a1) # write to serial
         ret
 
-.global prints
-prints:                                 # @param[in] a0 address of NULL terminated string
+.global uart_prints
+uart_prints:                            # @param[in] a0 address of NULL terminated string
         li      a1, UART_BASE
 1:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         beqz    t0, 3f                  # while not null
@@ -165,24 +186,24 @@ prints:                                 # @param[in] a0 address of NULL terminat
         j       1b
 3:      ret
 
-.global printd
-.global printu
-printd:                                 # @param[in] a0 decimal number
+.global uart_printd
+.global uart_printu
+uart_printd:                            # @param[in] a0 decimal number
 
                                         # if input is negative,
                                         # then print the negative sign first
-        bgez    a0, printu
+        bgez    a0, uart_printu
         neg     a0, a0                  # take two's complement of the input
         stackalloc_x 2
         sx      ra, 0,(sp)
         sx      a0, 1,(sp)
         li      a0, '-'
-        jal     printc                  # print '-' in front of the rest
+        jal     uart_printc             # print '-' in front of the rest
         lx      ra, 0,(sp)
         lx      a0, 1,(sp)
         stackfree_x 2
 
-printu:
+uart_printu:
         li      a1, 10                  # radix = 10
 
 print_radix:
@@ -206,7 +227,7 @@ print_radix:
         # print top of the stack
         mv      a0, a2
         addi    sp, sp, 16              # restore stack pointer (TODO: restore stack pointer after prints not before)
-        j       prints
+        j       uart_prints
 
 printo:
         li      a1, 8

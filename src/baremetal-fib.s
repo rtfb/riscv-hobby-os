@@ -16,23 +16,23 @@ halt:   j       halt
 main:
         la      a0, hello_fmt
         la      a1, hello_arg
-        call    printf                  # test printf()
+        call    uart_printf             # test uart_printf()
 
                                         # calculate Fibonacci sequence
                                         # for (int i = 1; i < 15; i++)
-                                        #     printf("fib(%d) = %d\n", i, fib(i));
+                                        #     uart_printf("fib(%d) = %d\n", i, fib(i));
         li      s0, 1
         li      s1, 15
 1:      mv      a0, s0
         jal     fib                     # call fib() with a0 containing index of Fibonacci sequence.
                                         # fib() will return result in a0.
 
-        addi    sp, sp, -8              # allocate 2 int arguments for printf() on the stack
+        addi    sp, sp, -8              # allocate 2 int arguments for uart_printf() on the stack
         mv      a1, sp
-        sw      s0, 0(a1)               # 1st printf argument s0 contains index i
+        sw      s0, 0(a1)               # 1st uart_printf argument s0 contains index i
         sw      a0, 4(a1)               # 2nd prinnt argument a0 contains result of fib(i)
         la      a0, fib_fmt
-        call    printf                  # call printf() with a0 pointing to "fib(%d) = %d\n" pattern
+        call    uart_printf             # call uart_printf() with a0 pointing to "fib(%d) = %d\n" pattern
                                         #                and a1 pointing to list of arguments [i, fib(i)] stored on stack
         addi    sp, sp, 8               # restore stack
 
