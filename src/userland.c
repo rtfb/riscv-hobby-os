@@ -177,6 +177,7 @@ void _userland run_program(int prognum) {
         uint32_t code = execv(buf, 0);
         // normally exec doesn't return, but if it did, it's an error:
         sys_puts("ERROR: execv\n");
+        exit();
     } else { // parent
         wait();
     }
