@@ -35,11 +35,6 @@
 
 #define MAX_USERLAND_PROGS 10
 
-// defined in proc_test.c:
-extern void* userland_main_funcs[MAX_USERLAND_PROGS];
-extern int num_userland_progs;
-
-
 typedef struct trap_frame_s {
     regsize_t regs[32];
 } trap_frame_t;
@@ -47,6 +42,7 @@ typedef struct trap_frame_s {
 typedef struct process_s {
     spinlock lock;
     uint32_t pid;
+    char *name;
     struct process_s* parent;
     void *pc;
     trap_frame_t context;
@@ -70,6 +66,7 @@ typedef struct proc_table_s {
     uint32_t pid_counter;
 } proc_table_t;
 
+// defined in proc.c
 extern proc_table_t proc_table;
 
 // trap_frame is the piece of memory to hold all user registers when we enter
@@ -118,8 +115,8 @@ void proc_exit();
 // arguments are passed vectorized, in an array of pointers to strings. The
 // last element in argv must be a NULL pointer.
 //
-// For now, the filename argument is expected to contain a one-digit number as
-// a single character, specifying the index into userland_main_funcs.
+// For now, the filename argument is expected to contain a program name as
+// specified in userland_programs.
 uint32_t proc_execv(char const* filename, char const* argv[]);
 
 // proc_wait implements the wait system call.

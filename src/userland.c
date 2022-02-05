@@ -14,7 +14,7 @@ int _userland u_main_init(int argc, char* argv[]) {
     if (pid == -1) {
         sys_puts("ERROR!\n");
     } else if (pid == 0) { // child
-        uint32_t code = execv("1", 0); // "1" == u_main
+        uint32_t code = execv("main1", 0); // "1" == u_main
         // normally exec doesn't return, but if it did, it's an error:
         sys_puts("ERROR: execv\n");
     } else { // parent
@@ -22,7 +22,7 @@ int _userland u_main_init(int argc, char* argv[]) {
         if (pid == -1) {
             sys_puts("ERROR!\n");
         } else if (pid == 0) { // child
-            uint32_t code = execv("2", 0); // "2" == u_main2
+            uint32_t code = execv("main2", 0); // "2" == u_main2
             // normally exec doesn't return, but if it did, it's an error:
             sys_puts("ERROR: execv\n");
         } else { // parent
@@ -62,7 +62,7 @@ int _userland u_main() {
                 // replace the pid to be printed:
                 pid = getpid();
                 pidstr[0] = '0' + (char)pid;
-                uint32_t code = execv("3", 0); // "3" == u_main3
+                uint32_t code = execv("main3", 0); // "3" == u_main3
                 // normally exec doesn't return, but if it did, it's an error:
                 sys_puts("ERROR: execv\n");
             } else { // parent
@@ -168,13 +168,12 @@ int _userland trimright(char *str) {
     return i;
 }
 
-void _userland run_program(int prognum) {
+void _userland run_program(char *name) {
     uint32_t pid = fork();
     if (pid == -1) {
         sys_puts("ERROR: fork!\n");
     } else if (pid == 0) { // child
-        char buf[2] = {'0'+prognum, 0};
-        uint32_t code = execv(buf, 0);
+        uint32_t code = execv(name, 0);
         // normally exec doesn't return, but if it did, it's an error:
         sys_puts("ERROR: execv\n");
         exit();
@@ -202,13 +201,13 @@ int _userland u_main_shell(int argc, char* argv[]) {
             buf[nread] = 0;
             trimright(buf);
             if (ustrncmp(buf, h1, ARRAY_LENGTH(h1)) == 0) {
-                run_program(5);  // 5 == u_main_hello1
+                run_program("hello1");
             } else if (ustrncmp(buf, h2, ARRAY_LENGTH(h2)) == 0) {
-                run_program(6);  // 6 == u_main_hello2
+                run_program("hello2");
             } else if (ustrncmp(buf, si, ARRAY_LENGTH(h2)) == 0) {
-                run_program(7);  // 7 == u_main_sysinfo
+                run_program("sysinfo");
             } else if (ustrncmp(buf, fmt, ARRAY_LENGTH(h2)) == 0) {
-                run_program(8);  // 8 == u_main_fmt
+                run_program("fmt");
             } else {
                 printf(unknown_cmd_fmt, buf);
             }

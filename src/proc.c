@@ -1,5 +1,6 @@
 #include "proc.h"
 #include "pagealloc.h"
+#include "programs.h"
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;
@@ -152,8 +153,8 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         // TODO: set errno
         return -1;
     }
-    int prog_num = filename[0] - '0';
-    if (prog_num >= num_userland_progs) {
+    user_program_t *program = find_user_program(filename);
+    if (!program) {
         // TODO: set errno
         return -1;
     }
@@ -170,7 +171,8 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         return -1;
     }
     acquire(&proc->lock);
-    proc->pc = userland_main_funcs[prog_num];
+    proc->pc = program->entry_point;
+    proc->name = program->name;
     release_page(proc->stack_page);
     proc->stack_page = sp;
     proc->context.regs[REG_RA] = (regsize_t)proc->pc;
