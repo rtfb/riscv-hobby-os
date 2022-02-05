@@ -112,6 +112,7 @@ uint32_t proc_fork() {
 
     process_t* parent = current_proc();
     if (parent == 0) {
+        release_page(sp);
         // this should never happen, some process called us, right?
         // TODO: panic
         return -1;
@@ -122,6 +123,7 @@ uint32_t proc_fork() {
 
     process_t* child = alloc_process();
     if (!child) {
+        release_page(sp);
         release(&parent->lock);
         return -1;
     }
@@ -133,9 +135,7 @@ uint32_t proc_fork() {
     copy_context(&child->context, &parent->context);
 
     // overwrite the sp with the same offset as parent->sp, but within the child stack:
-    // regsize_t offset = (regsize_t)(parent->stack_page - parent->context.regs[REG_SP]);
     regsize_t offset = parent->context.regs[REG_SP] - (regsize_t)parent->stack_page;
-    // regsize_t offset = trap_frame.regs[REG_SP] - (regsize_t)parent->stack_page;
     child->context.regs[REG_SP] = (regsize_t)(sp + offset);
     offset = parent->context.regs[REG_FP] - (regsize_t)parent->stack_page;
     child->context.regs[REG_FP] = (regsize_t)(sp + offset);
@@ -171,7 +171,8 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     }
     acquire(&proc->lock);
     proc->pc = userland_main_funcs[prog_num];
-    proc->stack_page = sp; // XXX: release the proc->stack_page before assigning the new one?
+    release_page(proc->stack_page);
+    proc->stack_page = sp;
     proc->context.regs[REG_RA] = (regsize_t)proc->pc;
     proc->context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
     proc->context.regs[REG_FP] = (regsize_t)(sp + PAGE_SIZE);
