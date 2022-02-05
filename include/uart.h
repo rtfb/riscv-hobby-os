@@ -1,8 +1,10 @@
 #ifndef _UART_H_
 #define _UART_H_
 
-// #define UART_BASE 0x10010000 // for run-baremetal
-#define UART_BASE 0x10013000 // for run-baremetal32 and for HiFive
+#ifndef UART_BASE
+#define UART_BASE 0x10010000
+#endif
+
 #define UART_TXDATA 0
 #define UART_RXDATA 4
 #define UART_RXCTRL 0xc
