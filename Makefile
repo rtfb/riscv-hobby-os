@@ -158,6 +158,7 @@ $(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
 		-Wa,--defsym,NUM_HARTS=1 -g \
+		-Wl,--defsym,RAM_SIZE=0x4000 \
 		-include include/machine/qemu.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
