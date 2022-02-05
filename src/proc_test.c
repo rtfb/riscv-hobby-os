@@ -24,25 +24,17 @@ void init_test_processes() {
         return;
     }
 
-    userland_programs[0].entry_point = &u_main_init;
-    userland_programs[0].name = "init";
-    userland_programs[1].entry_point = &u_main;
-    userland_programs[1].name = "main1";
-    userland_programs[2].entry_point = &u_main2;
-    userland_programs[2].name = "main2";
-    userland_programs[3].entry_point = &u_main3;
-    userland_programs[3].name = "main3";
-    userland_programs[4].entry_point = &u_main_shell;
-    userland_programs[4].name = "sh";
-    userland_programs[5].entry_point = &u_main_hello1;
-    userland_programs[5].name = "hello1";
-    userland_programs[6].entry_point = &u_main_hello2;
-    userland_programs[6].name = "hello2";
-    userland_programs[7].entry_point = &u_main_sysinfo;
-    userland_programs[7].name = "sysinfo";
-    userland_programs[8].entry_point = &u_main_fmt;
-    userland_programs[8].name = "fmt";
-    num_userland_progs = 9;
+    userland_programs[0].entry_point = &u_main_shell;
+    userland_programs[0].name = "sh";
+    userland_programs[1].entry_point = &u_main_hello1;
+    userland_programs[1].name = "hello1";
+    userland_programs[2].entry_point = &u_main_hello2;
+    userland_programs[2].name = "hello2";
+    userland_programs[3].entry_point = &u_main_sysinfo;
+    userland_programs[3].name = "sysinfo";
+    userland_programs[4].entry_point = &u_main_fmt;
+    userland_programs[4].name = "fmt";
+    num_userland_progs = 5;
 
     user_program_t *shell = find_user_program("sh");
     proc_table.num_procs = 1;
