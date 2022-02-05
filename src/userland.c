@@ -57,13 +57,13 @@ void _userland run_program(char *name) {
 }
 
 char unknown_cmd_fmt[] _user_rodata = "unknown command: %s\n";
+char prog_name_hello1[] _user_rodata = "hello1";
+char prog_name_hello2[] _user_rodata = "hello2";
+char prog_name_sysinfo[] _user_rodata = "sysinfo";
+char prog_name_fmt[] _user_rodata = "fmt";
 
 int _userland u_main_shell(int argc, char* argv[]) {
     sys_puts("\nInit userland!\n");
-    char h1[] = "hello1";
-    char h2[] = "hello2";
-    char si[] = "sysinfo";
-    char fmt[] = "fmt";
     char buf[16];
     for (;;) {
         buf[0] = 0;
@@ -74,13 +74,13 @@ int _userland u_main_shell(int argc, char* argv[]) {
         } else {
             buf[nread] = 0;
             trimright(buf);
-            if (ustrncmp(buf, h1, ARRAY_LENGTH(h1)) == 0) {
+            if (ustrncmp(buf, prog_name_hello1, ARRAY_LENGTH(prog_name_hello1)) == 0) {
                 run_program("hello1");
-            } else if (ustrncmp(buf, h2, ARRAY_LENGTH(h2)) == 0) {
+            } else if (ustrncmp(buf, prog_name_hello2, ARRAY_LENGTH(prog_name_hello2)) == 0) {
                 run_program("hello2");
-            } else if (ustrncmp(buf, si, ARRAY_LENGTH(h2)) == 0) {
+            } else if (ustrncmp(buf, prog_name_sysinfo, ARRAY_LENGTH(prog_name_sysinfo)) == 0) {
                 run_program("sysinfo");
-            } else if (ustrncmp(buf, fmt, ARRAY_LENGTH(h2)) == 0) {
+            } else if (ustrncmp(buf, prog_name_fmt, ARRAY_LENGTH(prog_name_fmt)) == 0) {
                 run_program("fmt");
             } else {
                 printf(unknown_cmd_fmt, buf);
