@@ -36,7 +36,8 @@
 #define MAX_USERLAND_PROGS 10
 
 typedef struct trap_frame_s {
-    regsize_t regs[32];
+    regsize_t regs[31]; // all registers except r0
+    regsize_t pc;
 } trap_frame_t;
 
 typedef struct process_s {
@@ -44,7 +45,6 @@ typedef struct process_s {
     uint32_t pid;
     char *name;
     struct process_s* parent;
-    void *pc;
     trap_frame_t context;
 
     // stack_page points to the base of the page allocated for stack (i.e. it's

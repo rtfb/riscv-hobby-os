@@ -16,6 +16,10 @@ k_interrupt_timer:
 ret_to_user:
         # load a pointer to trap_frame into t6:
         la      t6, trap_frame
+
+        lx      t0, 31, (t6)
+        csrw    mepc, t0
+
         # now restore user's t6 to t6:
         lx      t6, 30, (t6)
         # and now the trick: swap user's t6 with mscratch, which also contains the

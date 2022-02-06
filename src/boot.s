@@ -225,6 +225,9 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
         csrrw   t6, mscratch, t6
         sx      t6, 30, (t0)
 
+        csrr    t6, mepc
+        sx      t6, 31, (t0)
+
         # set kernel stack pointer:
         la      t0, stack_top           # set it at stack_top for hart0,
         csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
@@ -317,17 +320,13 @@ exception_dispatch:
 
 syscall_dispatch:
         call    syscall
-        j       syscall_epilogue
+        j       ret_to_user
 
 exception_epilogue:
 .if HALT_ON_EXCEPTION == 1
 1:      j       1b
 .endif
-syscall_epilogue:
-        csrr    t0, mepc                # mepc points to the instruction that raised an exception
-        addi    t0, t0, 4               # move mepc by the size of a single RISC-V instruction (always 4 bytes in RV32, RV64, RV128)
-        csrw    mepc, t0                # to point to the next instruction in order to continue execution.
-        j ret_to_user
+        j       ret_to_user
 
 interrupt_epilogue:
         mret

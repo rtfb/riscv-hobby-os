@@ -82,7 +82,6 @@ void schedule_user_process() {
         release(&last_proc->lock);
         copy_context(&trap_frame, &proc->context);
     }
-    set_jump_address(proc->pc);
     release(&proc->lock);
     release(&proc_table.lock);
     set_user_mode();
@@ -119,7 +118,7 @@ uint32_t proc_fork() {
         return -1;
     }
     acquire(&parent->lock);
-    parent->pc = get_mepc();
+    parent->context.pc = trap_frame.pc;
     copy_context(&parent->context, &trap_frame);
 
     process_t* child = alloc_process();
@@ -130,7 +129,7 @@ uint32_t proc_fork() {
     }
     child->pid = alloc_pid();
     child->parent = parent;
-    child->pc = parent->pc;
+    child->context.pc = parent->context.pc;
     child->stack_page = sp;
     copy_page(child->stack_page, parent->stack_page);
     copy_context(&child->context, &parent->context);
@@ -171,17 +170,16 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         return -1;
     }
     acquire(&proc->lock);
-    proc->pc = program->entry_point;
+    proc->context.pc = (regsize_t)program->entry_point;
     proc->name = program->name;
     release_page(proc->stack_page);
     proc->stack_page = sp;
-    proc->context.regs[REG_RA] = (regsize_t)proc->pc;
+    proc->context.regs[REG_RA] = (regsize_t)proc->context.pc;
     proc->context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
     proc->context.regs[REG_FP] = (regsize_t)(sp + PAGE_SIZE);
     proc->context.regs[REG_A0] = 7; // TODO: set it to len(argv)
     proc->context.regs[REG_A1] = (regsize_t)argv; // TODO: make a copy of it at some point?
     copy_context(&trap_frame, &proc->context);
-    set_jump_address(proc->pc - 4); // set it to -4 because syscall_epilogue will add 4 to it
     release(&proc->lock);
     return 0;
 }

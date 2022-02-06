@@ -27,6 +27,7 @@ void __attribute__((__section__(".text#"))) *syscall_vector[] = {
 
 void syscall() {
     int nr = trap_frame.regs[REG_A7];
+    trap_frame.pc += 4; // step over the ecall instruction that brought us here
     if (nr >= 0 && nr < ARRAY_LENGTH(syscall_vector) && syscall_vector[nr] != 0) {
         int32_t (*funcPtr)(void) = syscall_vector[nr];
         trap_frame.regs[REG_A0] = (*funcPtr)();

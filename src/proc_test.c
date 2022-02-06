@@ -40,7 +40,7 @@ void init_test_processes() {
     proc_table.num_procs = 1;
     process_t* p0 = &proc_table.procs[0];
     p0->pid = alloc_pid();
-    p0->pc = shell->entry_point;
+    p0->context.pc = (regsize_t)shell->entry_point;
     p0->name = shell->name;
     p0->state = PROC_STATE_READY;
     void* sp = allocate_page();
