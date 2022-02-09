@@ -121,3 +121,11 @@ int _userland u_main_sysinfo() {
     exit();
     return 0;
 }
+
+int _userland u_main_smoke_test() {
+    sys_puts("\nInit userland smoke test!\n");
+    run_program("sysinfo");
+    run_program("fmt");
+    for (;;)
+        ;
+}

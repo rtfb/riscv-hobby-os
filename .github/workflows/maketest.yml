@@ -19,9 +19,13 @@ jobs:
       run: riscv64-linux-gnu-gcc --version
     - name: Run virt tests
       run: make test
-    - name: Run u64 tests
+    - name: Run u64 dry-run tests
       run: make out/test-output-u64.txt
-    - name: Run u32 tests
+    - name: Run u32 dry-run tests
       run: make out/test-output-u32.txt
+    - name: Run u64 smoke tests
+      run: make out/smoke-test-output-u64.txt
+    - name: Run u32 smoke tests
+      run: make out/smoke-test-output-u32.txt
     - name: Make all binaries
       run: make all

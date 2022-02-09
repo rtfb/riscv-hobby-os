@@ -15,6 +15,7 @@ extern int u_main_hello1();
 extern int u_main_hello2();
 extern int u_main_sysinfo();
 extern int u_main_fmt();
+extern int u_main_smoke_test();
 
 user_program_t userland_programs[MAX_USERLAND_PROGS];
 int num_userland_progs;
@@ -34,14 +35,24 @@ void init_test_processes() {
     userland_programs[3].name = "sysinfo";
     userland_programs[4].entry_point = &u_main_fmt;
     userland_programs[4].name = "fmt";
-    num_userland_progs = 5;
+    userland_programs[5].entry_point = &u_main_smoke_test;
+    userland_programs[5].name = "smoke-test";
+    num_userland_progs = 6;
 
-    user_program_t *shell = find_user_program("sh");
+    if (!strncmp(fdt_get_bootargs(), "smoke-test", ARRAY_LENGTH("smoke-test"))) {
+        assign_init_program("smoke-test");
+    } else {
+        assign_init_program("sh");
+    }
+}
+
+void assign_init_program(char const* prog) {
+    user_program_t *program = find_user_program(prog);
     proc_table.num_procs = 1;
     process_t* p0 = &proc_table.procs[0];
     p0->pid = alloc_pid();
-    p0->context.pc = (regsize_t)shell->entry_point;
-    p0->name = shell->name;
+    p0->context.pc = (regsize_t)program->entry_point;
+    p0->name = program->name;
     p0->state = PROC_STATE_READY;
     void* sp = allocate_page();
     if (!sp) {

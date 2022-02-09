@@ -86,6 +86,8 @@ extern trap_frame_t trap_frame;
 // processes that will get executed by default. Kind of like what an initrd
 // would do, but a poor man's version until we can do better.
 void init_test_processes();
+void assign_init_program(char const* prog);
+
 void init_process_table();
 void schedule_user_process();
 
