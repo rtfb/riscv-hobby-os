@@ -24,3 +24,21 @@ void uart_writechar(char ch) {
     while ((int32_t)(*tx) < 0);
     *tx = ch;
 }
+
+int32_t uart_readline(char* buf, uint32_t bufsize) {
+    int32_t nread = 0;
+    for (;;) {
+        if (nread >= bufsize) {
+            break;
+        }
+        char ch = uart_readchar();
+        buf[nread] = ch;
+        nread++;
+        uart_writechar(ch); // echo back to console
+        if (ch == '\r') {
+            uart_writechar('\n'); // echo back to console
+            break;
+        }
+    }
+    return nread;
+}

@@ -13,5 +13,6 @@
 void uart_init();
 char uart_readchar();
 void uart_writechar(char ch);
+int32_t uart_readline(char* buf, uint32_t bufsize);
 
 #endif // ifndef _UART_H_

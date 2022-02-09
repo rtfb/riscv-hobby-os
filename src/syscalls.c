@@ -52,21 +52,7 @@ uint32_t sys_fork() {
 int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize) {
     // ignore fd and default to reading from UART for now, as there's nowhere
     // else to read from
-    int32_t nread = 0;
-    for (;;) {
-        if (nread >= bufsize) {
-            break;
-        }
-        char ch = uart_readchar();
-        buf[nread] = ch;
-        nread++;
-        uart_writechar(ch); // echo back to console
-        if (ch == '\r') {
-            uart_writechar('\n'); // echo back to console
-            break;
-        }
-    }
-    return nread;
+    return uart_readline(buf, bufsize);
 }
 
 // implemented in uart-print.s
