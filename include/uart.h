@@ -10,6 +10,8 @@
 #define UART_RXCTRL 0xc
 #define UART_BAUD_RATE_DIVISOR 0x18
 
+#define ASCII_DEL 0x7f
+
 void uart_init();
 char uart_readchar();
 void uart_writechar(char ch);

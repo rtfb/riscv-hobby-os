@@ -32,9 +32,18 @@ int32_t uart_readline(char* buf, uint32_t bufsize) {
             break;
         }
         char ch = uart_readchar();
-        buf[nread] = ch;
-        nread++;
-        uart_writechar(ch); // echo back to console
+        if (ch == ASCII_DEL) {
+            if (nread > 0) {
+                nread--;
+                uart_writechar('\b');
+                uart_writechar(' ');
+                uart_writechar('\b');
+            }
+        } else {
+            buf[nread] = ch;
+            nread++;
+            uart_writechar(ch); // echo back to console
+        }
         if (ch == '\r') {
             uart_writechar('\n'); // echo back to console
             break;
