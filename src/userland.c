@@ -82,6 +82,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
                 run_program("sysinfo");
             } else if (ustrncmp(buf, prog_name_fmt, ARRAY_LENGTH(prog_name_fmt)) == 0) {
                 run_program("fmt");
+                sleep(2000);
             } else {
                 printf(unknown_cmd_fmt, buf);
             }

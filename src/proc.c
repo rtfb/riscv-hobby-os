@@ -1,6 +1,7 @@
 #include "proc.h"
 #include "pagealloc.h"
 #include "programs.h"
+#include "kernel.h"
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;
@@ -11,8 +12,9 @@ void init_process_table() {
     // kernel_timer_tick, which will happen from the kernel land. We want to
     // know that so we can discard the kernel code pc that we get on that first
     // call.
-    proc_table.curr_proc = -1;
+    proc_table.curr_proc = -1; // XXX: drop this hack now that we have is_idle?
     proc_table.pid_counter = 0;
+    proc_table.is_idle = 1;
     for (int i = 0; i < MAX_PROCS; i++) {
         proc_table.procs[i].state = PROC_STATE_AVAILABLE;
     }
@@ -45,6 +47,7 @@ void init_global_trap_frame() {
 // schedule_user_process() is only called from kernel_timer_tick(), and MRET is
 // called in interrupt_epilogue, after kernel_timer_tick() exits.
 void schedule_user_process() {
+    uint64_t now = time_get_now();
     acquire(&proc_table.lock);
     int curr_proc = proc_table.curr_proc;
     process_t *last_proc = 0;
@@ -55,7 +58,7 @@ void schedule_user_process() {
         curr_proc = 0;
     } else {
         last_proc = &proc_table.procs[curr_proc];
-        if (last_proc->state == PROC_STATE_AVAILABLE) {
+        if (last_proc->state == PROC_STATE_AVAILABLE || proc_table.is_idle) {
             // schedule_user_process may have been called from proc_exit, which
             // kills the process in curr_proc slot, so if that's the case,
             // pretend there wasn't any last_proc:
@@ -68,6 +71,17 @@ void schedule_user_process() {
     }
 
     process_t *proc = find_ready_proc(curr_proc);
+    if (!proc) {
+        // nothing to schedule; this either means that something went terribly
+        // wrong, or all processes are sleeping. In which case we should simply
+        // schedule the next timer tick and do nothing
+        proc_table.is_idle = 1;
+        release(&proc_table.lock);
+        set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
+        enable_interrupts();
+        park_hart();
+        return;
+    }
     acquire(&proc->lock);
     proc->state = PROC_STATE_RUNNING;
 
@@ -83,23 +97,42 @@ void schedule_user_process() {
         copy_context(&trap_frame, &proc->context);
     }
     release(&proc->lock);
+    proc_table.is_idle = 0;
     release(&proc_table.lock);
     set_user_mode();
 }
 
 process_t* find_ready_proc(int curr_proc) {
     int orig_curr_proc = curr_proc;
+    process_t* proc = 0;
     do {
         curr_proc++;
         if (curr_proc >= MAX_PROCS) {
             curr_proc = 0;
         }
-        if (proc_table.procs[curr_proc].state == PROC_STATE_READY) {
+        proc = &proc_table.procs[curr_proc];
+        if (proc->state == PROC_STATE_READY) {
+            break;
+        }
+        if (proc->state == PROC_STATE_SLEEPING && should_wake_up(proc)) {
+            proc->state = PROC_STATE_READY;
             break;
         }
     } while (curr_proc != orig_curr_proc);
     proc_table.curr_proc = curr_proc;
-    return &proc_table.procs[curr_proc];
+    if (proc->state == PROC_STATE_SLEEPING) {
+        // this can happen if all processes are sleeping
+        return 0;
+    }
+    return proc;
+}
+
+int should_wake_up(process_t* proc) {
+    uint64_t now = time_get_now();
+    if (proc->wakeup_time <= now) {
+        return 1;
+    }
+    return 0;
 }
 
 uint32_t proc_fork() {
@@ -250,7 +283,7 @@ void proc_exit() {
     schedule_user_process();
 }
 
-int32_t proc_wait() {
+int32_t wait_or_sleep(uint64_t wakeup_time) {
     process_t* proc = current_proc();
     if (proc == 0) {
         // this should never happen, some process called us, right?
@@ -259,7 +292,19 @@ int32_t proc_wait() {
     }
     acquire(&proc->lock);
     proc->state = PROC_STATE_SLEEPING;
+    proc->wakeup_time = wakeup_time;
+    copy_context(&proc->context, &trap_frame); // save the context before sleep
     release(&proc->lock);
     schedule_user_process();
     return 0;
+}
+
+int32_t proc_wait() {
+    return wait_or_sleep(0);
+}
+
+int32_t proc_sleep(uint64_t milliseconds) {
+    uint64_t now = time_get_now();
+    uint64_t delta = (ONE_SECOND/1000)*milliseconds;
+    return wait_or_sleep(now + delta);
 }

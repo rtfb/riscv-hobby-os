@@ -47,3 +47,8 @@ getpid:
 sysinfo:
         macro_syscall SYS_NR_sysinfo
         ret
+
+.globl sleep
+sleep:
+        macro_syscall SYS_NR_sleep
+        ret

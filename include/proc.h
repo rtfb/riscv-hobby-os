@@ -56,6 +56,13 @@ typedef struct process_s {
     // state contains the state of the process, as well as the process table
     // slot itself (e.g. signifying the availability of the slot).
     uint32_t state;
+
+    // wakeup_time contains a timer value when this process should continue
+    // executing after a sleep() system call. If state != PROC_STATE_SLEEPING,
+    // the value of wakeup_time has no meaning and should be ignored. If the
+    // process was put into sleep by a wait() syscall instead of sleep(),
+    // wakeup_time should be set to zero.
+    uint64_t wakeup_time;
 } process_t;
 
 typedef struct proc_table_s {
@@ -64,6 +71,17 @@ typedef struct proc_table_s {
     int num_procs;
     int curr_proc;
     uint32_t pid_counter;
+
+    // is_idle is a flag meaning that the kernel isn't running any user
+    // process. This can mean we're fresh after the boot and no user process
+    // was scheduled yet, or it could mean all the processes are asleep waiting
+    // for something, and thus, the kernel didn't have anything to schedule
+    // last time it tried.
+    //
+    // In technical terms, this means that trap_frame.pc does not point to any
+    // user process and likely points to park_hart() within kernel itself, so
+    // we shouldn't jump back to it.
+    int is_idle;
 } proc_table_t;
 
 // defined in proc.c
@@ -123,6 +141,13 @@ uint32_t proc_execv(char const* filename, char const* argv[]);
 
 // proc_wait implements the wait system call.
 int32_t proc_wait();
+
+// proc_sleep implements the sleep system call.
+int32_t proc_sleep(uint64_t milliseconds);
+
+// should_wake_up checks the proc's wakeup_time against current time and
+// returns true if wakeup_time >= now.
+int should_wake_up(process_t* proc);
 
 // alloc_process finds an available slot in the process table and returns its
 // address. It will immediately acquire the process lock when it finds the

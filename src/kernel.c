@@ -69,21 +69,13 @@ void kernel_timer_tick() {
     disable_interrupts();
     regsize_t userland_pc = trap_frame.pc;
     acquire(&proc_table.lock);
-    if (userland_pc && proc_table.curr_proc >= 0) {
+    if (userland_pc && !proc_table.is_idle) {
         proc_table.procs[proc_table.curr_proc].context.pc = userland_pc;
     }
     release(&proc_table.lock);
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     schedule_user_process();
     enable_interrupts();
-}
-
-void set_timer_after(uint64_t delta) {
-    unsigned int hart_id = get_mhartid();
-    uint64_t *mtime = (uint64_t*)MTIME;
-    uint64_t *mtimecmp = (uint64_t*)(MTIMECMP_BASE) + 8*hart_id;
-    uint64_t now = *mtime;
-    *mtimecmp = now + delta;
 }
 
 void set_mie(unsigned int value) {

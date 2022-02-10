@@ -41,4 +41,7 @@ void set_mscratch(void* ptr);
 // implemented in boot.s
 void park_hart();
 
+void set_timer_after(uint64_t delta);
+uint64_t time_get_now();
+
 #endif // ifndef _RISCV_H_

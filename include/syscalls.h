@@ -28,6 +28,7 @@ int32_t sys_wait();
 uint32_t sys_execv();
 uint32_t sys_getpid();
 uint32_t sys_sysinfo();
+uint32_t sys_sleep(uint64_t milliseconds);
 
 // These are implemented in assembler as of now:
 extern void poweroff();

@@ -23,6 +23,7 @@ void __attribute__((__section__(".text#"))) *syscall_vector[] = {
     [SYS_NR_execv]     sys_execv,
     [SYS_NR_getpid]    sys_getpid,
     [SYS_NR_sysinfo]   sys_sysinfo,
+    [SYS_NR_sleep]     sys_sleep,
 };
 
 void syscall() {
@@ -88,4 +89,8 @@ uint32_t sys_sysinfo() {
     info->freeram = count_free_pages();
     release(&paged_memory.lock);
     return 0;
+}
+
+uint32_t sys_sleep(uint64_t milliseconds) {
+    return proc_sleep(milliseconds);
 }
