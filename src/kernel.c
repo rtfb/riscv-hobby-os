@@ -67,10 +67,9 @@ void init_trap_vector() {
 // run.
 void kernel_timer_tick() {
     disable_interrupts();
-    regsize_t userland_pc = trap_frame.pc;
     acquire(&proc_table.lock);
-    if (userland_pc && !proc_table.is_idle) {
-        proc_table.procs[proc_table.curr_proc].context.pc = userland_pc;
+    if (!proc_table.is_idle) {
+        copy_context(&proc_table.procs[proc_table.curr_proc].context, &trap_frame);
     }
     release(&proc_table.lock);
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);

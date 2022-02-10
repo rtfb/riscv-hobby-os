@@ -7,12 +7,7 @@ proc_table_t proc_table;
 trap_frame_t trap_frame;
 
 void init_process_table() {
-    // init curr_proc to -1, it will get incremented to 0 on the first
-    // scheduler run. This will also help to identify the very first call to
-    // kernel_timer_tick, which will happen from the kernel land. We want to
-    // know that so we can discard the kernel code pc that we get on that first
-    // call.
-    proc_table.curr_proc = -1; // XXX: drop this hack now that we have is_idle?
+    proc_table.curr_proc = 0;
     proc_table.pid_counter = 0;
     proc_table.is_idle = 1;
     for (int i = 0; i < MAX_PROCS; i++) {
@@ -50,20 +45,12 @@ void schedule_user_process() {
     uint64_t now = time_get_now();
     acquire(&proc_table.lock);
     int curr_proc = proc_table.curr_proc;
-    process_t *last_proc = 0;
-    if (curr_proc < 0) {
-        // compensate for curr_proc being initialized to -1 for the benefit of
-        // identifying the very first kernel_timer_tick(), which gets a mepc
-        // pointing to the kernel land, which we want to discard.
-        curr_proc = 0;
-    } else {
-        last_proc = &proc_table.procs[curr_proc];
-        if (last_proc->state == PROC_STATE_AVAILABLE || proc_table.is_idle) {
-            // schedule_user_process may have been called from proc_exit, which
-            // kills the process in curr_proc slot, so if that's the case,
-            // pretend there wasn't any last_proc:
-            last_proc = 0;
-        }
+    process_t *last_proc = &proc_table.procs[curr_proc];
+    if (last_proc->state == PROC_STATE_AVAILABLE || proc_table.is_idle) {
+        // schedule_user_process may have been called from proc_exit, which
+        // kills the process in curr_proc slot, so if that's the case,
+        // pretend there wasn't any last_proc:
+        last_proc = 0;
     }
     if (proc_table.num_procs == 0) {
         release(&proc_table.lock);
