@@ -188,6 +188,53 @@ int _userland u_main_smoke_test() {
     run_program("fmt", 0);
     run_hanger();
     run_program("sysinfo", 0);
+    run_program("ps", 0);
     for (;;)
         ;
+}
+
+char ps_header_fmt[] _user_rodata = "PID  STATE  NAME\n";
+char ps_process_info_fmt[] _user_rodata = "%d    %c      %s\n";
+char ps_dash_s_flag[] _user_rodata = "-s";
+
+char _userland state_to_char(uint32_t state) {
+    switch (state) {
+        case 0: return 'A'; // available
+        case 1: return 'G'; // ready (read: good)
+        case 2: return 'R'; // running
+        case 3: return 'S'; // sleeping
+        default: return 'U'; // unknown
+    }
+    return 'U';
+}
+
+int _userland u_main_ps(int argc, char const *argv[]) {
+    uint32_t pids[32];
+    uint32_t num_pids = plist(pids, 32);
+    if (num_pids < 0) {
+        sys_puts("ERROR: plist\n");
+        exit(-1);
+        return -1;
+    }
+    int skip_self = 0;
+    uint32_t my_pid = 0;
+    if (argc > 1 && !ustrncmp(ps_dash_s_flag, argv[1], 2)) {
+        skip_self = 1;
+        my_pid = getpid();
+    }
+    printf(ps_header_fmt);
+    for (int i = 0; i < num_pids; i++) {
+        if (skip_self && pids[i] == my_pid) {
+            continue;
+        }
+        pinfo_t info;
+        uint32_t status = pinfo(pids[i], &info);
+        if (status < 0 ) {
+            sys_puts("ERROR: pinfo\n");
+            continue;
+        }
+        printf(ps_process_info_fmt, info.pid, state_to_char(info.state), info.name);
+    }
+    exit(0);
+    return 0;
 }

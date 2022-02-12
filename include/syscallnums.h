@@ -15,3 +15,7 @@
 // trap_vector too big while very sparsely populated.
 #define SYS_NR_sysinfo        30  // __NR_sysinfo is 116 on Linux
 #define SYS_NR_sleep          31  // __NR_nanosleep is 162 on Linux
+
+// These are non-standard syscalls
+#define SYS_NR_plist          32
+#define SYS_NR_pinfo          33

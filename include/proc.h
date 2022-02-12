@@ -4,6 +4,7 @@
 #include "riscv.h"
 #include "sys.h"
 #include "spinlock.h"
+#include "syscalls.h"
 
 #define MAX_PROCS 4
 
@@ -165,5 +166,9 @@ process_t* current_proc();
 
 // copy_context copies the contents for src into dst.
 void copy_context(trap_frame_t* dst, trap_frame_t* src);
+
+uint32_t proc_plist(uint32_t *pids, uint32_t size);
+
+uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo);
 
 #endif // ifndef _PROC_H_

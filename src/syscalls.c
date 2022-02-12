@@ -24,6 +24,8 @@ void __attribute__((__section__(".text#"))) *syscall_vector[] = {
     [SYS_NR_getpid]    sys_getpid,
     [SYS_NR_sysinfo]   sys_sysinfo,
     [SYS_NR_sleep]     sys_sleep,
+    [SYS_NR_plist]     sys_plist,
+    [SYS_NR_pinfo]     sys_pinfo,
 };
 
 void syscall() {
@@ -97,4 +99,12 @@ uint32_t sys_sysinfo() {
 
 uint32_t sys_sleep(uint64_t milliseconds) {
     return proc_sleep(milliseconds);
+}
+
+uint32_t sys_plist(uint32_t *pids, uint32_t size) {
+    return proc_plist(pids, size);
+}
+
+uint32_t sys_pinfo(uint32_t pid, pinfo_t *pinfo) {
+    return proc_pinfo(pid, pinfo);
 }

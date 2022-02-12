@@ -52,3 +52,13 @@ sysinfo:
 sleep:
         macro_syscall SYS_NR_sleep
         ret
+
+.globl plist
+plist:
+        macro_syscall SYS_NR_plist
+        ret
+
+.globl pinfo
+pinfo:
+        macro_syscall SYS_NR_pinfo
+        ret

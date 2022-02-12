@@ -23,16 +23,24 @@ typedef struct sysinfo_s {
     regsize_t unclaimed_end;
 } sysinfo_t;
 
+typedef struct pinfo_s {
+    uint32_t pid;
+    char name[16];
+    uint32_t state;
+} pinfo_t;
+
 void sys_restart();
 void sys_exit();
 uint32_t sys_fork();
-int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize);
+int32_t sys_read();
 void sys_write();
 int32_t sys_wait();
 uint32_t sys_execv();
 uint32_t sys_getpid();
 uint32_t sys_sysinfo();
-uint32_t sys_sleep(uint64_t milliseconds);
+uint32_t sys_sleep();
+uint32_t sys_plist();
+uint32_t sys_pinfo();
 
 // These are implemented in assembler as of now:
 extern void poweroff();

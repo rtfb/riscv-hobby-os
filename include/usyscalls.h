@@ -16,5 +16,7 @@ extern uint32_t execv(char const* filename, char const* argv[]);
 extern uint32_t getpid();
 extern uint32_t sysinfo(sysinfo_t* info);
 extern uint32_t sleep(uint64_t milliseconds);
+extern uint32_t plist(uint32_t *pids, uint32_t size);
+extern uint32_t pinfo(uint32_t pid, pinfo_t *pinfo);
 
 #endif // ifndef _USYSCALLS_H_
