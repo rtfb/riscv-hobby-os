@@ -89,6 +89,8 @@ uint32_t sys_sysinfo() {
     acquire(&paged_memory.lock);
     info->totalram = paged_memory.num_pages;
     info->freeram = count_free_pages();
+    info->unclaimed_start = paged_memory.unclaimed_start;
+    info->unclaimed_end = paged_memory.unclaimed_end;
     release(&paged_memory.lock);
     return 0;
 }

@@ -4,7 +4,6 @@ FDT ok
 bootargs: dry-run
 kprintf test several params: foo, 0xF10A, 0
 paged memory: start=0x80005800, end=0x81000000, npages=32
-unclaimed: 0x800057A0-0x80005800 (96 bytes)
 cpu parked: 1
 
 qemu-launcher: killing qemu due to timeout

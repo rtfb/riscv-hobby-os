@@ -17,6 +17,10 @@ typedef struct sysinfo_s {
     // uint32_t totalswap; // Total swap space size
     // uint32_t freeswap;  // Swap space still available
     uint32_t procs;    // Number of current processes
+
+    // the region of unclaimed memory between stack_top and the first page
+    regsize_t unclaimed_start;
+    regsize_t unclaimed_end;
 } sysinfo_t;
 
 void sys_restart();

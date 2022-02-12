@@ -13,6 +13,8 @@ void init_paged_memory(void* paged_mem_end) {
         mem += PAGE_SIZE;
     }
     regsize_t paged_mem_start = mem;
+    paged_memory.unclaimed_start = unclaimed_start;
+    paged_memory.unclaimed_end = paged_mem_start;
     int i = 0;
     while (mem < (regsize_t)paged_mem_end && i < MAX_PAGES) {
         paged_memory.pages[i].ptr = (void*)mem;
@@ -21,9 +23,8 @@ void init_paged_memory(void* paged_mem_end) {
         i++;
     }
     paged_memory.num_pages = i;
-    kprintf("paged memory: start=%p, end=%p, npages=%d\nunclaimed: %p-%p (%d bytes)\n",
-            paged_mem_start, paged_mem_end, paged_memory.num_pages,
-            unclaimed_start, paged_mem_start, paged_mem_start - unclaimed_start);
+    kprintf("paged memory: start=%p, end=%p, npages=%d\n",
+            paged_mem_start, paged_mem_end, paged_memory.num_pages);
 }
 
 void* allocate_page() {

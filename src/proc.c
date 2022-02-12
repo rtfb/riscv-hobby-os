@@ -169,6 +169,9 @@ uint32_t proc_fork() {
 
 regsize_t len_argv(char const* argv[]) {
     regsize_t argc = 0;
+    if (!argv) {
+        return 0;
+    }
     while (argv[argc] != 0) {
         argc++;
     }
@@ -184,7 +187,7 @@ typedef struct {
 // of the stack page of the new process. Returns the new value for sp and argv
 // pointing to the new location.
 sp_argv_t copy_argv(void *sp, regsize_t argc, char const* argv[]) {
-    if (argc == 0) {
+    if (argc == 0 || argv == 0) {
         return (sp_argv_t){
             .new_sp = (regsize_t)sp,
             .new_argv = 0,

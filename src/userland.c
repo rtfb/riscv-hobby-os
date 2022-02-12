@@ -138,11 +138,17 @@ int _userland u_main_fmt() {
 }
 
 char sysinfo_fmt[] _user_rodata = "Total RAM: %d\nFree RAM: %d\nNum procs: %d\n";
+char unclaimed_mem_fmt[] _user_rodata = "Unclaimed mem: 0x%x-0x%x (%d bytes)\n";
+char dash_f[] _user_rodata = "-f";
 
-int _userland u_main_sysinfo() {
+int _userland u_main_sysinfo(int argc, char const* argv[]) {
     sysinfo_t info;
     sysinfo(&info);
     printf(sysinfo_fmt, info.totalram, info.freeram, info.procs);
+    if (argc > 1 && !ustrncmp(argv[1], dash_f, 2)) {
+        printf(unclaimed_mem_fmt, info.unclaimed_start, info.unclaimed_end,
+               info.unclaimed_end - info.unclaimed_start);
+    }
     exit();
     return 0;
 }
