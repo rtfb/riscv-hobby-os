@@ -16,15 +16,19 @@ extern int u_main_hello2();
 extern int u_main_sysinfo();
 extern int u_main_fmt();
 extern int u_main_smoke_test();
+extern int u_main_hanger();
 
 user_program_t userland_programs[MAX_USERLAND_PROGS];
-int num_userland_progs;
 
 void init_test_processes() {
     if (!strncmp(fdt_get_bootargs(), "dry-run", ARRAY_LENGTH("dry-run"))) {
         return;
     }
 
+    for (int i = 0; i < MAX_USERLAND_PROGS; i++) {
+        userland_programs[i].entry_point = 0;
+        userland_programs[i].name = 0;
+    }
     userland_programs[0].entry_point = &u_main_shell;
     userland_programs[0].name = "sh";
     userland_programs[1].entry_point = &u_main_hello1;
@@ -37,7 +41,8 @@ void init_test_processes() {
     userland_programs[4].name = "fmt";
     userland_programs[5].entry_point = &u_main_smoke_test;
     userland_programs[5].name = "smoke-test";
-    num_userland_progs = 6;
+    userland_programs[6].entry_point = &u_main_hanger;
+    userland_programs[6].name = "hang";
 
     if (!strncmp(fdt_get_bootargs(), "smoke-test", ARRAY_LENGTH("smoke-test"))) {
         assign_init_program("smoke-test");
@@ -64,8 +69,8 @@ void assign_init_program(char const* prog) {
 }
 
 user_program_t* find_user_program(char const *name) {
-    for (int i = 0; i < num_userland_progs; i++) {
-        if (!strncmp(name, userland_programs[i].name, 16)) {
+    for (int i = 0; i < MAX_USERLAND_PROGS; i++) {
+        if (userland_programs[i].name && !strncmp(name, userland_programs[i].name, 16)) {
             return &userland_programs[i];
         }
     }

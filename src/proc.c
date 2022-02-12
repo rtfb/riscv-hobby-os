@@ -79,7 +79,10 @@ void schedule_user_process() {
         // and load the ascending one's
         acquire(&last_proc->lock);
         copy_context(&last_proc->context, &trap_frame);
-        last_proc->state = PROC_STATE_READY;
+        if (last_proc->state != PROC_STATE_SLEEPING) {
+            // restore last_proc to the ready state, but only if it's not sleeping
+            last_proc->state = PROC_STATE_READY;
+        }
         release(&last_proc->lock);
         copy_context(&trap_frame, &proc->context);
     }
@@ -116,7 +119,7 @@ process_t* find_ready_proc(int curr_proc) {
 
 int should_wake_up(process_t* proc) {
     uint64_t now = time_get_now();
-    if (proc->wakeup_time <= now) {
+    if (proc->wakeup_time != 0 && proc->wakeup_time <= now) {
         return 1;
     }
     return 0;

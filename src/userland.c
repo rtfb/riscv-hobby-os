@@ -56,6 +56,23 @@ void _userland run_program(char *name, char *argv[]) {
     }
 }
 
+// run_hanger is like the run_program, but it's intended to run a malicious
+// program that hangs intentionally, so it doesn't wait() on it, only sleeps
+// for a bit to allow it to run briefly.
+void _userland run_hanger() {
+    uint32_t pid = fork();
+    if (pid == -1) {
+        sys_puts("ERROR: fork!\n");
+    } else if (pid == 0) { // child
+        uint32_t code = execv("hang", 0);
+        // normally exec doesn't return, but if it did, it's an error:
+        sys_puts("ERROR: execv\n");
+        exit();
+    } else { // parent
+        sleep(1);
+    }
+}
+
 // parse_command iterates over buf, replacing each whitespace with a zero, thus
 // making each word a terminated string. It then collects all those strings
 // into argv, terminating it with a null pointer as well.
@@ -82,6 +99,7 @@ void _userland parse_command(char *buf, char *argv[], int argvsize) {
 }
 
 char prog_name_fmt[] _user_rodata = "fmt";
+char prog_name_hanger[] _user_rodata = "hang";
 
 int _userland u_main_shell(int argc, char* argv[]) {
     sys_puts("\nInit userland!\n");
@@ -100,7 +118,11 @@ int _userland u_main_shell(int argc, char* argv[]) {
                 continue;
             }
             parse_command(buf, parsed_args, 8);
-            run_program(parsed_args[0], parsed_args);
+            if (ustrncmp(parsed_args[0], prog_name_hanger, ARRAY_LENGTH(prog_name_hanger)) == 0) {
+                run_hanger();
+            } else {
+                run_program(parsed_args[0], parsed_args);
+            }
             if (ustrncmp(parsed_args[0], prog_name_fmt, ARRAY_LENGTH(prog_name_fmt)) == 0) {
                 sleep(2000);
             }
@@ -153,10 +175,19 @@ int _userland u_main_sysinfo(int argc, char const* argv[]) {
     return 0;
 }
 
+
+int _userland u_main_hanger() {
+    sys_puts("I will hang now, bye\n");
+    wait();
+    return 0;
+}
+
 int _userland u_main_smoke_test() {
     sys_puts("\nInit userland smoke test!\n");
     run_program("sysinfo", 0);
     run_program("fmt", 0);
+    run_hanger();
+    run_program("sysinfo", 0);
     for (;;)
         ;
 }
