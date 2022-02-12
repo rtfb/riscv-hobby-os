@@ -67,7 +67,9 @@ int32_t sys_wait() {
     return proc_wait();
 }
 
-uint32_t sys_execv(char const* filename, char const* argv[]) {
+uint32_t sys_execv() {
+    char const* filename = (char const*)trap_frame.regs[REG_A0];
+    char const** argv = (char const**)trap_frame.regs[REG_A1];
     return proc_execv(filename, argv);
 }
 

@@ -32,22 +32,22 @@ int _userland trimright(char *str) {
     int i = 0;
     while (str[i] != 0) i++;
     i--;
-    while (i > 0) {
+    while (i >= 0) {
         char ch = str[i];
         if (ch != '\r' && ch != '\n' && ch != '\t' && ch != ' ')
             break;
         str[i] = 0;
         i--;
     }
-    return i;
+    return i + 1;
 }
 
-void _userland run_program(char *name) {
+void _userland run_program(char *name, char *argv[]) {
     uint32_t pid = fork();
     if (pid == -1) {
         sys_puts("ERROR: fork!\n");
     } else if (pid == 0) { // child
-        uint32_t code = execv(name, 0);
+        uint32_t code = execv(name, (char const**)argv);
         // normally exec doesn't return, but if it did, it's an error:
         sys_puts("ERROR: execv\n");
         exit();
@@ -56,15 +56,37 @@ void _userland run_program(char *name) {
     }
 }
 
-char unknown_cmd_fmt[] _user_rodata = "unknown command: %s\n";
-char prog_name_hello1[] _user_rodata = "hello1";
-char prog_name_hello2[] _user_rodata = "hello2";
-char prog_name_sysinfo[] _user_rodata = "sysinfo";
+// parse_command iterates over buf, replacing each whitespace with a zero, thus
+// making each word a terminated string. It then collects all those strings
+// into argv, terminating it with a null pointer as well.
+void _userland parse_command(char *buf, char *argv[], int argvsize) {
+    int i = 0;
+    while (*buf == ' ') buf++; // skip any leading whitespaces
+    argv[0] = buf;
+    while (*buf) {
+        buf++;
+        if (*buf == ' ') {
+            while (*buf == ' ') {
+                *buf = 0;
+                buf++;
+            }
+            i++;
+            argv[i] = buf;
+        }
+        if (i > argvsize - 1) {
+            break;
+        }
+    }
+    i++;
+    argv[i] = 0;
+}
+
 char prog_name_fmt[] _user_rodata = "fmt";
 
 int _userland u_main_shell(int argc, char* argv[]) {
     sys_puts("\nInit userland!\n");
     char buf[16];
+    char *parsed_args[8];
     for (;;) {
         buf[0] = 0;
         sys_puts("> ");
@@ -74,17 +96,13 @@ int _userland u_main_shell(int argc, char* argv[]) {
         } else {
             buf[nread] = 0;
             trimright(buf);
-            if (ustrncmp(buf, prog_name_hello1, ARRAY_LENGTH(prog_name_hello1)) == 0) {
-                run_program("hello1");
-            } else if (ustrncmp(buf, prog_name_hello2, ARRAY_LENGTH(prog_name_hello2)) == 0) {
-                run_program("hello2");
-            } else if (ustrncmp(buf, prog_name_sysinfo, ARRAY_LENGTH(prog_name_sysinfo)) == 0) {
-                run_program("sysinfo");
-            } else if (ustrncmp(buf, prog_name_fmt, ARRAY_LENGTH(prog_name_fmt)) == 0) {
-                run_program("fmt");
+            if (*buf == 0) {
+                continue;
+            }
+            parse_command(buf, parsed_args, 8);
+            run_program(parsed_args[0], parsed_args);
+            if (ustrncmp(parsed_args[0], prog_name_fmt, ARRAY_LENGTH(prog_name_fmt)) == 0) {
                 sleep(2000);
-            } else {
-                printf(unknown_cmd_fmt, buf);
             }
         }
     }
@@ -96,8 +114,14 @@ int _userland u_main_hello1() {
     return 0;
 }
 
-int _userland u_main_hello2() {
-    sys_puts("Very welcome from hellosayer 2\n");
+char dash_h[] _user_rodata = "-h";
+
+int _userland u_main_hello2(int argc, char const* argv[]) {
+    if (argc > 1 && !ustrncmp(argv[1], dash_h, 2)) {
+        sys_puts("A hidden greeting!\n");
+    } else {
+        sys_puts("Very welcome from hellosayer 2\n");
+    }
     exit();
     return 0;
 }
@@ -125,8 +149,8 @@ int _userland u_main_sysinfo() {
 
 int _userland u_main_smoke_test() {
     sys_puts("\nInit userland smoke test!\n");
-    run_program("sysinfo");
-    run_program("fmt");
+    run_program("sysinfo", 0);
+    run_program("fmt", 0);
     for (;;)
         ;
 }

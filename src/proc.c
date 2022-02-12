@@ -167,6 +167,54 @@ uint32_t proc_fork() {
     return child->pid;
 }
 
+regsize_t len_argv(char const* argv[]) {
+    regsize_t argc = 0;
+    while (argv[argc] != 0) {
+        argc++;
+    }
+    return argc;
+}
+
+typedef struct {
+    regsize_t new_sp;
+    regsize_t new_argv;
+} sp_argv_t;
+
+// copy_argv takes argv from the calling process and copies it over to the top
+// of the stack page of the new process. Returns the new value for sp and argv
+// pointing to the new location.
+sp_argv_t copy_argv(void *sp, regsize_t argc, char const* argv[]) {
+    if (argc == 0) {
+        return (sp_argv_t){
+            .new_sp = (regsize_t)sp,
+            .new_argv = 0,
+        };
+    }
+    regsize_t* spr = (regsize_t*)sp;
+    *spr-- = 0;
+    spr -= argc;
+    char* spc = (char*)spr;
+    spc--;
+    int i = 0;
+    for (; i < argc; i++) {
+        char const* str = argv[i];
+        int j = 0;
+        while (str[j] != 0) {
+            j++;
+        }
+        *spc-- = 0;
+        while (j >= 0) {
+            *spc-- = str[j];
+            j--;
+        }
+        spr[i] = (regsize_t)(spc + 1);
+    }
+    return (sp_argv_t){
+        .new_sp = (regsize_t)(spc) & ~7, // down-align at 8, we don't want sp to be odd
+        .new_argv = (regsize_t)(spr),
+    };
+}
+
 uint32_t proc_execv(char const* filename, char const* argv[]) {
     if (filename == 0) {
         // TODO: set errno
@@ -194,14 +242,20 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     proc->name = program->name;
     release_page(proc->stack_page);
     proc->stack_page = sp;
+    regsize_t argc = len_argv(argv);
+    sp_argv_t sp_argv = copy_argv(sp + PAGE_SIZE, argc, argv);
     proc->context.regs[REG_RA] = (regsize_t)proc->context.pc;
-    proc->context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
-    proc->context.regs[REG_FP] = (regsize_t)(sp + PAGE_SIZE);
-    proc->context.regs[REG_A0] = 7; // TODO: set it to len(argv)
-    proc->context.regs[REG_A1] = (regsize_t)argv; // TODO: make a copy of it at some point?
+    proc->context.regs[REG_SP] = sp_argv.new_sp;
+    proc->context.regs[REG_FP] = sp_argv.new_sp;
+    proc->context.regs[REG_A0] = argc;
+    proc->context.regs[REG_A1] = sp_argv.new_argv;
     copy_context(&trap_frame, &proc->context);
     release(&proc->lock);
-    return 0;
+    // syscall() assigns whatever we return here to a0, the register that
+    // contains the return value. But in case of exec, we don't really return
+    // to the caller, we call the new program's main() instead, so we want a0
+    // to contain argc.
+    return argc;
 }
 
 // Let's start with a trivial implementation: a forever increasing counter.
