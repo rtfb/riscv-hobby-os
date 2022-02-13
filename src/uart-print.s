@@ -18,6 +18,7 @@ MACHINE NOT SUPPORTED!
 
 .global uart_prints                     # Print string.
                                         # @param[in] a0 address of NULL terminated string
+                                        # @return a0 - the number of bytes written
 
 .global uart_printd                     # Print signed decimal number.
                                         # @param[in] a0 decimal number
@@ -177,6 +178,7 @@ uart_printc:                            # @param[in] a0 char
 .global uart_prints
 uart_prints:                            # @param[in] a0 address of NULL terminated string
         li      a1, UART_BASE
+        mv      t2, a0                  # backup a0 for size calculation before ret
 1:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         beqz    t0, 3f                  # while not null
 2:      lw      t1, UART_REG_TXFIFO(a1) # read from serial
@@ -184,7 +186,8 @@ uart_prints:                            # @param[in] a0 address of NULL terminat
         sw      t0, UART_REG_TXFIFO(a1) # write to serial
         addi    a0, a0, 1               # increment a0
         j       1b
-3:      ret
+3:      sub     a0, a0, t2              # return the number of bytes written
+        ret
 
 .global uart_printd
 .global uart_printu

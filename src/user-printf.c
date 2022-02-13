@@ -43,7 +43,7 @@ char const* _userland print_radix(regsize_t num, int radix, char *buf, unsigned 
 // Returns the size of the resulting formatted string.
 //
 // It supports the following verbs: %c, %d, %s, %x.
-int _userland printfvec(char const* fmt, regsize_t* args) {
+int32_t _userland printfvec(char const* fmt, regsize_t* args) {
     int argnum = 0;
     char buf[96];
     int srci = 0;
@@ -94,6 +94,13 @@ int _userland printfvec(char const* fmt, regsize_t* args) {
         dsti++;
     }
     buf[dsti] = 0;
-    sys_puts(buf);
-    return dsti;
+    return prints(buf);
+}
+
+// prints is a convenience wrapper around the write() system call, it defaults
+// to printing a zero-terminated string to stdout. It is cheaper to call
+// prints() than printf() with a single argument because printf() has to
+// allocate a buffer and prints() can call write() directly.
+int32_t _userland prints(char const* str) {
+    return write(1, str, -1);
 }

@@ -35,7 +35,7 @@ void syscall() {
         int32_t (*funcPtr)(void) = syscall_vector[nr];
         trap_frame.regs[REG_A0] = (*funcPtr)();
     } else {
-        kprintf("BAD sycall %d\n", nr);
+        kprintf("BAD syscall %d\n", nr);
         trap_frame.regs[REG_A0] = -1;
     }
 }
@@ -58,11 +58,14 @@ int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize) {
     return uart_readline(buf, bufsize);
 }
 
-// implemented in uart-print.s
-extern void uart_prints();
-
-void sys_write() {
-    uart_prints();
+int32_t sys_write() {
+    uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
+    char const *data = (char const*)trap_frame.regs[REG_A1];
+    uint32_t size = (uint32_t)trap_frame.regs[REG_A2];
+    if (fd == 1) {
+        return uart_print(data, size);
+    }
+    return -1;
 }
 
 int32_t sys_wait() {

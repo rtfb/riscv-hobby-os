@@ -23,8 +23,8 @@ read:
         macro_syscall SYS_NR_read
         ret
 
-.globl sys_puts
-sys_puts:
+.globl write
+write:
         macro_syscall SYS_NR_write
         ret
 

@@ -51,3 +51,10 @@ int32_t uart_readline(char* buf, uint32_t bufsize) {
     }
     return nread;
 }
+
+int32_t uart_print(char const* data, uint32_t size) {
+    if (size == -1) {
+        return uart_prints(data);
+    }
+    return -1; // TODO: implement writing non-asciiz
+}

@@ -14,6 +14,7 @@
 #define REG_FP 7
 #define REG_A0 9
 #define REG_A1 10
+#define REG_A2 11
 #define REG_A7 16
 
 // PROC_STATE_AVAILABLE signifies an unoccupied slot in the process table, it's

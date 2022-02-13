@@ -45,11 +45,11 @@ int _userland trimright(char *str) {
 void _userland run_program(char *name, char *argv[]) {
     uint32_t pid = fork();
     if (pid == -1) {
-        sys_puts("ERROR: fork!\n");
+        prints("ERROR: fork!\n");
     } else if (pid == 0) { // child
         uint32_t code = execv(name, (char const**)argv);
         // normally exec doesn't return, but if it did, it's an error:
-        sys_puts("ERROR: execv\n");
+        prints("ERROR: execv\n");
         exit();
     } else { // parent
         wait();
@@ -62,11 +62,11 @@ void _userland run_program(char *name, char *argv[]) {
 void _userland run_hanger() {
     uint32_t pid = fork();
     if (pid == -1) {
-        sys_puts("ERROR: fork!\n");
+        prints("ERROR: fork!\n");
     } else if (pid == 0) { // child
         uint32_t code = execv("hang", 0);
         // normally exec doesn't return, but if it did, it's an error:
-        sys_puts("ERROR: execv\n");
+        prints("ERROR: execv\n");
         exit();
     } else { // parent
         sleep(1);
@@ -102,15 +102,15 @@ char prog_name_fmt[] _user_rodata = "fmt";
 char prog_name_hanger[] _user_rodata = "hang";
 
 int _userland u_main_shell(int argc, char* argv[]) {
-    sys_puts("\nInit userland!\n");
+    prints("\nInit userland!\n");
     char buf[16];
     char *parsed_args[8];
     for (;;) {
         buf[0] = 0;
-        sys_puts("> ");
+        prints("> ");
         int32_t nread = read(1, buf, 15);
         if (nread < 0) {
-            sys_puts("ERROR: read\n");
+            prints("ERROR: read\n");
         } else {
             buf[nread] = 0;
             trimright(buf);
@@ -131,7 +131,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
 }
 
 int _userland u_main_hello1() {
-    sys_puts("Hello from hellosayer 1\n");
+    prints("Hello from hellosayer 1\n");
     exit();
     return 0;
 }
@@ -140,9 +140,9 @@ char dash_h[] _user_rodata = "-h";
 
 int _userland u_main_hello2(int argc, char const* argv[]) {
     if (argc > 1 && !ustrncmp(argv[1], dash_h, 2)) {
-        sys_puts("A hidden greeting!\n");
+        prints("A hidden greeting!\n");
     } else {
-        sys_puts("Very welcome from hellosayer 2\n");
+        prints("Very welcome from hellosayer 2\n");
     }
     exit();
     return 0;
@@ -177,13 +177,13 @@ int _userland u_main_sysinfo(int argc, char const* argv[]) {
 
 
 int _userland u_main_hanger() {
-    sys_puts("I will hang now, bye\n");
+    prints("I will hang now, bye\n");
     wait();
     return 0;
 }
 
 int _userland u_main_smoke_test() {
-    sys_puts("\nInit userland smoke test!\n");
+    prints("\nInit userland smoke test!\n");
     run_program("sysinfo", 0);
     run_program("fmt", 0);
     run_hanger();
@@ -212,7 +212,7 @@ int _userland u_main_ps(int argc, char const *argv[]) {
     uint32_t pids[32];
     uint32_t num_pids = plist(pids, 32);
     if (num_pids < 0) {
-        sys_puts("ERROR: plist\n");
+        prints("ERROR: plist\n");
         exit(-1);
         return -1;
     }
@@ -230,7 +230,7 @@ int _userland u_main_ps(int argc, char const *argv[]) {
         pinfo_t info;
         uint32_t status = pinfo(pids[i], &info);
         if (status < 0 ) {
-            sys_puts("ERROR: pinfo\n");
+            prints("ERROR: pinfo\n");
             continue;
         }
         printf(ps_process_info_fmt, info.pid, state_to_char(info.state), info.name);

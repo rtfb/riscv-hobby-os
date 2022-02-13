@@ -9,8 +9,13 @@
 extern void exit();
 extern uint32_t fork();
 extern int32_t read(uint32_t fd, char* buf, uint32_t bufsize);
-// TODO: rename sys_puts to write()
-extern void sys_puts(char const* msg);
+
+// write writes the given data to file descriptor fd. The two special file
+// descriptors are stdout=1 and stderr=2. Other descriptors should be obtained
+// via open(). The size parameter is optional: it specifies how many bytes to
+// write from data, but it can be -1 if data contains a zero-terminated string,
+// then data will be written until the first zero byte is encountered.
+extern int32_t write(uint32_t fd, char const* data, uint32_t size);
 extern int32_t wait();
 extern uint32_t execv(char const* filename, char const* argv[]);
 extern uint32_t getpid();

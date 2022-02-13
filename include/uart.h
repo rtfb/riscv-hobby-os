@@ -16,5 +16,9 @@ void uart_init();
 char uart_readchar();
 void uart_writechar(char ch);
 int32_t uart_readline(char* buf, uint32_t bufsize);
+int32_t uart_print(char const* data, uint32_t size);
+
+// implemented in uart-print.s
+extern int32_t uart_prints(char const* data);
 
 #endif // ifndef _UART_H_

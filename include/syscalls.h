@@ -33,7 +33,7 @@ void sys_restart();
 void sys_exit();
 uint32_t sys_fork();
 int32_t sys_read();
-void sys_write();
+int32_t sys_write();
 int32_t sys_wait();
 uint32_t sys_execv();
 uint32_t sys_getpid();
