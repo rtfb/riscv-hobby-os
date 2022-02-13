@@ -28,6 +28,16 @@ write:
         macro_syscall SYS_NR_write
         ret
 
+.globl open
+open:
+        macro_syscall SYS_NR_open
+        ret
+
+.globl close
+close:
+        macro_syscall SYS_NR_close
+        ret
+
 .globl wait
 wait:
         macro_syscall SYS_NR_wait

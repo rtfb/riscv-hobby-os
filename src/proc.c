@@ -134,13 +134,7 @@ uint32_t proc_fork() {
         return -1;
     }
 
-    process_t* parent = current_proc();
-    if (parent == 0) {
-        release_page(sp);
-        // this should never happen, some process called us, right?
-        // TODO: panic
-        return -1;
-    }
+    process_t* parent = myproc();
     acquire(&parent->lock);
     parent->context.pc = trap_frame.pc;
     copy_context(&parent->context, &trap_frame);
@@ -238,12 +232,7 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         // TODO: set errno
         return -1;
     }
-    process_t* proc = current_proc();
-    if (proc == 0) {
-        // this should never happen, some process called us, right?
-        // TODO: panic
-        return -1;
-    }
+    process_t* proc = myproc();
     acquire(&proc->lock);
     proc->context.pc = (regsize_t)program->entry_point;
     proc->name = program->name;
@@ -304,6 +293,15 @@ process_t* current_proc() {
     return proc;
 }
 
+process_t* myproc() {
+    process_t *proc = current_proc();
+    if (!proc) {
+        // TODO: panic
+        return 0;
+    }
+    return proc;
+}
+
 void copy_context(trap_frame_t* dst, trap_frame_t* src) {
     for (int i = 0; i < 32; i++) {
         dst->regs[i] = src->regs[i];
@@ -311,12 +309,7 @@ void copy_context(trap_frame_t* dst, trap_frame_t* src) {
 }
 
 void proc_exit() {
-    process_t* proc = current_proc();
-    if (proc == 0) {
-        // this should never happen, some process called us, right?
-        // TODO: panic
-        return;
-    }
+    process_t* proc = myproc();
     acquire(&proc->lock);
     release_page(proc->stack_page);
     proc->state = PROC_STATE_AVAILABLE;
@@ -332,12 +325,7 @@ void proc_exit() {
 }
 
 int32_t wait_or_sleep(uint64_t wakeup_time) {
-    process_t* proc = current_proc();
-    if (proc == 0) {
-        // this should never happen, some process called us, right?
-        // TODO: panic
-        return -1;
-    }
+    process_t* proc = myproc();
     acquire(&proc->lock);
     proc->state = PROC_STATE_SLEEPING;
     proc->wakeup_time = wakeup_time;
@@ -396,4 +384,57 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo) {
     }
     release(&proc_table.lock);
     return 0;
+}
+
+int32_t proc_open(char const *filepath, uint32_t flags) {
+    process_t* proc = myproc();
+    acquire(&proc->lock);
+    fd_t *f = 0;
+    uint32_t fd = 0;
+    for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
+        if (proc->files[i].file.fs_file == 0) {
+            f = &proc->files[i];
+            fd = i;
+            break;
+        }
+    }
+    if (!f) {
+        // TODO: set errno to indicate out of FDs
+        release(&proc->lock);
+        return -1;
+    }
+    int32_t status = fs_open(&f->file, filepath, flags);
+    if (status != 0) {
+        // TODO: set errno to status
+        release(&proc->lock);
+        return -1;
+    }
+    release(&proc->lock);
+    return fd;
+}
+
+int32_t proc_read(uint32_t fd, void *buf, uint32_t count, uint32_t elem_size) {
+    process_t* proc = myproc();
+    acquire(&proc->lock);
+    fd_t *f = &proc->files[fd];
+    int32_t status = fs_read(&f->file, f->position, buf, count, elem_size);
+    release(&proc->lock);
+    return status;
+}
+
+int32_t proc_close(uint32_t fd) {
+    if (fd <= FD_STDERR) {
+        // Can't close one of std* fds. TODO: set errno to something useful
+        return -1;
+    }
+    process_t* proc = myproc();
+    acquire(&proc->lock);
+    fd_t *f = &proc->files[fd];
+    if (!f->file.fs_file) {
+        // Closing a non-open file. TODO: set errno
+        return -1;
+    }
+    // TODO: flush when we have any buffering
+    f->file.fs_file = 0;
+    release(&proc->lock);
 }

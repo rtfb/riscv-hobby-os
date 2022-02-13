@@ -6,6 +6,8 @@
 #define SYS_NR_fork            2
 #define SYS_NR_read            3
 #define SYS_NR_write           4
+#define SYS_NR_open            5
+#define SYS_NR_close           6
 #define SYS_NR_wait            7
 #define SYS_NR_execv          11
 #define SYS_NR_getpid         20

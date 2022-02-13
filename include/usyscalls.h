@@ -8,7 +8,7 @@
 
 extern void exit();
 extern uint32_t fork();
-extern int32_t read(uint32_t fd, char* buf, uint32_t bufsize);
+extern int32_t read(uint32_t fd, char* buf, uint32_t count, uint32_t elem_size);
 
 // write writes the given data to file descriptor fd. The two special file
 // descriptors are stdout=1 and stderr=2. Other descriptors should be obtained
@@ -16,6 +16,8 @@ extern int32_t read(uint32_t fd, char* buf, uint32_t bufsize);
 // write from data, but it can be -1 if data contains a zero-terminated string,
 // then data will be written until the first zero byte is encountered.
 extern int32_t write(uint32_t fd, char const* data, uint32_t size);
+extern int32_t open(char const *filepath, uint32_t flags);
+extern int32_t close(uint32_t fd);
 extern int32_t wait();
 extern uint32_t execv(char const* filename, char const* argv[]);
 extern uint32_t getpid();

@@ -29,6 +29,7 @@ void kinit(uintptr_t fdt_header_addr) {
     init_paged_memory(paged_mem_end);
     init_process_table();
     init_global_trap_frame();
+    fs_init();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     enable_interrupts();
     release(&init_lock);

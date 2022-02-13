@@ -5,6 +5,7 @@
 #include "sys.h"
 #include "spinlock.h"
 #include "syscalls.h"
+#include "fs.h"
 
 #define MAX_PROCS 4
 
@@ -15,6 +16,7 @@
 #define REG_A0 9
 #define REG_A1 10
 #define REG_A2 11
+#define REG_A3 12
 #define REG_A7 16
 
 // PROC_STATE_AVAILABLE signifies an unoccupied slot in the process table, it's
@@ -65,6 +67,8 @@ typedef struct process_s {
     // process was put into sleep by a wait() syscall instead of sleep(),
     // wakeup_time should be set to zero.
     uint64_t wakeup_time;
+
+    fd_t files[MAX_PROC_FDS];
 } process_t;
 
 typedef struct proc_table_s {
@@ -165,11 +169,22 @@ uint32_t alloc_pid();
 // running.
 process_t* current_proc();
 
+// myproc is an opinionated version of current_proc which panics if no process
+// is found.
+process_t* myproc();
+
 // copy_context copies the contents for src into dst.
 void copy_context(trap_frame_t* dst, trap_frame_t* src);
 
 uint32_t proc_plist(uint32_t *pids, uint32_t size);
 
 uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo);
+
+// proc_open and proc_close are the entry points of open()/close() syscalls,
+// they start by dealing with the process-level file descriptors, then call the
+// lower level FS stuff.
+int32_t proc_open(char const *filepath, uint32_t flags);
+int32_t proc_close(uint32_t fd);
+int32_t proc_read(uint32_t fd, void *buf, uint32_t count, uint32_t elem_size);
 
 #endif // ifndef _PROC_H_

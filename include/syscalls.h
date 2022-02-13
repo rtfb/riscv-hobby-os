@@ -29,11 +29,27 @@ typedef struct pinfo_s {
     uint32_t state;
 } pinfo_t;
 
+#define DIRENT_READABLE   (1 << 0)
+#define DIRENT_WRITABLE   (1 << 1)
+#define DIRENT_EXECUTABLE (1 << 2)
+#define DIRENT_DIRECTORY  (1 << 16)
+
+#define MAX_FILENAME_LEN 16
+
+// dirent_t represents a directory entry. When a directory is open()ed, read()
+// should be given dirents to fill in.
+typedef struct dirent_s {
+    uint32_t flags; // DIRENT_*
+    char name[MAX_FILENAME_LEN];
+} dirent_t;
+
 void sys_restart();
 void sys_exit();
 uint32_t sys_fork();
 int32_t sys_read();
 int32_t sys_write();
+int32_t sys_open();
+int32_t sys_close();
 int32_t sys_wait();
 uint32_t sys_execv();
 uint32_t sys_getpid();

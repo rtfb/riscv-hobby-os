@@ -19,6 +19,8 @@ void __attribute__((__section__(".text#"))) *syscall_vector[] = {
     [SYS_NR_fork]      sys_fork,
     [SYS_NR_read]      sys_read,
     [SYS_NR_write]     sys_write,
+    [SYS_NR_open]      sys_open,
+    [SYS_NR_close]     sys_close,
     [SYS_NR_wait]      sys_wait,
     [SYS_NR_execv]     sys_execv,
     [SYS_NR_getpid]    sys_getpid,
@@ -52,10 +54,15 @@ uint32_t sys_fork() {
     return proc_fork();
 }
 
-int32_t sys_read(uint32_t fd, char* buf, uint32_t bufsize) {
-    // ignore fd and default to reading from UART for now, as there's nowhere
-    // else to read from
-    return uart_readline(buf, bufsize);
+int32_t sys_read() {
+    uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
+    void *buf = (void*)trap_frame.regs[REG_A1];
+    uint32_t count = (uint32_t)trap_frame.regs[REG_A2];
+    uint32_t elem_size = (uint32_t)trap_frame.regs[REG_A3];
+    if (fd == 0) {
+        return uart_readline(buf, count * elem_size);
+    }
+    return proc_read(fd, buf, count, elem_size);
 }
 
 int32_t sys_write() {
@@ -66,6 +73,17 @@ int32_t sys_write() {
         return uart_print(data, size);
     }
     return -1;
+}
+
+int32_t sys_open() {
+    char const *filepath = (char const*)trap_frame.regs[REG_A0];
+    uint32_t flags = (uint32_t)trap_frame.regs[REG_A1];
+    return proc_open(filepath, flags);
+}
+
+int32_t sys_close() {
+    uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
+    return proc_close(fd);
 }
 
 int32_t sys_wait() {
