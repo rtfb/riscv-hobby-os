@@ -28,9 +28,16 @@ extern bifs_directory_t bifs_all_directories[BIFS_MAX_FILES];
 extern bifs_file_t      bifs_all_files[BIFS_MAX_FILES];
 
 void bifs_init();
-bifs_directory_t* bifs_opendir(char const *name);
-bifs_file_t* bifs_openfile(bifs_directory_t *parent, char const *name);
-int32_t bifs_read(bifs_file_t *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
-int32_t bifs_write(bifs_file_t *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
+int32_t bifs_read(void *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
+int32_t bifs_write(void *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
+bifs_file_t* bifs_open(char const *filepath, uint32_t flags);
+
+bifs_directory_t* bifs_opendir(bifs_directory_t *parent, char const *name, int start, int end);
+bifs_file_t* bifs_openfile(bifs_directory_t *parent, char const *name, int start, int end);
+
+// next_slash starts looking at path[pos] and keeps going until it finds a slash
+// symbol ('/'), it then returns its index. If no slash is present, pos will
+// point to the terminating zero.
+int next_slash(char const *path, int pos);
 
 #endif // ifndef _BAKEDINFS_H_

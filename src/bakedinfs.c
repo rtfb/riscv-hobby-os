@@ -1,5 +1,6 @@
 #include "fs.h"
 #include "bakedinfs.h"
+#include "string.h"
 
 bifs_directory_t *bifs_root;
 bifs_directory_t bifs_all_directories[BIFS_MAX_FILES];
@@ -10,19 +11,56 @@ void bifs_init() {
     bifs_root->flags = BIFS_READABLE;
     bifs_root->name = "/";
     bifs_root->parent = 0;
+
+    bifs_directory_t *home = &bifs_all_directories[1];
+    home->flags = BIFS_READABLE;
+    home->name = "home";
+    home->parent = bifs_root;
+
     bifs_file_t *f0 = &bifs_all_files[0];
     f0->flags = BIFS_READABLE | BIFS_RAW;
     f0->parent = bifs_root;
     f0->name = "readme.txt";
     f0->data = "Hello, I am File Zero.\n";
+
+    bifs_file_t *f1 = &bifs_all_files[1];
+    f1->flags = BIFS_READABLE | BIFS_RAW;
+    f1->parent = home;
+    f1->name = "read.me";
+    f1->data = "This Is File One. File Zero is at root.\n";
 }
 
-int32_t bifs_read(bifs_file_t *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size) {
+bifs_file_t* bifs_open(char const *filepath, uint32_t flags) {
+    if (*filepath != '/') {
+        // TODO set errno to not implemented, we don't care to support
+        // non-rooted paths yet
+        return 0;
+    }
+    int prev_slash_pos = 0;
+    int slash_pos = next_slash(filepath, prev_slash_pos + 1);
+    bifs_directory_t *dir = bifs_root;
+    while (filepath[slash_pos]) {
+        dir = bifs_opendir(dir, filepath, prev_slash_pos + 1, slash_pos);
+        if (!dir) {
+            return 0;
+        }
+        prev_slash_pos = slash_pos;
+        slash_pos = next_slash(filepath, slash_pos + 1);
+    }
+    // by now, dir contains the directory we're interested in, and
+    // filepath[prev_slash_pos+1..slash_pos] contains the file element. Unless
+    // its a rooted path which ends in a directory, which I don't want to think
+    // about yet
+    return bifs_openfile(dir, filepath, prev_slash_pos + 1, slash_pos);
+}
+
+int32_t bifs_read(void *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size) {
+    bifs_file_t *ff = (bifs_file_t*)f;
     char *cbuf = (char*)buf;
     // TODO: take pos into account
     int i = 0;
     while (i < count * elem_size) {
-        char ch = f->data[i];
+        char ch = ff->data[i];
         if (!ch) {
             break;
         }
@@ -32,6 +70,47 @@ int32_t bifs_read(bifs_file_t *f, uint32_t pos, void *buf, uint32_t count, uint3
     return i;
 }
 
-int32_t bifs_write(bifs_file_t *fs_file, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size) {
+int32_t bifs_write(void *fs_file, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size) {
     return -1; // TODO: implement
+}
+
+int next_slash(char const *path, int pos) {
+    char ch = path[pos];
+    while (ch && ch != '/') {
+        pos++;
+        ch = path[pos];
+    }
+    return pos;
+}
+
+bifs_directory_t* bifs_opendir(bifs_directory_t *parent, char const *name, int start, int end) {
+    if (parent == 0) {
+        parent = &bifs_all_directories[0]; // assume root
+    }
+    for (int i = 1; i < BIFS_MAX_FILES; i++) {
+        bifs_directory_t *d = &bifs_all_directories[i];
+        if (d->parent != parent) {
+            continue;
+        }
+        if (!strncmp(d->name, name+start, end-start)) {
+            return d;
+        }
+    }
+    return 0;
+}
+
+bifs_file_t* bifs_openfile(bifs_directory_t *parent, char const *name, int start, int end) {
+    if (parent == 0) {
+        parent = &bifs_all_directories[0]; // assume root
+    }
+    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+        bifs_file_t *f = &bifs_all_files[i];
+        if (f->parent != parent) {
+            continue;
+        }
+        if (!strncmp(f->name, name+start, end-start)) {
+            return f;
+        }
+    }
+    return 0;
 }

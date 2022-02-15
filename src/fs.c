@@ -6,7 +6,11 @@ void fs_init() {
 }
 
 int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {
-    f->fs_file = &bifs_all_files[0];
+    f->fs_file = (void*)bifs_open(filepath, flags);
+    if (!f->fs_file) {
+        // TODO: errno = ENOENT
+        return -1;
+    }
     f->read = bifs_read;
     f->write = bifs_write;
     return 0;

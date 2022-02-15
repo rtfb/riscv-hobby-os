@@ -19,6 +19,9 @@ int strncmp(char const *a, char const *b, unsigned int num) {
         a++;
         b++;
     } while(i < num);
+    if (i == num) {
+        return 0;
+    }
     return *a - *b;
 }
 

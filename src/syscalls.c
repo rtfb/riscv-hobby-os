@@ -59,6 +59,10 @@ int32_t sys_read() {
     void *buf = (void*)trap_frame.regs[REG_A1];
     uint32_t count = (uint32_t)trap_frame.regs[REG_A2];
     uint32_t elem_size = (uint32_t)trap_frame.regs[REG_A3];
+    if (!buf) {
+        // TODO: errno
+        return -1;
+    }
     if (fd == 0) {
         return uart_readline(buf, count * elem_size);
     }
@@ -69,6 +73,10 @@ int32_t sys_write() {
     uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
     char const *data = (char const*)trap_frame.regs[REG_A1];
     uint32_t size = (uint32_t)trap_frame.regs[REG_A2];
+    if (!data) {
+        // TODO: errno
+        return -1;
+    }
     if (fd == 1) {
         return uart_print(data, size);
     }
@@ -78,6 +86,10 @@ int32_t sys_write() {
 int32_t sys_open() {
     char const *filepath = (char const*)trap_frame.regs[REG_A0];
     uint32_t flags = (uint32_t)trap_frame.regs[REG_A1];
+    if (!filepath) {
+        // TODO: errno
+        return -1;
+    }
     return proc_open(filepath, flags);
 }
 

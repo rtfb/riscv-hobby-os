@@ -100,25 +100,15 @@ void _userland parse_command(char *buf, char *argv[], int argvsize) {
 
 char prog_name_fmt[] _user_rodata = "fmt";
 char prog_name_hanger[] _user_rodata = "hang";
-char fd_fmt[] _user_rodata = "fd = %d\n";
-char read_status_fmt[] _user_rodata = "status=%d\n";
-char read_data[] _user_rodata = "str=%s\n";
 
 int _userland u_main_shell(int argc, char* argv[]) {
     prints("\nInit userland!\n");
-    uint32_t fd = open("", 0);
-    printf(fd_fmt, fd);
-    char fbuf[64];
-    int32_t status = read(fd, fbuf, 64, 1);
-    printf(read_status_fmt, status);
-    fbuf[status] = 0;
-    printf(read_data, fbuf);
-    char buf[16];
+    char buf[32];
     char *parsed_args[8];
     for (;;) {
         buf[0] = 0;
         prints("> ");
-        int32_t nread = read(0, buf, 15, 1);
+        int32_t nread = read(0, buf, 31, 1);
         if (nread < 0) {
             prints("ERROR: read\n");
         } else {
@@ -247,4 +237,21 @@ int _userland u_main_ps(int argc, char const *argv[]) {
     }
     exit(0);
     return 0;
+}
+
+int _userland u_main_cat(int argc, char const *argv[]) {
+    if (argc < 2) {
+        exit(0);
+    }
+    uint32_t fd = open(argv[1], 0);
+    if (fd == -1) {
+        prints("ERROR: open=-1\n");
+        exit(0);
+    }
+    char fbuf[64];
+    int32_t status = read(fd, fbuf, 64, 1);
+    fbuf[status] = 0;
+    prints(fbuf);
+    close(fd);
+    exit(0);
 }
