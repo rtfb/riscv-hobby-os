@@ -7,7 +7,7 @@
 #include "syscalls.h"
 #include "fs.h"
 
-#define MAX_PROCS 4
+#define MAX_PROCS 8
 
 // REG_* constants are indexes into trap_frame_t.regs. (Add here as needed)
 #define REG_RA 0

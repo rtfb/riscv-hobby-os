@@ -19,6 +19,7 @@ extern int u_main_smoke_test();
 extern int u_main_hanger();
 extern int u_main_ps();
 extern int u_main_cat();
+extern int u_main_coma();
 
 user_program_t userland_programs[MAX_USERLAND_PROGS];
 
@@ -49,6 +50,8 @@ void init_test_processes() {
     userland_programs[7].name = "ps";
     userland_programs[8].entry_point = &u_main_cat;
     userland_programs[8].name = "cat";
+    userland_programs[9].entry_point = &u_main_coma;
+    userland_programs[9].name = "coma";
 
     if (!strncmp(fdt_get_bootargs(), "smoke-test", ARRAY_LENGTH("smoke-test"))) {
         assign_init_program("smoke-test");

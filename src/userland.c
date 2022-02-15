@@ -98,10 +98,58 @@ void _userland parse_command(char *buf, char *argv[], int argvsize) {
     argv[i] = 0;
 }
 
-char prog_name_fmt[] _user_rodata = "fmt";
 char prog_name_hanger[] _user_rodata = "hang";
 
+int _userland run_shell_script(char const *filepath) {
+    uint32_t fd = open(filepath, 0);
+    if (fd == -1) {
+        prints("ERROR: open=-1\n");
+        return -1;
+    }
+    char fbuf[64];
+    int32_t status = read(fd, fbuf, 64, 1);
+    if (status == -1) {
+        prints("ERROR: read=-1\n");
+        return -1;
+    }
+    close(fd);
+    fbuf[status] = 0;
+    int start = 0;
+    int end = 0;
+    char pbuf[32];
+    char *parsed_args[8];
+    while (fbuf[end] != 0) {
+        pbuf[0] = 0;
+        int i = 0;
+        while (fbuf[end] != 0 && fbuf[end] != '\n') {
+            pbuf[i++] = fbuf[end++];
+        }
+        while (fbuf[end] != 0 && fbuf[end] == '\n') {
+            end++;
+        }
+        start = end + 1;
+        pbuf[i] = 0;
+        if (!*pbuf) {
+            break;
+        }
+        parse_command(pbuf, parsed_args, 8);
+        if (ustrncmp(parsed_args[0], prog_name_hanger, ARRAY_LENGTH(prog_name_hanger)) == 0) {
+            run_hanger();
+        } else {
+            run_program(parsed_args[0], parsed_args);
+        }
+    }
+    return 0;
+}
+
+char prog_name_fmt[] _user_rodata = "fmt";
+
 int _userland u_main_shell(int argc, char* argv[]) {
+    if (argc > 1) {
+        int code = run_shell_script(argv[1]);
+        exit(code);
+        return code;
+    }
     prints("\nInit userland!\n");
     char buf[32];
     char *parsed_args[8];
@@ -182,13 +230,15 @@ int _userland u_main_hanger() {
     return 0;
 }
 
-int _userland u_main_smoke_test() {
+int _userland u_main_smoke_test(int argc, char const *argv[]) {
     prints("\nInit userland smoke test!\n");
-    run_program("sysinfo", 0);
-    run_program("fmt", 0);
-    run_hanger();
-    run_program("sysinfo", 0);
-    run_program("ps", 0);
+    char *sh_args[] = {"sh", "/home/smoke-test.sh"};
+    run_program("sh", sh_args);
+
+    // any trailing arg will cause it to exit and not hang forever
+    if (argc > 1) {
+        exit(0);
+    }
     for (;;)
         ;
 }
@@ -250,8 +300,20 @@ int _userland u_main_cat(int argc, char const *argv[]) {
     }
     char fbuf[64];
     int32_t status = read(fd, fbuf, 64, 1);
+    if (status == -1) {
+        prints("ERROR: read=-1\n");
+        exit(0);
+    }
     fbuf[status] = 0;
     prints(fbuf);
     close(fd);
     exit(0);
+    return 0;
+}
+
+// coma is a special program that hangs forever. Don't run it, and, more
+// importantly, don't wait() on it.
+int _userland u_main_coma() {
+    for (;;)
+        ;
 }

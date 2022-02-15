@@ -28,6 +28,12 @@ void bifs_init() {
     f1->parent = home;
     f1->name = "read.me";
     f1->data = "This Is File One. File Zero is at root.\n";
+
+    bifs_file_t *st = &bifs_all_files[2];
+    st->flags = BIFS_READABLE | BIFS_RAW;
+    st->parent = home;
+    st->name = "smoke-test.sh";
+    st->data = "sysinfo\nfmt\nhang\nsysinfo\nps\n";
 }
 
 bifs_file_t* bifs_open(char const *filepath, uint32_t flags) {
