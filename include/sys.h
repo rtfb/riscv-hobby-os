@@ -25,4 +25,10 @@
 
 #define ARRAY_LENGTH(a) (sizeof(a) / sizeof(a[0]))
 
+// Define a couple section attributes. We specify the section with a
+// trailing # in order to avoid a warning from GCC, see this answer:
+// https://stackoverflow.com/a/58455496/6763
+#define _text __attribute__((__section__(".text#")))
+#define _rodata __attribute__((__section__(".rodata#")))
+
 #endif // ifndef _SYS_H_

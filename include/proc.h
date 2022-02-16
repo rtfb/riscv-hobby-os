@@ -36,9 +36,6 @@
 // wait()).
 #define PROC_STATE_SLEEPING 3
 
-
-#define MAX_USERLAND_PROGS 10
-
 typedef struct trap_frame_s {
     regsize_t regs[31]; // all registers except r0
     regsize_t pc;
