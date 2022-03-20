@@ -270,17 +270,23 @@ process_t* alloc_process() {
             continue;
         }
         if (proc_table.procs[i].state == PROC_STATE_AVAILABLE) {
-            process_t* proc = &proc_table.procs[i];
-            acquire(&proc->lock);
-            proc->state = PROC_STATE_READY;
-            proc_table.num_procs++;
-            release(&proc_table.lock);
-            return proc;
+            return init_proc(&proc_table.procs[i]);
         }
     }
     // TODO: set errno
     release(&proc_table.lock);
     return 0;
+}
+
+process_t* init_proc(process_t* proc) {
+    acquire(&proc->lock);
+    proc->state = PROC_STATE_READY;
+    for (int i = 0; i < MAX_PROC_FDS; i++) {
+        proc->files[i] = 0;
+    }
+    proc_table.num_procs++;
+    release(&proc_table.lock);
+    return proc;
 }
 
 process_t* current_proc() {
@@ -386,25 +392,37 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo) {
     return 0;
 }
 
-int32_t proc_open(char const *filepath, uint32_t flags) {
-    process_t* proc = myproc();
-    acquire(&proc->lock);
-    fd_t *f = 0;
-    uint32_t fd = 0;
+int32_t fd_alloc(process_t *proc) {
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
-        if (proc->files[i].file.fs_file == 0) {
-            f = &proc->files[i];
-            fd = i;
-            break;
+        if (proc->files[i] == 0) {
+            return i;
         }
     }
-    if (!f) {
-        // TODO: set errno to indicate out of FDs
+    return -1;
+}
+
+void fd_free(process_t *proc, int32_t fd) {
+    proc->files[fd] = 0;
+}
+
+int32_t proc_open(char const *filepath, uint32_t flags) {
+    file_t *f = fs_alloc_file();
+    if (f == 0) {
+        // TODO: set errno to indicate out of global files
+        return -1;
+    }
+    process_t* proc = myproc();
+    acquire(&proc->lock);
+    int32_t fd = fd_alloc(proc);
+    if (fd < 0) {
+        // TODO: set errno to indicate out of proc FDs
         release(&proc->lock);
         return -1;
     }
-    int32_t status = fs_open(&f->file, filepath, flags);
+    proc->files[fd] = f;
+    int32_t status = fs_open(f, filepath, flags);
     if (status != 0) {
+        proc->files[fd] = 0;
         // TODO: set errno to status
         release(&proc->lock);
         return -1;
@@ -416,25 +434,30 @@ int32_t proc_open(char const *filepath, uint32_t flags) {
 int32_t proc_read(uint32_t fd, void *buf, uint32_t count, uint32_t elem_size) {
     process_t* proc = myproc();
     acquire(&proc->lock);
-    fd_t *f = &proc->files[fd];
-    int32_t status = fs_read(&f->file, f->position, buf, count, elem_size);
+    file_t *f = proc->files[fd];
+    if (f == 0) {
+        // Reading a non-open file. TODO: set errno
+        return -1;
+    }
+    int32_t status = fs_read(f, f->position, buf, count, elem_size);
     release(&proc->lock);
     return status;
 }
 
 int32_t proc_close(uint32_t fd) {
     if (fd <= FD_STDERR) {
-        // Can't close one of std* fds. TODO: set errno to something useful
+        // Can't (yet?) close one of std* fds. TODO: set errno to something useful
         return -1;
     }
     process_t* proc = myproc();
     acquire(&proc->lock);
-    fd_t *f = &proc->files[fd];
-    if (!f->file.fs_file) {
+    // TODO: flush when we have any buffering
+    file_t *f = proc->files[fd];
+    if (f == 0) {
         // Closing a non-open file. TODO: set errno
         return -1;
     }
-    // TODO: flush when we have any buffering
-    f->file.fs_file = 0;
+    fs_free_file(f);
+    fd_free(proc, fd);
     release(&proc->lock);
 }

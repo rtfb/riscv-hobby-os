@@ -1,8 +1,32 @@
 #include "fs.h"
 #include "bakedinfs.h"
 
+file_table_t ftable;
+
 void fs_init() {
+    ftable.lock = 0;
+    for (int i = 0; i < MAX_FILES; i++) {
+        ftable.files[i].fs_file = FFLAGS_FREE;
+    }
     bifs_init();
+}
+
+file_t* fs_alloc_file() {
+    acquire(&ftable.lock);
+    for (int i = 0; i < MAX_FILES; i++) {
+        if (ftable.files[i].fs_file == 0) {
+            ftable.files[i].flags = FFLAGS_ALLOCED;
+            release(&ftable.lock);
+            return &ftable.files[i];
+        }
+    }
+    release(&ftable.lock);
+    // TODO: set errno
+    return 0;
+}
+
+void fs_free_file(file_t *f) {
+    f->flags = FFLAGS_FREE;
 }
 
 int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {

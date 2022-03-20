@@ -65,7 +65,7 @@ typedef struct process_s {
     // wakeup_time should be set to zero.
     uint64_t wakeup_time;
 
-    fd_t files[MAX_PROC_FDS];
+    file_t* files[MAX_PROC_FDS];
 } process_t;
 
 typedef struct proc_table_s {
@@ -158,6 +158,10 @@ int should_wake_up(process_t* proc);
 // it.
 process_t* alloc_process();
 
+// init_proc initializes a given process struct. Returns the same pointer it
+// was passed, for convenience. Must be called with proc_table.lock held.
+process_t* init_proc(process_t* proc);
+
 // alloc_pid returns a unique process identifier suitable to assign to a newly
 // created process.
 uint32_t alloc_pid();
@@ -183,5 +187,10 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo);
 int32_t proc_open(char const *filepath, uint32_t flags);
 int32_t proc_close(uint32_t fd);
 int32_t proc_read(uint32_t fd, void *buf, uint32_t count, uint32_t elem_size);
+
+// fd_alloc allocates a file descriptor in process's open files list. proc.lock
+// must be held.
+int32_t fd_alloc(process_t *proc);
+void fd_free(process_t *proc, int32_t fd);
 
 #endif // ifndef _PROC_H_
