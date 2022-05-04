@@ -3,6 +3,8 @@ ENTRY( _start )
 SECTIONS
 {
   RAM_START = DEFINED(RAM_START) ? RAM_START : 0x80000000;
+  /* Default to 16MiB of RAM if not specified otherwise: */
+  RAM_SIZE = DEFINED(RAM_SIZE) ? RAM_SIZE : 0x1000000;
   STACK_SIZE = DEFINED(STACK_SIZE) ? STACK_SIZE : 0x1000;
   PAGE_SIZE = 0x1000;
 
@@ -22,6 +24,7 @@ SECTIONS
   .gnu_build_id : { *(.note.gnu.build-id) }
 
   . = DEFINED(ROM_START) ? RAM_START : .;
+  data_start = .;
   .data : { *(.data) }
   bss_start = .;
   .bss : {

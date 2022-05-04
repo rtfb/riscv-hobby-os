@@ -3,6 +3,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "fdt.h"
+#include "pagealloc.h"
 
 spinlock init_lock = 0;
 
@@ -23,6 +24,7 @@ void kinit(uintptr_t fdt_header_addr) {
     char const* str = "foo"; // this is a random string to test out %s in kprintf()
     void *p = (void*)0xf10a; // this is a random hex to test out %p in kprintf()
     kprintf("kprintf test several params: %s, %p, %d\n", str, p, cpu_id);
+    init_paged_memory();
     init_process_table();
     init_global_trap_frame();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
