@@ -24,6 +24,7 @@ void kinit(uintptr_t fdt_header_addr) {
     void *p = (void*)0xf10a; // this is a random hex to test out %p in kprintf()
     kprintf("kprintf test several params: %s, %p, %d\n", str, p, cpu_id);
     init_process_table();
+    init_global_trap_frame();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     enable_interrupts();
     release(&init_lock);

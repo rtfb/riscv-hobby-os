@@ -349,10 +349,6 @@ interrupt_noop:
 interrupt_timer:
         j       interrupt_epilogue
 
-k_interrupt_timer:
-        call    kernel_timer_tick
-        j       interrupt_epilogue
-
 # kprintf is called with args in a0..a7, but printf expects to get fmt string
 # in a0 and a pointer to the rest of args in a1. So push a1..a7 to stack and
 # pass a pointer to that location in a1.
