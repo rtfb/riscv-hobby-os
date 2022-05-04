@@ -45,14 +45,14 @@ int _userland u_main() {
     int counter = 0;
     int flipper = 0;
     char pidstr[2];
+    uint32_t pid = getpid();
+    pidstr[0] = '0' + (char)pid;
     pidstr[1] = 0;
     while (1) {
         counter++;
         if (counter % PRINT_FREQ == 0) {
             flipper++;
             if ((flipper & 1) == 0) {
-                uint32_t pid = getpid();
-                pidstr[0] = '0' + (char)pid;
                 sys_puts(pidstr);
             } else {
                 sys_puts("|");
@@ -103,14 +103,14 @@ int _userland u_main2() {
     int counter = 0;
     int flipper = 0;
     char pidstr[2];
+    uint32_t pid = getpid();
+    pidstr[0] = '0' + (char)pid;
     pidstr[1] = 0;
     while (1) {
         counter++;
         if (counter % PRINT_FREQ == 0) {
             flipper++;
             if ((flipper & 1) == 0) {
-                uint32_t pid = getpid();
-                pidstr[0] = '0' + (char)pid;
                 sys_puts(pidstr);
             } else {
                 sys_puts("o");

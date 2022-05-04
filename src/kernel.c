@@ -26,6 +26,7 @@ void kinit(uintptr_t fdt_header_addr) {
     kprintf("kprintf test several params: %s, %p, %d\n", str, p, cpu_id);
     init_paged_memory();
     init_process_table();
+    init_global_trap_frame();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     enable_interrupts();
     release(&init_lock);

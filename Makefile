@@ -69,7 +69,8 @@ TEST_DEPS = src/baremetal-fib.s src/baremetal-print.s src/baremetal-poweroff.s
 USER_DEPS = src/boot.s src/baremetal-print.s \
 			src/baremetal-poweroff.s src/userland.c src/kernel.c src/syscalls.c \
 			src/pmp.c src/riscv.c src/fdt.c src/string.c src/proc_test.c \
-			src/spinlock.c src/proc.c src/usyscalls.s src/pagealloc.c
+			src/spinlock.c src/proc.c src/usyscalls.s src/pagealloc.c \
+			src/context.s
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
@@ -132,70 +133,38 @@ GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -fno-plt -fno-pic \
           -Tsrc/baremetal.ld -Iinclude
 
-$(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		${TEST_SIFIVE_U_DEPS} -o $@
-
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wa,--defsym,NUM_HARTS=2 \
+		-Wa,--defsym,NUM_HARTS=2 -g \
 		-include include/machine/qemu.h \
 		${USER_SIFIVE_U_DEPS} -o $@
-
-$(OUT)/test_sifive_u32: ${TEST_SIFIVE_U32_DEPS}
-	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
-		-Wa,--defsym,XLEN=32 \
-		-Wa,--defsym,NUM_HARTS=1 \
-		-include include/machine/qemu.h \
-		${TEST_SIFIVE_U32_DEPS} -o $@
 
 $(OUT)/user_sifive_u32: ${USER_SIFIVE_U32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
 		-Wa,--defsym,XLEN=32 \
-		-Wa,--defsym,NUM_HARTS=2 \
+		-Wa,--defsym,NUM_HARTS=2 -g \
 		-include include/machine/qemu.h \
 		${USER_SIFIVE_U32_DEPS} -o $@
-
-$(OUT)/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
-		-Wa,--defsym,NUM_HARTS=1 \
-		-include include/machine/qemu.h \
-		${TEST_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/user_sifive_e: ${USER_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
-		-Wa,--defsym,NUM_HARTS=1 \
+		-Wa,--defsym,NUM_HARTS=1 -g \
 		-include include/machine/qemu.h \
 		${USER_SIFIVE_E_DEPS} -o $@
-
-$(OUT)/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
-	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
-		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
-		-Wa,--defsym,XLEN=32 \
-		-Wa,--defsym,NUM_HARTS=1 \
-		-include include/machine/qemu.h \
-		${TEST_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
 		-Wa,--defsym,XLEN=32 \
-		-Wa,--defsym,NUM_HARTS=1 \
+		-Wa,--defsym,NUM_HARTS=1 -g \
 		-include include/machine/qemu.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
-
-$(OUT)/test_virt: ${TEST_VIRT_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
-		-include include/machine/qemu.h \
-		${TEST_VIRT_DEPS} -o $@
 
 $(OUT)/user_virt: ${USER_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
-		-Wa,--defsym,NUM_HARTS=1 \
+		-Wa,--defsym,NUM_HARTS=1 -g \
 		-include include/machine/qemu.h \
 		${USER_VIRT_DEPS} -o $@
 
@@ -206,6 +175,38 @@ $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 		-Wl,--defsym,RAM_SIZE=0x4000 \
 		-include include/machine/hifive1-revb.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
+
+$(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
+		${TEST_SIFIVE_U_DEPS} -o $@
+
+$(OUT)/test_sifive_u32: ${TEST_SIFIVE_U32_DEPS}
+	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
+		-Wa,--defsym,XLEN=32 \
+		-Wa,--defsym,NUM_HARTS=1 \
+		-include include/machine/qemu.h \
+		${TEST_SIFIVE_U32_DEPS} -o $@
+
+$(OUT)/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
+		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
+		-Wa,--defsym,NUM_HARTS=1 \
+		-include include/machine/qemu.h \
+		${TEST_SIFIVE_E_DEPS} -o $@
+
+$(OUT)/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
+	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
+		-Wl,--defsym,ROM_START=0x20400000 -Wa,--defsym,UART=0x10013000 \
+		-Wa,--defsym,XLEN=32 \
+		-Wa,--defsym,NUM_HARTS=1 \
+		-include include/machine/qemu.h \
+		${TEST_SIFIVE_E32_DEPS} -o $@
+
+$(OUT)/test_virt: ${TEST_VIRT_DEPS}
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
+		-Wa,--defsym,UART=0x10000000 -Wa,--defsym,QEMU_EXIT=0x100000 \
+		-include include/machine/qemu.h \
+		${TEST_VIRT_DEPS} -o $@
 
 $(OUT):
 	mkdir -p $(OUT)

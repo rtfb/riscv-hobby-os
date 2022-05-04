@@ -36,6 +36,7 @@ void set_pmpcfg0(unsigned long value);
 
 void set_user_mode();
 void set_jump_address(void *func);
+void set_mscratch(void* ptr);
 
 // implemented in boot.s
 void park_hart();

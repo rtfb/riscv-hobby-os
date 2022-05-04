@@ -27,30 +27,12 @@ Debugging with gdb
 2. Run as usual with and extra `DBG=1` argument, e.g. `make run-baremetal DBG=1`
 3. In a separate terminal, run `make gdb`
 
-RISC-V Linux in QEMU
-====================
-
-Run a RISC-V Linux system in Qemu. Based on instructions provided
-[here][riscv-qemu-docs] and [here][custom-kernel-tutorial].
-
-Documents the steps to build a Qemu locally, a custom Linux kernel, and Busybox
-tools, as well as an initrd image.
-
-As of this writing, these are the latest versions of the software involved:
-* Qemu: `v5.1.0`
-* Linux: `v5.9`
-* Busybox: `1_9_2`
-* RISC-V GNU toolchain: `10.1.0`
-
 Make targets
 ------------
 
-`make prereqs` -- apt-get the prerequisites.
-`make clone` -- clone the relevant source code.
-`make qemu` -- build Qemu for RISC-V.
-
-`make run-linux` -- build Linux bootable image, add our executable and launch
-via QEMU.
+* `make prereqs` -- apt-get the prerequisites.
+* `make clone` -- clone the relevant source code.
+* `make qemu` -- build Qemu for RISC-V.
 
 RISC-V ELF executable in SPIKE
 ==============================
