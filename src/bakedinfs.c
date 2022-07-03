@@ -1,4 +1,3 @@
-#include "fs.h"
 #include "bakedinfs.h"
 #include "string.h"
 
@@ -60,12 +59,12 @@ bifs_file_t* bifs_open(char const *filepath, uint32_t flags) {
     return bifs_openfile(dir, filepath, prev_slash_pos + 1, slash_pos);
 }
 
-int32_t bifs_read(void *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size) {
-    bifs_file_t *ff = (bifs_file_t*)f;
+int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
+    bifs_file_t *ff = (bifs_file_t*)f->fs_file;
     char *cbuf = (char*)buf;
     // TODO: take pos into account
     int i = 0;
-    while (i < count * elem_size) {
+    while (i < size) {
         char ch = ff->data[i];
         if (!ch) {
             break;
@@ -76,7 +75,7 @@ int32_t bifs_read(void *f, uint32_t pos, void *buf, uint32_t count, uint32_t ele
     return i;
 }
 
-int32_t bifs_write(void *fs_file, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size) {
+int32_t bifs_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
     return -1; // TODO: implement
 }
 

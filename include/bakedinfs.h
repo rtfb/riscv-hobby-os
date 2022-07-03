@@ -2,6 +2,7 @@
 #define _BAKEDINFS_H_
 
 #include "sys.h"
+#include "fs.h"
 
 #define BIFS_MAX_FILES 32
 
@@ -28,8 +29,8 @@ extern bifs_directory_t bifs_all_directories[BIFS_MAX_FILES];
 extern bifs_file_t      bifs_all_files[BIFS_MAX_FILES];
 
 void bifs_init();
-int32_t bifs_read(void *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
-int32_t bifs_write(void *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
+int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size);
+int32_t bifs_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes);
 bifs_file_t* bifs_open(char const *filepath, uint32_t flags);
 
 bifs_directory_t* bifs_opendir(bifs_directory_t *parent, char const *name, int start, int end);

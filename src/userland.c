@@ -107,7 +107,7 @@ int _userland run_shell_script(char const *filepath) {
         return -1;
     }
     char fbuf[64];
-    int32_t status = read(fd, fbuf, 64, 1);
+    int32_t status = read(fd, fbuf, 64);
     if (status == -1) {
         prints("ERROR: read=-1\n");
         return -1;
@@ -156,7 +156,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
     for (;;) {
         buf[0] = 0;
         prints("> ");
-        int32_t nread = read(0, buf, 31, 1);
+        int32_t nread = read(0, buf, 31);
         if (nread < 0) {
             prints("ERROR: read\n");
         } else {
@@ -299,7 +299,7 @@ int _userland u_main_cat(int argc, char const *argv[]) {
         exit(0);
     }
     char fbuf[64];
-    int32_t status = read(fd, fbuf, 64, 1);
+    int32_t status = read(fd, fbuf, 64);
     if (status == -1) {
         prints("ERROR: read=-1\n");
         exit(0);

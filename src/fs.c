@@ -40,10 +40,10 @@ int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {
     return 0;
 }
 
-int32_t fs_read(file_t *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size) {
-    return f->read((bifs_file_t*)f->fs_file, pos, buf, count, elem_size);
+int32_t fs_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
+    return f->read(f, pos, buf, size);
 }
 
-int32_t fs_write(file_t *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size) {
-    return f->write((bifs_file_t*)f->fs_file, pos, buf, count, elem_size);
+int32_t fs_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
+    return f->write(f, pos, buf, nbytes);
 }

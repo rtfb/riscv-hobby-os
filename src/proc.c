@@ -392,9 +392,10 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo) {
     return 0;
 }
 
-int32_t fd_alloc(process_t *proc) {
+int32_t fd_alloc(process_t *proc, file_t *f) {
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         if (proc->files[i] == 0) {
+            proc->files[i] = f;
             return i;
         }
     }
@@ -413,13 +414,12 @@ int32_t proc_open(char const *filepath, uint32_t flags) {
     }
     process_t* proc = myproc();
     acquire(&proc->lock);
-    int32_t fd = fd_alloc(proc);
+    int32_t fd = fd_alloc(proc, f);
     if (fd < 0) {
         // TODO: set errno to indicate out of proc FDs
         release(&proc->lock);
         return -1;
     }
-    proc->files[fd] = f;
     int32_t status = fs_open(f, filepath, flags);
     if (status != 0) {
         proc->files[fd] = 0;
@@ -431,17 +431,16 @@ int32_t proc_open(char const *filepath, uint32_t flags) {
     return fd;
 }
 
-int32_t proc_read(uint32_t fd, void *buf, uint32_t count, uint32_t elem_size) {
+int32_t proc_read(uint32_t fd, void *buf, uint32_t size) {
     process_t* proc = myproc();
     acquire(&proc->lock);
     file_t *f = proc->files[fd];
+    release(&proc->lock);
     if (f == 0) {
         // Reading a non-open file. TODO: set errno
         return -1;
     }
-    int32_t status = fs_read(f, f->position, buf, count, elem_size);
-    release(&proc->lock);
-    return status;
+    return fs_read(f, f->position, buf, size);
 }
 
 int32_t proc_close(uint32_t fd) {
@@ -455,6 +454,7 @@ int32_t proc_close(uint32_t fd) {
     file_t *f = proc->files[fd];
     if (f == 0) {
         // Closing a non-open file. TODO: set errno
+        release(&proc->lock);
         return -1;
     }
     fs_free_file(f);

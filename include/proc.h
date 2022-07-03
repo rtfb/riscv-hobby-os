@@ -186,11 +186,12 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo);
 // lower level FS stuff.
 int32_t proc_open(char const *filepath, uint32_t flags);
 int32_t proc_close(uint32_t fd);
-int32_t proc_read(uint32_t fd, void *buf, uint32_t count, uint32_t elem_size);
+int32_t proc_read(uint32_t fd, void *buf, uint32_t size);
 
-// fd_alloc allocates a file descriptor in process's open files list. proc.lock
+// fd_alloc allocates a file descriptor in process's open files list and
+// assigns a file pointer to it. proc.lock
 // must be held.
-int32_t fd_alloc(process_t *proc);
+int32_t fd_alloc(process_t *proc, file_t *f);
 void fd_free(process_t *proc, int32_t fd);
 
 #endif // ifndef _PROC_H_

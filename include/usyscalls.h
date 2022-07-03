@@ -8,7 +8,7 @@
 
 extern void exit();
 extern uint32_t fork();
-extern int32_t read(uint32_t fd, char* buf, uint32_t count, uint32_t elem_size);
+extern int32_t read(uint32_t fd, char* buf, uint32_t size);
 
 // write writes the given data to file descriptor fd. The two special file
 // descriptors are stdout=1 and stderr=2. Other descriptors should be obtained

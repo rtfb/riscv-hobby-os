@@ -26,8 +26,8 @@ typedef struct file_s {
     uint32_t position;
     uint32_t mode;     // FDMODE_*
     void     *fs_file; // a pointer to the underlying FS-level file struct
-    int32_t (*read)(void *fs_file, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
-    int32_t (*write)(void *fs_file, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
+    int32_t (*read)(struct file_s *f, uint32_t pos, void *buf, uint32_t size);
+    int32_t (*write)(struct file_s *f, uint32_t pos, void *buf, uint32_t nbytes);
 } file_t;
 
 typedef struct file_table_s {
@@ -42,7 +42,7 @@ void fs_init();
 file_t* fs_alloc_file();
 void fs_free_file(file_t *f);
 int32_t fs_open(file_t *f, char const *filepath, uint32_t flags);
-int32_t fs_read(file_t *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
-int32_t fs_write(file_t *f, uint32_t pos, void *buf, uint32_t count, uint32_t elem_size);
+int32_t fs_read(file_t *f, uint32_t pos, void *buf, uint32_t size);
+int32_t fs_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes);
 
 #endif // ifndef _FS_H_

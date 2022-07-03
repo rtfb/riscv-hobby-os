@@ -55,16 +55,15 @@ uint32_t sys_fork() {
 int32_t sys_read() {
     uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
     void *buf = (void*)trap_frame.regs[REG_A1];
-    uint32_t count = (uint32_t)trap_frame.regs[REG_A2];
-    uint32_t elem_size = (uint32_t)trap_frame.regs[REG_A3];
+    uint32_t size = (uint32_t)trap_frame.regs[REG_A2];
     if (!buf) {
         // TODO: errno
         return -1;
     }
     if (fd == 0) {
-        return uart_readline(buf, count * elem_size);
+        return uart_readline(buf, size);
     }
-    return proc_read(fd, buf, count, elem_size);
+    return proc_read(fd, buf, size);
 }
 
 int32_t sys_write() {
