@@ -70,7 +70,7 @@ void kernel_timer_tick() {
     disable_interrupts();
     acquire(&proc_table.lock);
     if (!proc_table.is_idle) {
-        copy_context(&proc_table.procs[proc_table.curr_proc].context, &trap_frame);
+        copy_trap_frame(&proc_table.procs[proc_table.curr_proc].trap, &trap_frame);
     }
     release(&proc_table.lock);
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);

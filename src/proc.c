@@ -74,18 +74,18 @@ void schedule_user_process() {
     proc->state = PROC_STATE_RUNNING;
 
     if (last_proc == 0) {
-        copy_context(&trap_frame, &proc->context);
+        copy_trap_frame(&trap_frame, &proc->trap);
     } else if (last_proc->pid != proc->pid) {
         // the user process has changed: save the descending process's context
         // and load the ascending one's
         acquire(&last_proc->lock);
-        copy_context(&last_proc->context, &trap_frame);
+        copy_trap_frame(&last_proc->trap, &trap_frame);
         if (last_proc->state != PROC_STATE_SLEEPING) {
             // restore last_proc to the ready state, but only if it's not sleeping
             last_proc->state = PROC_STATE_READY;
         }
         release(&last_proc->lock);
-        copy_context(&trap_frame, &proc->context);
+        copy_trap_frame(&trap_frame, &proc->trap);
     }
     release(&proc->lock);
     proc_table.is_idle = 0;
@@ -136,8 +136,8 @@ uint32_t proc_fork() {
 
     process_t* parent = myproc();
     acquire(&parent->lock);
-    parent->context.pc = trap_frame.pc;
-    copy_context(&parent->context, &trap_frame);
+    parent->trap.pc = trap_frame.pc;
+    copy_trap_frame(&parent->trap, &trap_frame);
 
     process_t* child = alloc_process();
     if (!child) {
@@ -147,18 +147,18 @@ uint32_t proc_fork() {
     }
     child->pid = alloc_pid();
     child->parent = parent;
-    child->context.pc = parent->context.pc;
+    child->trap.pc = parent->trap.pc;
     child->stack_page = sp;
     copy_page(child->stack_page, parent->stack_page);
-    copy_context(&child->context, &parent->context);
+    copy_trap_frame(&child->trap, &parent->trap);
 
     // overwrite the sp with the same offset as parent->sp, but within the child stack:
-    regsize_t offset = parent->context.regs[REG_SP] - (regsize_t)parent->stack_page;
-    child->context.regs[REG_SP] = (regsize_t)(sp + offset);
-    offset = parent->context.regs[REG_FP] - (regsize_t)parent->stack_page;
-    child->context.regs[REG_FP] = (regsize_t)(sp + offset);
+    regsize_t offset = parent->trap.regs[REG_SP] - (regsize_t)parent->stack_page;
+    child->trap.regs[REG_SP] = (regsize_t)(sp + offset);
+    offset = parent->trap.regs[REG_FP] - (regsize_t)parent->stack_page;
+    child->trap.regs[REG_FP] = (regsize_t)(sp + offset);
     // child's return value should be a 0 pid:
-    child->context.regs[REG_A0] = 0;
+    child->trap.regs[REG_A0] = 0;
     release(&parent->lock);
     release(&child->lock);
     trap_frame.regs[REG_A0] = child->pid;
@@ -234,18 +234,18 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     }
     process_t* proc = myproc();
     acquire(&proc->lock);
-    proc->context.pc = (regsize_t)program->entry_point;
+    proc->trap.pc = (regsize_t)program->entry_point;
     proc->name = program->name;
     release_page(proc->stack_page);
     proc->stack_page = sp;
     regsize_t argc = len_argv(argv);
     sp_argv_t sp_argv = copy_argv(sp + PAGE_SIZE, argc, argv);
-    proc->context.regs[REG_RA] = (regsize_t)proc->context.pc;
-    proc->context.regs[REG_SP] = sp_argv.new_sp;
-    proc->context.regs[REG_FP] = sp_argv.new_sp;
-    proc->context.regs[REG_A0] = argc;
-    proc->context.regs[REG_A1] = sp_argv.new_argv;
-    copy_context(&trap_frame, &proc->context);
+    proc->trap.regs[REG_RA] = (regsize_t)proc->trap.pc;
+    proc->trap.regs[REG_SP] = sp_argv.new_sp;
+    proc->trap.regs[REG_FP] = sp_argv.new_sp;
+    proc->trap.regs[REG_A0] = argc;
+    proc->trap.regs[REG_A1] = sp_argv.new_argv;
+    copy_trap_frame(&trap_frame, &proc->trap);
     release(&proc->lock);
     // syscall() assigns whatever we return here to a0, the register that
     // contains the return value. But in case of exec, we don't really return
@@ -308,7 +308,7 @@ process_t* myproc() {
     return proc;
 }
 
-void copy_context(trap_frame_t* dst, trap_frame_t* src) {
+void copy_trap_frame(trap_frame_t* dst, trap_frame_t* src) {
     for (int i = 0; i < 32; i++) {
         dst->regs[i] = src->regs[i];
     }
@@ -335,7 +335,7 @@ int32_t wait_or_sleep(uint64_t wakeup_time) {
     acquire(&proc->lock);
     proc->state = PROC_STATE_SLEEPING;
     proc->wakeup_time = wakeup_time;
-    copy_context(&proc->context, &trap_frame); // save the context before sleep
+    copy_trap_frame(&proc->trap, &trap_frame); // save the context before sleep
     release(&proc->lock);
     schedule_user_process();
     return 0;

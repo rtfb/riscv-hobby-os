@@ -46,7 +46,7 @@ typedef struct process_s {
     uint32_t pid;
     char *name;
     struct process_s* parent;
-    trap_frame_t context;
+    trap_frame_t trap;
 
     // stack_page points to the base of the page allocated for stack (i.e. it's
     // the value returned by allocate_page()). We need to save it so that we
@@ -174,8 +174,8 @@ process_t* current_proc();
 // is found.
 process_t* myproc();
 
-// copy_context copies the contents for src into dst.
-void copy_context(trap_frame_t* dst, trap_frame_t* src);
+// copy_trap_frame copies the contents of src into dst.
+void copy_trap_frame(trap_frame_t* dst, trap_frame_t* src);
 
 uint32_t proc_plist(uint32_t *pids, uint32_t size);
 

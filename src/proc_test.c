@@ -85,7 +85,7 @@ void assign_init_program(char const* prog) {
     proc_table.num_procs = 1;
     process_t* p0 = &proc_table.procs[0];
     p0->pid = alloc_pid();
-    p0->context.pc = (regsize_t)program->entry_point;
+    p0->trap.pc = (regsize_t)program->entry_point;
     p0->name = program->name;
     p0->state = PROC_STATE_READY;
     void* sp = allocate_page();
@@ -94,7 +94,7 @@ void assign_init_program(char const* prog) {
         return;
     }
     p0->stack_page = sp;
-    p0->context.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
+    p0->trap.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
 }
 
 user_program_t* find_user_program(char const *name) {
