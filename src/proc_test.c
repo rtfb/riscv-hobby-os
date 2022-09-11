@@ -93,8 +93,15 @@ void assign_init_program(char const* prog) {
         // TODO: panic
         return;
     }
+    void *ksp = allocate_page();
+    if (!ksp) {
+        // TODO: panic
+        return;
+    }
     p0->stack_page = sp;
+    p0->kstack_page = ksp;
     p0->trap.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
+    p0->kernel_stack = ksp + PAGE_SIZE;
 }
 
 user_program_t* find_user_program(char const *name) {

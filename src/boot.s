@@ -8,7 +8,7 @@
 .section .text
 .globl _start
 _start:
-                                        # if not specified otherwise, the source is:
+                                        # if not specified otherwise, the source for quotations is:
                                         #       The RISC-V Instruction Set Manual
                                         #       Volume II: Privileged Architecture
                                         #       Privileged Architecture Version 1.10
@@ -228,13 +228,9 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
         csrr    t6, mepc
         sx      t6, 31, (t0)
 
-        # set kernel stack pointer:
-        la      t0, stack_top           # set it at stack_top for hart0,
-        csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
-        li      t2, 512
-        mul     t1, t1, t2
-        sub     t0, t0, t1
-        mv      sp, t0
+        # Restore sp from cpu.kernel_stack
+        la      t0, cpu
+        lx      sp, 1, (t0)
 
         csrr    t0, mcause
         bgez    t0, exception_dispatch

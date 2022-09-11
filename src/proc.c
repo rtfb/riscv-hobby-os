@@ -10,6 +10,7 @@ cpu_t cpu;
 
 void init_process_table(uint32_t runflags) {
     cpu.proc = 0;
+    cpu.kernel_stack = &stack_top;
     proc_table.pid_counter = 0;
     proc_table.is_idle = 1;
     for (int i = 0; i < MAX_PROCS; i++) {
@@ -73,6 +74,7 @@ void schedule_user_process() {
     acquire(&proc->lock);
     proc->state = PROC_STATE_RUNNING;
     cpu.proc = proc;
+    cpu.kernel_stack = proc->kernel_stack;
 
     if (last_proc == 0) {
         copy_trap_frame(&trap_frame, &proc->trap);
@@ -95,7 +97,10 @@ void schedule_user_process() {
 }
 
 process_t* find_ready_proc() {
-    int curr_proc = cpu.proc - proc_table.procs;
+    int curr_proc = 0;
+    if (cpu.proc) {
+        curr_proc = cpu.proc - proc_table.procs;
+    }
     int orig_curr_proc = curr_proc;
     process_t* proc = 0;
     do {
@@ -134,6 +139,11 @@ uint32_t proc_fork() {
         // TODO: set errno
         return -1;
     }
+    void *ksp = allocate_page();
+    if (!ksp) {
+        // TODO: set errno
+        return -1;
+    }
 
     process_t* parent = myproc();
     acquire(&parent->lock);
@@ -142,15 +152,18 @@ uint32_t proc_fork() {
 
     process_t* child = alloc_process();
     if (!child) {
-        release_page(sp);
         release(&parent->lock);
+        release_page(ksp);
+        release_page(sp);
         return -1;
     }
     child->pid = alloc_pid();
     child->parent = parent;
     child->trap.pc = parent->trap.pc;
     child->stack_page = sp;
+    child->kstack_page = ksp;
     copy_page(child->stack_page, parent->stack_page);
+    copy_page(child->kstack_page, parent->kstack_page);
     copy_trap_frame(&child->trap, &parent->trap);
 
     // overwrite the sp with the same offset as parent->sp, but within the child stack:
@@ -158,6 +171,8 @@ uint32_t proc_fork() {
     child->trap.regs[REG_SP] = (regsize_t)(sp + offset);
     offset = parent->trap.regs[REG_FP] - (regsize_t)parent->stack_page;
     child->trap.regs[REG_FP] = (regsize_t)(sp + offset);
+    regsize_t koffset = parent->trap.regs[REG_SP] - (regsize_t)parent->kstack_page;
+    child->kernel_stack = parent->kernel_stack;
     // child's return value should be a 0 pid:
     child->trap.regs[REG_A0] = 0;
     release(&parent->lock);
