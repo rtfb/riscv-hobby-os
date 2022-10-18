@@ -7,14 +7,14 @@
 proc_table_t proc_table;
 trap_frame_t trap_frame;
 
-void init_process_table() {
+void init_process_table(uint32_t runflags) {
     proc_table.curr_proc = 0;
     proc_table.pid_counter = 0;
     proc_table.is_idle = 1;
     for (int i = 0; i < MAX_PROCS; i++) {
         proc_table.procs[i].state = PROC_STATE_AVAILABLE;
     }
-    init_test_processes();
+    init_test_processes(runflags);
 }
 
 void init_global_trap_frame() {

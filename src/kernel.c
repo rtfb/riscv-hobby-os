@@ -5,6 +5,7 @@
 #include "fdt.h"
 #include "pagealloc.h"
 #include "uart.h"
+#include "runflags.h"
 
 spinlock init_lock = 0;
 
@@ -12,7 +13,6 @@ void kinit(uintptr_t fdt_header_addr) {
     acquire(&init_lock);
     unsigned int cpu_id = get_mhartid();
     if (cpu_id > 0) {
-        kprintf("cpu parked: %d\n", cpu_id);
         release(&init_lock);
         // TODO: support multi-core
         park_hart();
@@ -21,13 +21,15 @@ void kinit(uintptr_t fdt_header_addr) {
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());
+    uint32_t runflags = parse_runflags();
     init_trap_vector();
     void* paged_mem_end = init_pmp();
     char const* str = "foo"; // this is a random string to test out %s in kprintf()
     void *p = (void*)0xf10a; // this is a random hex to test out %p in kprintf()
     kprintf("kprintf test several params: %s, %p, %d\n", str, p, cpu_id);
-    init_paged_memory(paged_mem_end);
-    init_process_table();
+    int running_tests = runflags & RUNFLAGS_TESTS;
+    init_paged_memory(paged_mem_end, !running_tests);
+    init_process_table(runflags);
     init_global_trap_frame();
     fs_init();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);

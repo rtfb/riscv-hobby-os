@@ -106,10 +106,10 @@ extern trap_frame_t trap_frame;
 // init_test_processes initializes the process table with a set of userland
 // processes that will get executed by default. Kind of like what an initrd
 // would do, but a poor man's version until we can do better.
-void init_test_processes();
+void init_test_processes(uint32_t runflags);
 void assign_init_program(char const* prog);
 
-void init_process_table();
+void init_process_table(uint32_t runflags);
 void schedule_user_process();
 
 // find_ready_proc iterates over the proc table looking for the first available

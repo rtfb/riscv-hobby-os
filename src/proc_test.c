@@ -1,9 +1,9 @@
 #include "proc.h"
 #include "kernel.h"
-#include "fdt.h"
 #include "string.h"
 #include "pagealloc.h"
 #include "programs.h"
+#include "runflags.h"
 
 // defined in userland.c:
 extern int u_main_init();
@@ -69,11 +69,11 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     },
 };
 
-void init_test_processes() {
-    if (!strncmp(fdt_get_bootargs(), "dry-run", ARRAY_LENGTH("dry-run"))) {
+void init_test_processes(uint32_t runflags) {
+    if (runflags == RUNFLAGS_DRY_RUN) {
         return;
     }
-    if (!strncmp(fdt_get_bootargs(), "smoke-test", ARRAY_LENGTH("smoke-test"))) {
+    if (runflags == RUNFLAGS_SMOKE_TEST) {
         assign_init_program("smoke-test");
     } else {
         assign_init_program("sh");
