@@ -6,9 +6,10 @@
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;
+cpu_t cpu;
 
 void init_process_table(uint32_t runflags) {
-    proc_table.curr_proc = 0;
+    cpu.proc = 0;
     proc_table.pid_counter = 0;
     proc_table.is_idle = 1;
     for (int i = 0; i < MAX_PROCS; i++) {
@@ -45,12 +46,11 @@ void init_global_trap_frame() {
 void schedule_user_process() {
     uint64_t now = time_get_now();
     acquire(&proc_table.lock);
-    int curr_proc = proc_table.curr_proc;
-    process_t *last_proc = &proc_table.procs[curr_proc];
-    if (last_proc->state == PROC_STATE_AVAILABLE || proc_table.is_idle) {
+    process_t *last_proc = cpu.proc;
+    if (last_proc && last_proc->state == PROC_STATE_AVAILABLE || proc_table.is_idle) {
         // schedule_user_process may have been called from proc_exit, which
-        // kills the process in curr_proc slot, so if that's the case,
-        // pretend there wasn't any last_proc:
+        // kills the current process, so if that's the case, pretend there
+        // wasn't any last_proc:
         last_proc = 0;
     }
     if (proc_table.num_procs == 0) {
@@ -58,7 +58,7 @@ void schedule_user_process() {
         return;
     }
 
-    process_t *proc = find_ready_proc(curr_proc);
+    process_t *proc = find_ready_proc();
     if (!proc) {
         // nothing to schedule; this either means that something went terribly
         // wrong, or all processes are sleeping. In which case we should simply
@@ -72,6 +72,7 @@ void schedule_user_process() {
     }
     acquire(&proc->lock);
     proc->state = PROC_STATE_RUNNING;
+    cpu.proc = proc;
 
     if (last_proc == 0) {
         copy_trap_frame(&trap_frame, &proc->trap);
@@ -93,7 +94,8 @@ void schedule_user_process() {
     set_user_mode();
 }
 
-process_t* find_ready_proc(int curr_proc) {
+process_t* find_ready_proc() {
+    int curr_proc = cpu.proc - proc_table.procs;
     int orig_curr_proc = curr_proc;
     process_t* proc = 0;
     do {
@@ -110,8 +112,7 @@ process_t* find_ready_proc(int curr_proc) {
             break;
         }
     } while (curr_proc != orig_curr_proc);
-    proc_table.curr_proc = curr_proc;
-    if (proc->state == PROC_STATE_SLEEPING) {
+    if (proc && proc->state == PROC_STATE_SLEEPING) {
         // this can happen if all processes are sleeping
         return 0;
     }
@@ -266,11 +267,12 @@ uint32_t alloc_pid() {
 process_t* alloc_process() {
     acquire(&proc_table.lock);
     for (int i = 0; i < MAX_PROCS; i++) {
-        if (i == proc_table.curr_proc) {
+        process_t *proc = &proc_table.procs[i];
+        if (proc == cpu.proc) {
             continue;
         }
-        if (proc_table.procs[i].state == PROC_STATE_AVAILABLE) {
-            return init_proc(&proc_table.procs[i]);
+        if (proc->state == PROC_STATE_AVAILABLE) {
+            return init_proc(proc); // will release proc_table.lock
         }
     }
     // TODO: set errno
@@ -278,6 +280,7 @@ process_t* alloc_process() {
     return 0;
 }
 
+// must be called with proc_table.lock held and is responsible for releasing it.
 process_t* init_proc(process_t* proc) {
     acquire(&proc->lock);
     proc->state = PROC_STATE_READY;
@@ -290,13 +293,7 @@ process_t* init_proc(process_t* proc) {
 }
 
 process_t* current_proc() {
-    acquire(&proc_table.lock);
-    if (proc_table.num_procs == 0) {
-        return 0;
-    }
-    process_t* proc = &proc_table.procs[proc_table.curr_proc];
-    release(&proc_table.lock);
-    return proc;
+    return cpu.proc;
 }
 
 process_t* myproc() {

@@ -106,9 +106,7 @@ uint32_t sys_execv() {
 }
 
 uint32_t sys_getpid() {
-    acquire(&proc_table.lock);
-    uint32_t pid = proc_table.procs[proc_table.curr_proc].pid;
-    release(&proc_table.lock);
+    uint32_t pid = cpu.proc->pid;
     return pid;
 }
 

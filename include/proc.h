@@ -72,7 +72,6 @@ typedef struct proc_table_s {
     spinlock lock;
     process_t procs[MAX_PROCS];
     int num_procs;
-    int curr_proc;
     uint32_t pid_counter;
 
     // is_idle is a flag meaning that the kernel isn't running any user
@@ -84,11 +83,21 @@ typedef struct proc_table_s {
     // In technical terms, this means that trap_frame.pc does not point to any
     // user process and likely points to park_hart() within kernel itself, so
     // we shouldn't jump back to it.
-    int is_idle;
+    int is_idle; // TODO: is this obsoleted by cpu.proc == NULL?
 } proc_table_t;
+
+typedef struct cpu_s {
+    process_t *proc;       // the process running on this cpu, or null
+} cpu_t;
 
 // defined in proc.c
 extern proc_table_t proc_table;
+
+// we're still single-core, so put it here. Later this needs to become an array
+// of one cpu_t per hart
+//
+// defined in proc.c
+extern cpu_t cpu;
 
 // trap_frame is the piece of memory to hold all user registers when we enter
 // the trap. When the scheduler picks the new process to run, it will save
@@ -115,10 +124,10 @@ void schedule_user_process();
 // find_ready_proc iterates over the proc table looking for the first available
 // proc that's in a PROC_STATE_READY state. Wraps around and starts from zero
 // until reaches the same index it started with, in which case it returns the
-// same process. Sets curr_proc to its index and returns the process.
+// same process.
 //
 // MUST be called with proc_table.lock held.
-process_t* find_ready_proc(int curr_proc);
+process_t* find_ready_proc();
 
 // init_global_trap_frame makes sure that mscratch contains a pointer to
 // trap_frame before the first userland process gets scheduled.
