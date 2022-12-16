@@ -267,47 +267,29 @@ clean:
 	rm -Rf $(OUT)
 
 prereqs:
-	# OSX brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat wget
-	# OSX brew install riscv-tools qemu
+	# OSX brew install riscv-tools
 	sudo apt --yes install \
-		autoconf \
-		automake \
-		autotools-dev \
-		bc \
-		bison \
 		build-essential \
-		curl \
-		device-tree-compiler \
-		flex \
-		gawk \
-		gcc-riscv64-linux-gnu \
-		git \
-		libexpat-dev \
-		libglib2.0-dev \
-		libpixman-1-dev \
-		libgmp-dev \
-		libmpc-dev \
-		libmpfr-dev \
-		libtool \
-		patchutils \
-		picocom \
-		pkg-config \
-		texinfo gperf \
-		wget \
-		zlib1g-dev
+		gcc-riscv64-linux-gnu
 
 $(FREEDOM_SDK_DIR):
 	mkdir -p $@
 	wget -qO- "$(SIFIVE_TOOLCHAIN_URL)" | tar xzv -C "$@"
 
 clone:
-	git clone https://github.com/qemu/qemu
 	git clone https://github.com/riscv/riscv-isa-sim
 	git clone https://github.com/riscv/riscv-pk
 
 .PHONY: qemu
 qemu:
 	./scripts/build-qemu.sh
+
+QEMU_DOCKER_IMG_NAME := qemu-image
+
+# builds the docker image
+.PHONY: build-qemu-image
+build-qemu-image:
+	docker build -f scripts/Dockerfile -t ${QEMU_DOCKER_IMG_NAME} .
 
 $(OUT)/generic-elf/hello:
 	@mkdir -p $(OUT)/generic-elf

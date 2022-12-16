@@ -3,6 +3,7 @@
 # pylint: disable=invalid-name,missing-function-docstring,unused-argument
 
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import argparse
 import contextlib
@@ -54,6 +55,11 @@ class _GetchWindows:
 
 
 getch = _Getch()
+
+
+def get_full_wd():
+    p = Path(".").resolve()
+    return p
 
 
 def mkdelta(deltavalue):
@@ -118,31 +124,41 @@ def cleanup_gdb_files():
         os.unlink(GDBINIT_FILE)
 
 
+def make_docker_cmd(is_32bit):
+    mount =  'type=bind,source={},target=/host'.format(get_full_wd())
+    cmd = [
+        'docker', 'run', '-it', '--name', 'qemu-image', '--rm',
+        '--mount', mount, '--net=host', 'qemu-image:latest',
+    ]
+    if is_32bit:
+        cmd.append('rv32')
+    return cmd
+
+
 def make_qemu_command(args):
     binary = args.binary
 
     # First try to derive qemu and machine from binary name:
+    is_32bit = False
     if binary.endswith('32'):
-        qemu = 'qemu-system-riscv32'
-    else:
-        qemu = 'qemu-system-riscv64'
+        is_32bit = True
 
     if binary.strip('32').endswith('_u'):
         machine = 'sifive_u'
     else:
         machine = 'sifive_e'
 
+    cmd = make_docker_cmd(is_32bit)
+
     # Override our guesses if args were passed explicitly:
     if args.qemu is not None:
-        qemu = args.qemu
+        cmd = [args.qemu]
     if args.machine is not None:
         machine = args.machine
 
-    if os.path.isdir('qemu-build'):
-        qemu = os.path.join('qemu-build/bin', qemu)
-    cmd = [qemu, '-nographic', '-machine', machine, '-bios', 'none',
-           '-kernel', binary,
-           ]
+    cmd.extend([
+        '-nographic', '-machine', machine, '-bios', 'none', '-kernel', binary,
+    ])
     if args.debug:
         cmd.extend([
             '-S',  # only loads an image, but stops the CPU, giving a chance to attach gdb
@@ -150,7 +166,7 @@ def make_qemu_command(args):
         ])
     if args.bootargs:
         cmd.extend(['-append', args.bootargs])
-    return cmd, machine, binary, qemu.endswith('riscv32')
+    return cmd, machine, binary, is_32bit
 
 
 def run(args):
@@ -207,9 +223,6 @@ def main():
                         action='store_true')
     parser.add_argument('--bootargs', help='pass this as bootargs to the kernel')
     args = parser.parse_args()
-    # c = getch()
-    # print(c)
-    # return
     run(args)
 
 
