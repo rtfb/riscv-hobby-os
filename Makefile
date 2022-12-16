@@ -26,8 +26,8 @@ ifeq ($(wildcard $(RISCV_PK)),)
 	RISCV_PK = pk
 endif
 
-FREEDOM_SDK_TOOLCHAIN_PATH := ./sifive-freedom-toolchain/$(shell ls sifive-freedom-toolchain)
-GDB := $(FREEDOM_SDK_TOOLCHAIN_PATH)/bin/riscv64-unknown-elf-gdb
+FREEDOM_SDK_DIR := sifive-freedom-toolchain
+GDB := $(FREEDOM_SDK_DIR)/*/bin/riscv64-unknown-elf-gdb
 
 # If the links below get outdated, head to https://www.sifive.com/software and
 # download GNU Embedded Toolchain.
@@ -108,7 +108,7 @@ run-baremetalu32: $(OUT)/user_sifive_u32
 # * qemu-launcher also creates a .gbdinit file so that gdb sets the correct
 #   arch and automatically attaches to the target
 .PHONY: gdb
-gdb:
+gdb: $(FREEDOM_SDK_DIR)
 	$(GDB) $(shell cat .debug-session)
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
@@ -296,10 +296,9 @@ prereqs:
 		wget \
 		zlib1g-dev
 
-.PHONY: download-sifive-toolchain
-download-sifive-toolchain:
-	mkdir -p sifive-freedom-toolchain
-	wget -qO- "$(SIFIVE_TOOLCHAIN_URL)" | tar xzv -C "sifive-freedom-toolchain"
+$(FREEDOM_SDK_DIR):
+	mkdir -p $@
+	wget -qO- "$(SIFIVE_TOOLCHAIN_URL)" | tar xzv -C "$@"
 
 clone:
 	git clone https://github.com/qemu/qemu
