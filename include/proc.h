@@ -41,8 +41,13 @@ typedef struct trap_frame_s {
     regsize_t pc;
 } trap_frame_t;
 
+typedef struct context_s {
+    regsize_t regs[14]; // ra, sp, s0..s11
+} context_t;
+
 typedef struct process_s {
     spinlock lock;
+    context_t ctx;
     uint32_t pid;
     char *name;
     struct process_s* parent;
@@ -67,11 +72,6 @@ typedef struct process_s {
     uint64_t wakeup_time;
 
     file_t* files[MAX_PROC_FDS];
-
-    // current sp within kstack_page:
-    void *kernel_stack; // each process has its own kernel-side stack,
-                        // otherwise syscalls from different processes would
-                        // thrash each other's stack
 } process_t;
 
 typedef struct proc_table_s {
@@ -94,7 +94,7 @@ typedef struct proc_table_s {
 
 typedef struct cpu_s {
     process_t *proc;       // the process running on this cpu, or null
-    void *kernel_stack;    // copy of proc->kernel_stack or null
+    context_t context;     // swtch() here to enter scheduler()
 } cpu_t;
 
 // defined in proc.c
@@ -119,6 +119,9 @@ extern cpu_t cpu;
 // registers without trashing any.
 extern trap_frame_t trap_frame;
 
+// defined in context.s
+void swtch(context_t *old, context_t *new);
+
 // init_test_processes initializes the process table with a set of userland
 // processes that will get executed by default. Kind of like what an initrd
 // would do, but a poor man's version until we can do better.
@@ -126,7 +129,9 @@ void init_test_processes(uint32_t runflags);
 void assign_init_program(char const* prog);
 
 void init_process_table(uint32_t runflags);
-void schedule_user_process();
+void scheduler();
+void sched();
+void forkret();
 
 // find_ready_proc iterates over the proc table looking for the first available
 // proc that's in a PROC_STATE_READY state. Wraps around and starts from zero
@@ -192,6 +197,7 @@ process_t* myproc();
 
 // copy_trap_frame copies the contents of src into dst.
 void copy_trap_frame(trap_frame_t* dst, trap_frame_t* src);
+void copy_context(context_t *dst, context_t *src);
 
 uint32_t proc_plist(uint32_t *pids, uint32_t size);
 

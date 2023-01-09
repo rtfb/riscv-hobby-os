@@ -33,11 +33,8 @@ void kinit(uintptr_t fdt_header_addr) {
     init_global_trap_frame();
     fs_init();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
-    enable_interrupts();
     release(&init_lock);
-    // after kinit() is done, halt this hart until the timer gets called, all
-    // the remaining kernel ops will be orchestrated from the timer
-    park_hart();
+    scheduler(); // done init'ing, now run the scheduler, forever
 }
 
 // 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)
@@ -76,7 +73,7 @@ void kernel_timer_tick() {
     }
     release(&proc_table.lock);
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
-    schedule_user_process();
+    sched();
     enable_interrupts();
 }
 

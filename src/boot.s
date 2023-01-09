@@ -228,9 +228,16 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
         csrr    t6, mepc
         sx      t6, 31, (t0)
 
-        # Restore sp from cpu.kernel_stack
+        # Restore sp from cpu.proc->ctx[REG_SP].
+        # TODO: cpu.proc may be NULL, so we need a check for that and a
+        # fallback. I'm not  very sure, though, what circumstances could lead
+        # to a cpu not having a process scheduled on it, but still handling a
+        # trap - if this can only be in case of a panic, maybe we don't care?
         la      t0, cpu
-        lx      sp, 1, (t0)
+        lx      t0, 0, (t0)
+        lx      sp, 2, (t0)  # (*process_t)[0] => lock
+                             # (*process_t)[1] => ctx[0] (RA)
+                             # (*process_t)[2] => ctx[1] (SP)
 
         csrr    t0, mcause
         bgez    t0, exception_dispatch

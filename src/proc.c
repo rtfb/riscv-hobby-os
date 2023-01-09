@@ -10,118 +10,43 @@ cpu_t cpu;
 
 void init_process_table(uint32_t runflags) {
     cpu.proc = 0;
-    cpu.kernel_stack = &stack_top;
     proc_table.pid_counter = 0;
     proc_table.is_idle = 1;
     for (int i = 0; i < MAX_PROCS; i++) {
         proc_table.procs[i].state = PROC_STATE_AVAILABLE;
+        proc_table.procs[i].ctx.regs[REG_RA] = (regsize_t)forkret;
     }
     init_test_processes(runflags);
+
+    for (int i = 0; i < 14; i++) {
+        cpu.context.regs[i] = 0;
+    }
+    unsigned int hart_id = get_mhartid();
+    cpu.context.regs[REG_SP] = (regsize_t)(&stack_top - hart_id*PAGE_SIZE);
 }
 
 void init_global_trap_frame() {
     set_mscratch(&trap_frame);
 }
 
-// 3.1.7 Privilege and Global Interrupt-Enable Stack in mstatus register
-// > The MRET, SRET, or URET instructions are used to return from traps in
-// > M-mode, S-mode, or U-mode respectively. When executing an xRET instruction,
-// > supposing x PP holds the value y, x IE is set to xPIE; the privilege mode
-// > is changed to > y; xPIE is set to 1; and xPP is set to U (or M if user-mode
-// > is not supported).
-//
-// 3.2.2 Trap-Return Instructions
-// > An xRET instruction can be executed in privilege mode x or higher,
-// > where executing a lower-privilege xRET instruction will pop
-// > the relevant lower-privilege interrupt enable and privilege mode stack.
-// > In addition to manipulating the privilege stack as described in Section
-// > 3.1.7, xRET sets the pc to the value stored in the x epc register.
-//
-// Use MRET instruction to switch privilege level from Machine (M-mode) to User
-// (U-mode). MRET will change privilege to Machine Previous Privilege stored in
-// mstatus CSR and jump to Machine Exception Program Counter specified by mepc
-// CSR.
-//
-// schedule_user_process() is only called from kernel_timer_tick(), and MRET is
-// called in interrupt_epilogue, after kernel_timer_tick() exits.
-void schedule_user_process() {
-    uint64_t now = time_get_now();
-    acquire(&proc_table.lock);
-    process_t *last_proc = cpu.proc;
-    if (last_proc && last_proc->state == PROC_STATE_AVAILABLE || proc_table.is_idle) {
-        // schedule_user_process may have been called from proc_exit, which
-        // kills the current process, so if that's the case, pretend there
-        // wasn't any last_proc:
-        last_proc = 0;
-    }
-    if (proc_table.num_procs == 0) {
-        release(&proc_table.lock);
-        return;
-    }
-
-    process_t *proc = find_ready_proc();
-    if (!proc) {
-        // nothing to schedule; this either means that something went terribly
-        // wrong, or all processes are sleeping. In which case we should simply
-        // schedule the next timer tick and do nothing
-        proc_table.is_idle = 1;
-        release(&proc_table.lock);
-        set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
-        enable_interrupts();
-        park_hart();
-        return;
-    }
-    acquire(&proc->lock);
-    proc->state = PROC_STATE_RUNNING;
-    cpu.proc = proc;
-    cpu.kernel_stack = proc->kernel_stack;
-
-    if (last_proc == 0) {
-        copy_trap_frame(&trap_frame, &proc->trap);
-    } else if (last_proc->pid != proc->pid) {
-        // the user process has changed: save the descending process's context
-        // and load the ascending one's
-        acquire(&last_proc->lock);
-        copy_trap_frame(&last_proc->trap, &trap_frame);
-        if (last_proc->state != PROC_STATE_SLEEPING) {
-            // restore last_proc to the ready state, but only if it's not sleeping
-            last_proc->state = PROC_STATE_READY;
+void scheduler() {
+    while (1) {
+        for (int i = 0; i < MAX_PROCS; i++) {
+            process_t *p = &proc_table.procs[i];
+            acquire(&p->lock);
+            if (p->state == PROC_STATE_READY) {
+                p->state = PROC_STATE_RUNNING;
+                cpu.proc = p;
+                // switch context into p. This will not return until p itself
+                // does not call swtch().
+                swtch(&cpu.context, &p->ctx);
+                // the process has yielded the cpu, keep looking for something
+                // to run
+                cpu.proc = 0;
+            }
+            release(&p->lock);
         }
-        release(&last_proc->lock);
-        copy_trap_frame(&trap_frame, &proc->trap);
     }
-    release(&proc->lock);
-    proc_table.is_idle = 0;
-    release(&proc_table.lock);
-    set_user_mode();
-}
-
-process_t* find_ready_proc() {
-    int curr_proc = 0;
-    if (cpu.proc) {
-        curr_proc = cpu.proc - proc_table.procs;
-    }
-    int orig_curr_proc = curr_proc;
-    process_t* proc = 0;
-    do {
-        curr_proc++;
-        if (curr_proc >= MAX_PROCS) {
-            curr_proc = 0;
-        }
-        proc = &proc_table.procs[curr_proc];
-        if (proc->state == PROC_STATE_READY) {
-            break;
-        }
-        if (proc->state == PROC_STATE_SLEEPING && should_wake_up(proc)) {
-            proc->state = PROC_STATE_READY;
-            break;
-        }
-    } while (curr_proc != orig_curr_proc);
-    if (proc && proc->state == PROC_STATE_SLEEPING) {
-        // this can happen if all processes are sleeping
-        return 0;
-    }
-    return proc;
 }
 
 int should_wake_up(process_t* proc) {
@@ -146,13 +71,11 @@ uint32_t proc_fork() {
     }
 
     process_t* parent = myproc();
-    acquire(&parent->lock);
     parent->trap.pc = trap_frame.pc;
     copy_trap_frame(&parent->trap, &trap_frame);
 
     process_t* child = alloc_process();
     if (!child) {
-        release(&parent->lock);
         release_page(ksp);
         release_page(sp);
         return -1;
@@ -168,17 +91,25 @@ uint32_t proc_fork() {
 
     // overwrite the sp with the same offset as parent->sp, but within the child stack:
     regsize_t offset = parent->trap.regs[REG_SP] - (regsize_t)parent->stack_page;
+    regsize_t koffset = parent->ctx.regs[REG_SP] - (regsize_t)parent->kstack_page;
     child->trap.regs[REG_SP] = (regsize_t)(sp + offset);
+    child->ctx.regs[REG_SP] = (regsize_t)(ksp + koffset);
     offset = parent->trap.regs[REG_FP] - (regsize_t)parent->stack_page;
     child->trap.regs[REG_FP] = (regsize_t)(sp + offset);
-    regsize_t koffset = parent->trap.regs[REG_SP] - (regsize_t)parent->kstack_page;
-    child->kernel_stack = parent->kernel_stack;
+    child->ctx.regs[REG_FP] = (regsize_t)(ksp + koffset);
     // child's return value should be a 0 pid:
     child->trap.regs[REG_A0] = 0;
-    release(&parent->lock);
     release(&child->lock);
     trap_frame.regs[REG_A0] = child->pid;
     return child->pid;
+}
+
+extern void ret_to_user();  // defined in context.s
+void forkret() {
+    process_t* proc = myproc();
+    copy_trap_frame(&trap_frame, &proc->trap);
+    release(&proc->lock);
+    ret_to_user();
 }
 
 regsize_t len_argv(char const* argv[]) {
@@ -302,6 +233,10 @@ process_t* init_proc(process_t* proc) {
     for (int i = 0; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
     }
+    for (int i = 0; i < 14; i++) {
+        proc->ctx.regs[i] = 0;
+    }
+    proc->ctx.regs[REG_RA] = (regsize_t)forkret;
     proc_table.num_procs++;
     release(&proc_table.lock);
     return proc;
@@ -326,31 +261,42 @@ void copy_trap_frame(trap_frame_t* dst, trap_frame_t* src) {
     }
 }
 
+void copy_context(context_t *dst, context_t *src) {
+    for (int i = 0; i < 14; i++) {
+        dst->regs[i] = src->regs[i];
+    }
+}
+
 void proc_exit() {
     process_t* proc = myproc();
-    acquire(&proc->lock);
     release_page(proc->stack_page);
+    release_page(proc->kstack_page);   // XXX: problem! Can't release kstack_page yet, until we swtch outta here
     proc->state = PROC_STATE_AVAILABLE;
     acquire(&proc->parent->lock);
     proc->parent->state = PROC_STATE_READY;
+    copy_trap_frame(&trap_frame, &proc->parent->trap); // we should return to parent after child exits
     release(&proc->parent->lock);
-    release(&proc->lock);
 
     acquire(&proc_table.lock);
     proc_table.num_procs--;
     release(&proc_table.lock);
-    schedule_user_process();
+    swtch(&proc->ctx, &cpu.context);
 }
 
 int32_t wait_or_sleep(uint64_t wakeup_time) {
     process_t* proc = myproc();
-    acquire(&proc->lock);
     proc->state = PROC_STATE_SLEEPING;
     proc->wakeup_time = wakeup_time;
-    copy_trap_frame(&proc->trap, &trap_frame); // save the context before sleep
-    release(&proc->lock);
-    schedule_user_process();
+    copy_trap_frame(&proc->trap, &trap_frame); // save trap context before sleep
+    swtch(&proc->ctx, &cpu.context);
     return 0;
+}
+
+void sched() {
+    process_t* proc = myproc();
+    acquire(&proc->lock);
+    swtch(&proc->ctx, &cpu.context);
+    release(&proc->lock);
 }
 
 int32_t proc_wait() {

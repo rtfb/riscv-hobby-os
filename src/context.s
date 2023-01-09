@@ -69,3 +69,44 @@ ret_to_user:
 
         # return to userland:
         mret
+
+# Context switch
+#
+#   void swtch(context_t *old, context_t *new);
+#
+# Save ra, sp and all sXX registers in old context, restore the same registers
+# from new, then 'ret'. Since this changes ra, this will effectively return
+# into another execution context, something that was saved previously in old.
+.globl swtch
+swtch:
+        sx      ra,  0,  (a0)
+        sx      sp,  1,  (a0)
+        sx      s0,  2,  (a0)
+        sx      s1,  3,  (a0)
+        sx      s2,  4,  (a0)
+        sx      s3,  5,  (a0)
+        sx      s4,  6,  (a0)
+        sx      s5,  7,  (a0)
+        sx      s6,  8,  (a0)
+        sx      s7,  9,  (a0)
+        sx      s8,  10, (a0)
+        sx      s9,  11, (a0)
+        sx      s10, 12, (a0)
+        sx      s11, 13, (a0)
+
+        lx      ra,  0,  (a1)
+        lx      sp,  1,  (a1)
+        lx      s0,  2,  (a1)
+        lx      s1,  3,  (a1)
+        lx      s2,  4,  (a1)
+        lx      s3,  5,  (a1)
+        lx      s4,  6,  (a1)
+        lx      s5,  7,  (a1)
+        lx      s6,  8,  (a1)
+        lx      s7,  9,  (a1)
+        lx      s8,  10, (a1)
+        lx      s9,  11, (a1)
+        lx      s10, 12, (a1)
+        lx      s11, 13, (a1)
+
+        ret
