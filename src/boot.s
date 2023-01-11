@@ -234,7 +234,7 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
         # to a cpu not having a process scheduled on it, but still handling a
         # trap - if this can only be in case of a panic, maybe we don't care?
         la      t0, cpu
-        lx      t0, 0, (t0)
+        lx      t0, 0, (t0)  # t0 = cpu.proc
         lx      sp, 2, (t0)  # (*process_t)[0] => lock
                              # (*process_t)[1] => ctx[0] (RA)
                              # (*process_t)[2] => ctx[1] (SP)
@@ -323,6 +323,23 @@ exception_dispatch:
 
 syscall_dispatch:
         call    syscall
+        la      t0, cpu
+        lx      t0,  0,  (t0)  # t0 = cpu.proc
+                               # (*process_t)[0] => lock, we skip that
+        sx      ra,  1,  (t0)  # (*process_t)[1] => ctx[0] (RA)
+        sx      sp,  2,  (t0)  # (*process_t)[2] => ctx[1] (SP)
+        sx      s0,  3,  (t0)  # (*process_t)[3] => ctx[2] (S0, etc)
+        sx      s1,  4,  (t0)  # (*process_t)[4] => ctx[3]
+        sx      s2,  5,  (t0)  # (*process_t)[5] => ctx[4]
+        sx      s3,  6,  (t0)  # (*process_t)[6] => ctx[5]
+        sx      s4,  7,  (t0)  # (*process_t)[7] => ctx[6]
+        sx      s5,  8,  (t0)  # (*process_t)[8] => ctx[7]
+        sx      s6,  9,  (t0)  # (*process_t)[9] => ctx[8]
+        sx      s7,  10, (t0)  # (*process_t)[10] => ctx[9]
+        sx      s8,  11, (t0)  # (*process_t)[11] => ctx[10]
+        sx      s9,  12, (t0)  # (*process_t)[12] => ctx[11]
+        sx      s10, 13, (t0)  # (*process_t)[13] => ctx[12]
+        sx      s11, 14, (t0)  # (*process_t)[14] => ctx[13]
         j       ret_to_user
 
 exception_epilogue:

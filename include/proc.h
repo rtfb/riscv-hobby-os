@@ -132,6 +132,7 @@ void init_process_table(uint32_t runflags);
 void scheduler();
 void sched();
 void forkret();
+void ret_to_user();  // defined in context.s
 
 // find_ready_proc iterates over the proc table looking for the first available
 // proc that's in a PROC_STATE_READY state. Wraps around and starts from zero

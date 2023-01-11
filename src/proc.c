@@ -104,7 +104,6 @@ uint32_t proc_fork() {
     return child->pid;
 }
 
-extern void ret_to_user();  // defined in context.s
 void forkret() {
     process_t* proc = myproc();
     copy_trap_frame(&trap_frame, &proc->trap);
@@ -174,7 +173,7 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         return -1;
     }
     // allocate stack. Fail early if we're out of memory:
-    void* sp = allocate_page();
+    void* sp = allocate_page(); // XXX: we already have a stack_page and kstack_page allocated in fork, do we need a new copy? Why?
     if (!sp) {
         // TODO: set errno
         return -1;
