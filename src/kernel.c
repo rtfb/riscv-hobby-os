@@ -86,13 +86,16 @@ void set_mie(unsigned int value) {
 }
 
 void disable_interrupts() {
+    unsigned int mstatus = get_mstatus();
+    mstatus &= ~(1 << 3);
+    set_mstatus(mstatus);
     set_mie(0);
 }
 
 void enable_interrupts() {
-    // set mstatus.MIE (Machine Interrupt Enable) bit to 1:
+    // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:
     unsigned int mstatus = get_mstatus();
-    mstatus |= 1 << 3;
+    mstatus |= (1 << 7);
     set_mstatus(mstatus);
 
     // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:

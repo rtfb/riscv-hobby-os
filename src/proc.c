@@ -108,6 +108,7 @@ void forkret() {
     process_t* proc = myproc();
     copy_trap_frame(&trap_frame, &proc->trap);
     release(&proc->lock);
+    enable_interrupts();
     ret_to_user();
 }
 
@@ -293,9 +294,8 @@ int32_t wait_or_sleep(uint64_t wakeup_time) {
 
 void sched() {
     process_t* proc = myproc();
-    acquire(&proc->lock);
+    proc->state = PROC_STATE_READY;
     swtch(&proc->ctx, &cpu.context);
-    release(&proc->lock);
 }
 
 int32_t proc_wait() {

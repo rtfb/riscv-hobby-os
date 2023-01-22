@@ -29,6 +29,7 @@ void *syscall_vector[] _text = {
 };
 
 void syscall() {
+    disable_interrupts();
     int nr = trap_frame.regs[REG_A7];
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
     if (nr >= 0 && nr < ARRAY_LENGTH(syscall_vector) && syscall_vector[nr] != 0) {
@@ -38,6 +39,7 @@ void syscall() {
         kprintf("BAD syscall %d\n", nr);
         trap_frame.regs[REG_A0] = -1;
     }
+    enable_interrupts();
 }
 
 void sys_restart() {
