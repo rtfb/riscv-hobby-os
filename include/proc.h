@@ -79,17 +79,6 @@ typedef struct proc_table_s {
     process_t procs[MAX_PROCS];
     int num_procs;
     uint32_t pid_counter;
-
-    // is_idle is a flag meaning that the kernel isn't running any user
-    // process. This can mean we're fresh after the boot and no user process
-    // was scheduled yet, or it could mean all the processes are asleep waiting
-    // for something, and thus, the kernel didn't have anything to schedule
-    // last time it tried.
-    //
-    // In technical terms, this means that trap_frame.pc does not point to any
-    // user process and likely points to park_hart() within kernel itself, so
-    // we shouldn't jump back to it.
-    int is_idle; // TODO: is this obsoleted by cpu.proc == NULL?
 } proc_table_t;
 
 typedef struct cpu_s {

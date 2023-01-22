@@ -67,11 +67,6 @@ void init_trap_vector() {
 // run.
 void kernel_timer_tick() {
     disable_interrupts();
-    acquire(&proc_table.lock);
-    if (!proc_table.is_idle) {
-        copy_trap_frame(&cpu.proc->trap, &trap_frame);
-    }
-    release(&proc_table.lock);
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     sched();
     enable_interrupts();

@@ -11,7 +11,6 @@ cpu_t cpu;
 void init_process_table(uint32_t runflags) {
     cpu.proc = 0;
     proc_table.pid_counter = 0;
-    proc_table.is_idle = 1;
     for (int i = 0; i < MAX_PROCS; i++) {
         proc_table.procs[i].state = PROC_STATE_AVAILABLE;
         proc_table.procs[i].ctx.regs[REG_RA] = (regsize_t)forkret;
@@ -29,23 +28,56 @@ void init_global_trap_frame() {
     set_mscratch(&trap_frame);
 }
 
+void sleep_scheduler() {
+    // nothing to schedule; this either means that something went terribly
+    // wrong, or all processes are sleeping. In which case we should simply
+    // schedule the next timer tick and do nothing
+    unsigned int mstatus = get_mstatus();
+    mstatus |= ((1 << 3) | (1 << 7));
+    set_mstatus(mstatus);
+    set_mie(1 << 7);
+    set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
+    park_hart();
+}
+
 void scheduler() {
+    int i_after_wakeup = -1;
+    int new_loop = 0;
     while (1) {
         for (int i = 0; i < MAX_PROCS; i++) {
+            if (new_loop && i_after_wakeup < i) {
+                // we have checked all procs and didn't find anything to run,
+                // so enable interrupts and sleep, as there's nothing to
+                // schedule now
+                sleep_scheduler();
+            }
             process_t *p = &proc_table.procs[i];
             acquire(&p->lock);
+            if (p->state == PROC_STATE_SLEEPING && should_wake_up(p)) {
+                p->state = PROC_STATE_READY;
+                // we're waking up the process, which means it's possible that
+                // we interrupted sleep_scheduler, which in turn means
+                // trap_frame currently corresponds to a sleeping scheduler.
+                // Overwrite trap_frame with what the user process has:
+                copy_trap_frame(&trap_frame, &p->trap);
+                // trap_frame.pc = p->trap.pc;
+                // trap_frame.regs[REG_RA] = p->trap.regs[REG_RA];
+            }
             if (p->state == PROC_STATE_READY) {
                 p->state = PROC_STATE_RUNNING;
                 cpu.proc = p;
                 // switch context into p. This will not return until p itself
                 // does not call swtch().
                 swtch(&cpu.context, &p->ctx);
+                i_after_wakeup = i;
+                new_loop = 0;
                 // the process has yielded the cpu, keep looking for something
                 // to run
                 cpu.proc = 0;
             }
             release(&p->lock);
         }
+        new_loop = 1;
     }
 }
 
@@ -294,6 +326,10 @@ int32_t wait_or_sleep(uint64_t wakeup_time) {
 
 void sched() {
     process_t* proc = myproc();
+    if (!proc) {
+        scheduler(); // no process was scheduled, let the scheduler run, forever
+        return; // this is just for clarity: scheduler() never returns
+    }
     proc->state = PROC_STATE_READY;
     swtch(&proc->ctx, &cpu.context);
 }

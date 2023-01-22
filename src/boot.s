@@ -229,16 +229,27 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
         sx      t6, 31, (t0)
 
         # Restore sp from cpu.proc->ctx[REG_SP].
-        # TODO: cpu.proc may be NULL, so we need a check for that and a
-        # fallback. I'm not  very sure, though, what circumstances could lead
-        # to a cpu not having a process scheduled on it, but still handling a
-        # trap - if this can only be in case of a panic, maybe we don't care?
         la      t0, cpu
         lx      t0, 0, (t0)  # t0 = cpu.proc
+        # cpu.proc may be NULL, so we check for that and if so, jump to
+        # set_global_stack. This can happen if the CPU had nothing to schedule
+        # and was idling.
+        beq     x0, t0, set_global_stack
         lx      sp, 2, (t0)  # (*process_t)[0] => lock
                              # (*process_t)[1] => ctx[0] (RA)
                              # (*process_t)[2] => ctx[1] (SP)
+        j       stack_done
 
+set_global_stack:
+        # set the same stack location as we do during the boot time.
+        la      t0, stack_top           # set it at stack_top for hart0,
+        csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
+        li      t2, 512
+        mul     t1, t1, t2
+        add     t0, t0, t1
+        mv      sp, t0
+
+stack_done:
         csrr    t0, mcause
         bgez    t0, exception_dispatch
 
