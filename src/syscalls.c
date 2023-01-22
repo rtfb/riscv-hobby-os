@@ -125,14 +125,19 @@ uint32_t sys_sysinfo() {
     return 0;
 }
 
-uint32_t sys_sleep(uint64_t milliseconds) {
+uint32_t sys_sleep() {
+    uint32_t milliseconds = (uint32_t)trap_frame.regs[REG_A0];
     return proc_sleep(milliseconds);
 }
 
-uint32_t sys_plist(uint32_t *pids, uint32_t size) {
+uint32_t sys_plist() {
+    uint32_t *pids = (uint32_t*)trap_frame.regs[REG_A0];
+    uint32_t size = (uint32_t)trap_frame.regs[REG_A1];
     return proc_plist(pids, size);
 }
 
-uint32_t sys_pinfo(uint32_t pid, pinfo_t *pinfo) {
+uint32_t sys_pinfo() {
+    uint32_t pid = (uint32_t)trap_frame.regs[REG_A0];
+    pinfo_t *pinfo = (pinfo_t*)trap_frame.regs[REG_A1];
     return proc_pinfo(pid, pinfo);
 }
