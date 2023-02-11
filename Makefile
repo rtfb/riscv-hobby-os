@@ -266,8 +266,10 @@ run-spike: elf
 clean:
 	rm -Rf $(OUT)
 
+# On OSX:
+# brew tap riscv-software-src/riscv
+# brew install riscv-tools
 prereqs:
-	# OSX brew install riscv-tools
 	sudo apt --yes install \
 		build-essential \
 		gcc-riscv64-linux-gnu
