@@ -13,7 +13,6 @@ void init_process_table(uint32_t runflags) {
     proc_table.pid_counter = 0;
     for (int i = 0; i < MAX_PROCS; i++) {
         proc_table.procs[i].state = PROC_STATE_AVAILABLE;
-        proc_table.procs[i].ctx.regs[REG_RA] = (regsize_t)forkret;
     }
     init_test_processes(runflags);
 
