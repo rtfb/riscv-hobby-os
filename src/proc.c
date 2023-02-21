@@ -299,6 +299,14 @@ void copy_context(context_t *dst, context_t *src) {
     }
 }
 
+void save_sp(regsize_t sp) {
+    process_t *p = cpu.proc;
+    if (!p) {
+        return;
+    }
+    p->ctx.regs[REG_SP] = sp;
+}
+
 void proc_exit() {
     process_t* proc = myproc();
     release_page(proc->stack_page);

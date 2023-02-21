@@ -9,6 +9,12 @@ k_interrupt_timer:
         # ret_to_user will restore the registers from it.
         call    kernel_timer_tick
 
+        # we saved the wrong sp inside swtch (slightly too deep), so let's
+        # save sp again, now that we're back at the same level of stack that
+        # the interrupt has entered in:
+        mv      a0, sp
+        call    save_sp
+
         # This will restore user registers from trap_frame and then mret:
         j       ret_to_user
 
