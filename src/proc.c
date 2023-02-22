@@ -27,15 +27,21 @@ void init_global_trap_frame() {
     set_mscratch(&trap_frame);
 }
 
+// sleep_scheduler is called when there's nothing to schedule; this either
+// means that something went terribly wrong, or all processes are sleeping. In
+// which case we should simply schedule the next timer tick and do nothing.
 void sleep_scheduler() {
-    // nothing to schedule; this either means that something went terribly
-    // wrong, or all processes are sleeping. In which case we should simply
-    // schedule the next timer tick and do nothing
+    set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
+
+    // this is almost identical to enable_interrupts, except that it sets MIE
+    // flag immediately, instead of setting the MPIE flag. That's because we
+    // don't call mret in this code path, which reacts to the pending interrupt
+    // enable flag.
     unsigned int mstatus = get_mstatus();
     mstatus |= ((1 << 3) | (1 << 7));
     set_mstatus(mstatus);
     set_mie(1 << 7);
-    set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
+
     park_hart();
 }
 
