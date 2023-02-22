@@ -21,6 +21,7 @@ extern int32_t close(uint32_t fd);
 extern int32_t wait();
 extern uint32_t execv(char const* filename, char const* argv[]);
 extern uint32_t getpid();
+extern uint32_t pipe(uint32_t fd[2]);
 extern uint32_t sysinfo(sysinfo_t* info);
 extern uint32_t sleep(uint64_t milliseconds);
 extern uint32_t plist(uint32_t *pids, uint32_t size);

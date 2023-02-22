@@ -5,6 +5,7 @@
 #include "proc.h"
 #include "uart.h"
 #include "pagealloc.h"
+#include "pipe.h"
 
 // for fun let's pretend syscall table is kinda like 32bit Linux on x86,
 // /usr/include/asm/unistd_32.h: __NR_restart_syscall 0, __NR_exit 1, _NR_fork 2, __NR_read 3, __NR_write 4
@@ -22,6 +23,7 @@ void *syscall_vector[] _text = {
     [SYS_NR_wait]      sys_wait,
     [SYS_NR_execv]     sys_execv,
     [SYS_NR_getpid]    sys_getpid,
+    [SYS_NR_pipe]      sys_pipe,
     [SYS_NR_sysinfo]   sys_sysinfo,
     [SYS_NR_sleep]     sys_sleep,
     [SYS_NR_plist]     sys_plist,
@@ -79,7 +81,7 @@ int32_t sys_write() {
     if (fd == 1) {
         return uart_print(data, size);
     }
-    return -1;
+    return proc_write(fd, (void*)data, size);
 }
 
 int32_t sys_open() {
@@ -110,6 +112,11 @@ uint32_t sys_execv() {
 uint32_t sys_getpid() {
     uint32_t pid = cpu.proc->pid;
     return pid;
+}
+
+uint32_t sys_pipe() {
+    uint32_t *fds = (uint32_t*)trap_frame.regs[REG_A0];
+    return pipe_open(fds);
 }
 
 uint32_t sys_sysinfo() {

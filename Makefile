@@ -71,7 +71,7 @@ USER_DEPS = src/boot.s src/uart-print.s \
 			src/pmp.c src/riscv.c src/fdt.c src/string.c src/proc_test.c \
 			src/spinlock.c src/proc.c src/usyscalls.S src/context.s \
 			src/pagealloc.c src/uart.c src/user-printf.s src/user-printf.c \
-			src/fs.c src/bakedinfs.c src/runflags.c
+			src/fs.c src/bakedinfs.c src/runflags.c src/pipe.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)

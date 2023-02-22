@@ -20,5 +20,6 @@ int32_t uart_print(char const* data, uint32_t size);
 
 // implemented in uart-print.s
 extern int32_t uart_prints(char const* data);
+extern int32_t uart_printc(char c);
 
 #endif // ifndef _UART_H_

@@ -53,6 +53,7 @@ int32_t sys_close();
 int32_t sys_wait();
 uint32_t sys_execv();
 uint32_t sys_getpid();
+uint32_t sys_pipe();
 uint32_t sys_sysinfo();
 uint32_t sys_sleep();
 uint32_t sys_plist();

@@ -13,15 +13,23 @@
 #define FDMODE_READ  (1 << 0)
 #define FDMODE_WRITE (1 << 1)
 
-#define FFLAGS_FREE        0            // unallocated
-#define FFLAGS_ALLOCED     (1 << 0)     // allocated
 #define FFLAGS_READABLE    (1 << 1)
 #define FFLAGS_WRITABLE    (1 << 2)
 #define FFLAGS_DIR         (1 << 3)
 #define FFLAGS_UART_STREAM (1 << 8)
 #define FFLAGS_BIFS_FILE   (1 << 9)
+#define FFLAGS_PIPE        (1 << 10)
+
+#define EOF   (-2)
 
 typedef struct file_s {
+    // TODO: add lock here and fix all code to lock properly
+
+    // The files are ref-counted, otherwise it's not clear how to do pipes.
+    // fork() does refcount++ so that parent/child can do what they want
+    // with their copies of file descriptors without affecting each other
+    uint32_t refcount;
+
     uint32_t flags;    // FFLAGS_* bit flags
     uint32_t position;
     uint32_t mode;     // FDMODE_*

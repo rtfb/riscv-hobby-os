@@ -23,6 +23,8 @@
     #error Unknown xlen
 #endif
 
+#define uint8_t unsigned char
+
 #define ARRAY_LENGTH(a) (sizeof(a) / sizeof(a[0]))
 
 // Define a couple section attributes. We specify the section with a

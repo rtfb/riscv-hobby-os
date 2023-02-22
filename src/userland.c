@@ -25,6 +25,12 @@ int _userland ustrncmp(char const *a, char const *b, unsigned int num) {
     return *a - *b;
 }
 
+int _userland ustrlen(char const *s) {
+    unsigned int i = 0;
+    while (*s++) i++;
+    return i;
+}
+
 // trimright finds the end of the provided string and trims any trailing
 // whitespace characters (\n,\r,\t,' ') by overwriting them with 0. Returns the
 // new length of the string.
@@ -308,6 +314,67 @@ int _userland u_main_cat(int argc, char const *argv[]) {
     prints(fbuf);
     close(fd);
     exit(0);
+    return 0;
+}
+
+char pipe_fmt[] _user_rodata = "fd0=0x%x, fd1=0x%x\n";
+
+int _userland u_main_pipe(int argc, char const *argv[]) {
+    uint32_t fds[2];
+    int32_t status = pipe(fds);
+    if (status == -1) {
+        prints("ERROR: pipe=-1\n");
+        exit(-1);
+    }
+    printf(pipe_fmt, fds[0], fds[1]);
+    close(fds[0]);
+    exit(0);
+    return 0;
+}
+
+char pipe2_fmt[] _user_rodata = "Usage: %s <string>\n";
+
+// this program is copied (almost) verbatim from 'man pipe2'
+int _userland u_main_pipe2(int argc, char const *argv[]) {
+    uint32_t pipefd[2];
+    uint32_t cpid;
+    char buf;
+
+    if (argc != 2) {
+        printf(pipe2_fmt, argv[0]);
+        exit(-1);
+    }
+
+    if (pipe(pipefd) == -1) {
+        prints("ERROR: pipe=-1\n");
+        exit(-1);
+    }
+
+    cpid = fork();
+    if (cpid == -1) {
+        prints("ERROR: fork=-1\n");
+        exit(-1);
+    }
+
+    if (cpid == 0) {            // Child reads from pipe
+        close(pipefd[1]);       // Close unused write end
+
+        while (read(pipefd[0], &buf, 1) > 0)
+            write(1, &buf, 1);
+
+        // write(1, "\n", 1);
+        close(pipefd[0]);
+        exit(0);
+    } else {                    // Parent writes argv[1] to pipe
+        close(pipefd[0]);       // Close unused read end
+        for (int i = 0; i < 50; i++) {
+            write(pipefd[1], argv[1], ustrlen(argv[1]));
+            write(pipefd[1], "\n", 1);
+        }
+        close(pipefd[1]);       // Reader will see EOF
+        wait();                 // Wait for child
+        exit(0);
+    }
     return 0;
 }
 

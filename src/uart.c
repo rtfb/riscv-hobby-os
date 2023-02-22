@@ -56,5 +56,10 @@ int32_t uart_print(char const* data, uint32_t size) {
     if (size == -1) {
         return uart_prints(data);
     }
-    return -1; // TODO: implement writing non-asciiz
+    int i = 0;
+    while (i < size) {
+        uart_printc(data[i]);
+        i++;
+    }
+    return i;
 }

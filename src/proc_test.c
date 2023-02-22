@@ -20,6 +20,8 @@ extern int u_main_hanger();
 extern int u_main_ps();
 extern int u_main_cat();
 extern int u_main_coma();
+extern int u_main_pipe();
+extern int u_main_pipe2();
 
 user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
@@ -61,6 +63,14 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
         .entry_point = &u_main_coma,
         .name = "coma",
+    },
+    (user_program_t){
+        .entry_point = &u_main_pipe,
+        .name = "pp",
+    },
+    (user_program_t){
+        .entry_point = &u_main_pipe2,
+        .name = "pp2",
     },
     // keep this last, it's a sentinel:
     (user_program_t){

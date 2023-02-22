@@ -156,8 +156,17 @@ uint32_t proc_execv(char const* filename, char const* argv[]);
 // proc_wait implements the wait system call.
 int32_t proc_wait();
 
+// proc_yield is like proc_wait, but it doesn't return, it jumps to the newly
+// scheduled userland process immediately. Use it in cases when further
+// execution is impossible (e.g. i/o is blocked) and another process should be
+// scheduled.
+void proc_yield();
+
 // proc_sleep implements the sleep system call.
 int32_t proc_sleep(uint64_t milliseconds);
+
+// proc_mark_for_wakeup sets proc's state to PROC_STATE_READY.
+void proc_mark_for_wakeup(uint64_t pid);
 
 // should_wake_up checks the proc's wakeup_time against current time and
 // returns true if wakeup_time >= now.
@@ -190,6 +199,10 @@ void copy_trap_frame(trap_frame_t* dst, trap_frame_t* src);
 void copy_context(context_t *dst, context_t *src);
 void save_sp(regsize_t sp);
 
+// copy_files copies non-NULL files from src to dst and increases reference
+// count of each.
+void copy_files(process_t *dst, process_t *src);
+
 uint32_t proc_plist(uint32_t *pids, uint32_t size);
 
 uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo);
@@ -200,11 +213,14 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo);
 int32_t proc_open(char const *filepath, uint32_t flags);
 int32_t proc_close(uint32_t fd);
 int32_t proc_read(uint32_t fd, void *buf, uint32_t size);
+int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes);
 
 // fd_alloc allocates a file descriptor in process's open files list and
-// assigns a file pointer to it. proc.lock
-// must be held.
+// assigns a file pointer to it. proc.lock must be held.
 int32_t fd_alloc(process_t *proc, file_t *f);
 void fd_free(process_t *proc, int32_t fd);
+
+// find_proc finds a process by a given pid. Returns NULL if nothing is found.
+process_t* find_proc(uint32_t pid);
 
 #endif // ifndef _PROC_H_

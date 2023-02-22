@@ -1,4 +1,5 @@
 #include "fs.h"
+#include "pipe.h"
 #include "bakedinfs.h"
 
 file_table_t ftable;
@@ -6,7 +7,7 @@ file_table_t ftable;
 void fs_init() {
     ftable.lock = 0;
     for (int i = 0; i < MAX_FILES; i++) {
-        ftable.files[i].fs_file = FFLAGS_FREE;
+        ftable.files[i].refcount = 0;
     }
     bifs_init();
 }
@@ -14,8 +15,8 @@ void fs_init() {
 file_t* fs_alloc_file() {
     acquire(&ftable.lock);
     for (int i = 0; i < MAX_FILES; i++) {
-        if (ftable.files[i].fs_file == 0) {
-            ftable.files[i].flags = FFLAGS_ALLOCED;
+        if (ftable.files[i].refcount == 0) {
+            ftable.files[i].refcount = 1;
             release(&ftable.lock);
             return &ftable.files[i];
         }
@@ -26,7 +27,12 @@ file_t* fs_alloc_file() {
 }
 
 void fs_free_file(file_t *f) {
-    f->flags = FFLAGS_FREE;
+    f->refcount--;
+    if (f->refcount == 0) {
+        if (f->flags & FFLAGS_PIPE) {
+            pipe_close_file(f);
+        }
+    }
 }
 
 int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {

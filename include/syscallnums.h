@@ -15,6 +15,7 @@
 // The numbers below differ from Linux, may need to renumber one day if we ever
 // want to achieve ABI compatibility. But for now, I don't want to make
 // trap_vector too big while very sparsely populated.
+#define SYS_NR_pipe           29  // __NR_pipe is 42 on Linux
 #define SYS_NR_sysinfo        30  // __NR_sysinfo is 116 on Linux
 #define SYS_NR_sleep          31  // __NR_nanosleep is 162 on Linux
 
