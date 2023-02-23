@@ -359,10 +359,16 @@ int _userland u_main_pipe2(int argc, char const *argv[]) {
     if (cpid == 0) {            // Child reads from pipe
         close(pipefd[1]);       // Close unused write end
 
-        while (read(pipefd[0], &buf, 1) > 0)
-            write(1, &buf, 1);
+        while (1) {
+            int nread = read(pipefd[0], &buf, 1);
+            if (nread <= 0) {
+                // prints("EREAD\n");
+                break;
+            } else {
+                write(1, &buf, 1);
+            }
+        }
 
-        // write(1, "\n", 1);
         close(pipefd[0]);
         exit(0);
     } else {                    // Parent writes argv[1] to pipe

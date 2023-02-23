@@ -364,7 +364,8 @@ int32_t proc_wait() {
 
 void proc_yield() {
     wait_or_sleep(0);
-    ret_to_user();
+    process_t* proc = myproc();
+    copy_trap_frame(&trap_frame, &proc->trap); // restore trap context after wakeup
 }
 
 int32_t proc_sleep(uint64_t milliseconds) {
@@ -379,7 +380,12 @@ void proc_mark_for_wakeup(uint64_t pid) {
         release(&proc_table.lock);
         return;
     }
-    process_t* proc = &proc_table.procs[pid];
+    process_t* proc = find_proc(pid);
+    if (!proc) {
+        release(&proc_table.lock);
+        // TODO: panic
+        return;
+    }
     acquire(&proc->lock);
     release(&proc_table.lock);
     proc->state = PROC_STATE_READY;
@@ -468,9 +474,7 @@ int32_t proc_open(char const *filepath, uint32_t flags) {
 
 int32_t proc_read(uint32_t fd, void *buf, uint32_t size) {
     process_t* proc = myproc();
-    acquire(&proc->lock);
     file_t *f = proc->files[fd];
-    release(&proc->lock);
     if (f == 0) {
         // Reading a non-open file. TODO: set errno
         return -1;
@@ -480,9 +484,7 @@ int32_t proc_read(uint32_t fd, void *buf, uint32_t size) {
 
 int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes) {
     process_t* proc = myproc();
-    acquire(&proc->lock);
     file_t *f = proc->files[fd];
-    release(&proc->lock);
     if (f == 0) {
         // Writing a non-open file. TODO: set errno
         return -1;
@@ -497,27 +499,21 @@ int32_t proc_close(uint32_t fd) {
         return -1;
     }
     process_t* proc = myproc();
-    acquire(&proc->lock);
     // TODO: flush when we have any buffering
     file_t *f = proc->files[fd];
     if (f == 0) {
         // Closing a non-open file. TODO: set errno
-        release(&proc->lock);
         return -1;
     }
     fs_free_file(f);
     fd_free(proc, fd);
-    release(&proc->lock);
 }
 
 process_t* find_proc(uint32_t pid) {
-    acquire(&proc_table.lock);
     for (int i = 0; i < MAX_PROCS; i++) {
         if (proc_table.procs[i].pid == pid) {
-            release(&proc_table.lock);
             return &proc_table.procs[i];
         }
     }
-    release(&proc_table.lock);
     return 0;
 }

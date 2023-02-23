@@ -9,7 +9,7 @@
 
 #define MAX_PROCS 8
 
-// REG_* constants are indexes into trap_frame_t.regs. (Add here as needed)
+// REG_* constants are indexes into trap_frame_t.regs and context_t.regs. (Add here as needed)
 #define REG_RA 0
 #define REG_SP 1
 #define REG_FP 7
@@ -221,6 +221,7 @@ int32_t fd_alloc(process_t *proc, file_t *f);
 void fd_free(process_t *proc, int32_t fd);
 
 // find_proc finds a process by a given pid. Returns NULL if nothing is found.
+// Must be called with proc_table.lock held.
 process_t* find_proc(uint32_t pid);
 
 #endif // ifndef _PROC_H_

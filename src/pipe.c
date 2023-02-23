@@ -108,6 +108,8 @@ int32_t pipe_close_file(file_t *file) {
             release(&pipe->lock);
             proc_mark_for_wakeup(pipe->rpid);
             return 0;
+        } else {
+            // XXX: no reader. free_pipe?
         }
     }
     release(&pipe->lock);
@@ -122,7 +124,7 @@ int32_t pipe_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
     pipe->rpid = proc->pid;
     // nothing to read, so we have to either sleep, waiting for the writing end
     // to write something, or return EOF if the writing end is already closed
-    if (pipe->rpos >= pipe->wpos && ((pipe->flags & PIPE_BUF_FULL) == 0)) {
+    if (pipe->rpos == pipe->wpos && ((pipe->flags & PIPE_BUF_FULL) == 0)) {
         if (pipe->flags & PIPE_FLAG_WRITE_CLOSED) {
             release(&pipe->lock);
             return EOF;
@@ -190,6 +192,7 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
     acquire(&pipe->lock);
     process_t* proc = myproc();
     pipe->wpid = proc->pid;
+    int32_t nwritten = 0;
     while (1) {
         // we have (at most) two chunks available for writing: wpos til the end of
         // buf, and beginning of buf til rpos:
@@ -203,9 +206,12 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
             return -1;
         }
         if (available > 0) {
-            int32_t nwritten = pipe_do_write(pipe, buf, nbytes);
-            release(&pipe->lock);
-            return nwritten;
+            int32_t wr = pipe_do_write(pipe, buf+nwritten, nbytes - nwritten);
+            nwritten += wr;
+            if (nwritten == nbytes) {
+                release(&pipe->lock);
+                return nwritten;
+            }
         }
         // otherwise, sleep:
         if (pipe->rpid != -1) {
