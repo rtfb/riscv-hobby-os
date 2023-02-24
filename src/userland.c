@@ -2,6 +2,7 @@
 #include "userland.h"
 #include "string.h"
 #include "syscalls.h"
+#include "fs.h"
 
 int _userland ustrncmp(char const *a, char const *b, unsigned int num) {
     unsigned int i = 0;
@@ -382,6 +383,36 @@ int _userland u_main_pipe2(int argc, char const *argv[]) {
         exit(0);
     }
     return 0;
+}
+
+char wc_charcount_fmt[] _user_rodata = "%d\n";
+int _userland u_main_wc(int argc, char const *argv[]) {
+    uint32_t fd = 0; // stdin
+    if (argc > 1) {
+        fd = open(argv[1], 0);
+        if (fd == -1) {
+            prints("ERROR: open=-1\n");
+            exit(-1);
+        }
+    }
+    char fbuf[64];
+    uint32_t charcount = 0;
+    while (1) {
+        int32_t nread = read(fd, fbuf, 64);
+        if (nread == EOF) {
+            break;
+        }
+        if (nread == -1) {
+            prints("ERROR: read=-1\n");
+            exit(-1);
+        }
+        charcount += nread;
+    }
+    if (fd != 0) {
+        close(fd);
+    }
+    printf(wc_charcount_fmt, charcount);
+    exit(0);
 }
 
 // coma is a special program that hangs forever. Don't run it, and, more
