@@ -17,6 +17,7 @@ file_t* fs_alloc_file() {
     for (int i = 0; i < MAX_FILES; i++) {
         if (ftable.files[i].refcount == 0) {
             ftable.files[i].refcount = 1;
+            ftable.files[i].position = 0;
             release(&ftable.lock);
             return &ftable.files[i];
         }

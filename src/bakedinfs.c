@@ -62,15 +62,18 @@ bifs_file_t* bifs_open(char const *filepath, uint32_t flags) {
 int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
     bifs_file_t *ff = (bifs_file_t*)f->fs_file;
     char *cbuf = (char*)buf;
-    // TODO: take pos into account
     int i = 0;
     while (i < size) {
-        char ch = ff->data[i];
+        char ch = ff->data[pos];
         if (!ch) {
             break;
         }
         cbuf[i] = ch;
         i++;
+        pos++;
+    }
+    if (i == 0) {
+        return EOF;
     }
     return i;
 }

@@ -479,7 +479,11 @@ int32_t proc_read(uint32_t fd, void *buf, uint32_t size) {
         // Reading a non-open file. TODO: set errno
         return -1;
     }
-    return fs_read(f, f->position, buf, size);
+    int32_t nread = fs_read(f, f->position, buf, size);
+    if (nread > 0) {
+        f->position += nread;
+    }
+    return nread;
 }
 
 int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes) {
