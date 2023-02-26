@@ -10,8 +10,8 @@ extern void exit();
 extern uint32_t fork();
 extern int32_t read(uint32_t fd, char* buf, uint32_t size);
 
-// write writes the given data to file descriptor fd. The two special file
-// descriptors are stdout=1 and stderr=2. Other descriptors should be obtained
+// write writes the given data to file descriptor fd. The three special file
+// descriptors are stdin=0, stdout=1 and stderr=2. Other descriptors should be obtained
 // via open(). The size parameter is optional: it specifies how many bytes to
 // write from data, but it can be -1 if data contains a zero-terminated string,
 // then data will be written until the first zero byte is encountered.
@@ -21,6 +21,7 @@ extern int32_t close(uint32_t fd);
 extern int32_t wait();
 extern uint32_t execv(char const* filename, char const* argv[]);
 extern uint32_t getpid();
+extern uint32_t dup(uint32_t fd);
 extern uint32_t pipe(uint32_t fd[2]);
 extern uint32_t sysinfo(sysinfo_t* info);
 extern uint32_t sleep(uint64_t milliseconds);

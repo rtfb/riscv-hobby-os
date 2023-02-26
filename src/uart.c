@@ -63,3 +63,11 @@ int32_t uart_print(char const* data, uint32_t size) {
     }
     return i;
 }
+
+int32_t uart_read(file_t*, uint32_t, void* buf, uint32_t bufsize) {
+    return uart_readline(buf, bufsize);
+}
+
+int32_t uart_write(file_t*, uint32_t, void* buf, uint32_t bufsize) {
+    return uart_print(buf, bufsize);
+}

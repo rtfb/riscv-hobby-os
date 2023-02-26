@@ -3,7 +3,6 @@
 #include "kernel.h"
 #include "syscalls.h"
 #include "proc.h"
-#include "uart.h"
 #include "pagealloc.h"
 #include "pipe.h"
 
@@ -23,6 +22,7 @@ void *syscall_vector[] _text = {
     [SYS_NR_wait]      sys_wait,
     [SYS_NR_execv]     sys_execv,
     [SYS_NR_getpid]    sys_getpid,
+    [SYS_NR_dup]       sys_dup,
     [SYS_NR_pipe]      sys_pipe,
     [SYS_NR_sysinfo]   sys_sysinfo,
     [SYS_NR_sleep]     sys_sleep,
@@ -60,28 +60,14 @@ int32_t sys_read() {
     uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
     void *buf = (void*)trap_frame.regs[REG_A1];
     uint32_t size = (uint32_t)trap_frame.regs[REG_A2];
-    if (!buf) {
-        // TODO: errno
-        return -1;
-    }
-    if (fd == 0) {
-        return uart_readline(buf, size);
-    }
     return proc_read(fd, buf, size);
 }
 
 int32_t sys_write() {
     uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
-    char const *data = (char const*)trap_frame.regs[REG_A1];
+    void *buf = (void*)trap_frame.regs[REG_A1];
     uint32_t size = (uint32_t)trap_frame.regs[REG_A2];
-    if (!data) {
-        // TODO: errno
-        return -1;
-    }
-    if (fd == 1) {
-        return uart_print(data, size);
-    }
-    return proc_write(fd, (void*)data, size);
+    return proc_write(fd, buf, size);
 }
 
 int32_t sys_open() {
@@ -112,6 +98,11 @@ uint32_t sys_execv() {
 uint32_t sys_getpid() {
     uint32_t pid = cpu.proc->pid;
     return pid;
+}
+
+uint32_t sys_dup() {
+    uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
+    return proc_dup(fd);
 }
 
 uint32_t sys_pipe() {

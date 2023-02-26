@@ -3,6 +3,7 @@
 #include "programs.h"
 #include "kernel.h"
 #include "string.h"
+#include "uart.h"
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;
@@ -265,29 +266,34 @@ process_t* alloc_process() {
         if (proc == cpu.proc) {
             continue;
         }
+        acquire(&proc->lock);
         if (proc->state == PROC_STATE_AVAILABLE) {
-            return init_proc(proc); // will release proc_table.lock
+            init_proc(proc);
+            release(&proc->lock);
+            release(&proc_table.lock);
+            return proc;
         }
+        release(&proc->lock);
     }
     // TODO: set errno
     release(&proc_table.lock);
     return 0;
 }
 
-// must be called with proc_table.lock held and is responsible for releasing it.
-process_t* init_proc(process_t* proc) {
-    acquire(&proc->lock);
+// must be called with proc_table.lock and proc->lock held.
+void init_proc(process_t* proc) {
     proc->state = PROC_STATE_READY;
-    for (int i = 0; i < MAX_PROC_FDS; i++) {
+    for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
     }
+    proc->files[FD_STDIN] = &stdin;
+    proc->files[FD_STDOUT] = &stdout;
+    proc->files[FD_STDERR] = &stderr;
     for (int i = 0; i < 14; i++) {
         proc->ctx.regs[i] = 0;
     }
     proc->ctx.regs[REG_RA] = (regsize_t)forkret;
     proc_table.num_procs++;
-    release(&proc_table.lock);
-    return proc;
 }
 
 process_t* current_proc() {
@@ -332,6 +338,13 @@ void proc_exit() {
     proc->parent->state = PROC_STATE_READY;
     copy_trap_frame(&trap_frame, &proc->parent->trap); // we should return to parent after child exits
     release(&proc->parent->lock);
+
+    for (int i = 0; i < MAX_PROC_FDS; i++) {
+        file_t *pf = proc->files[i];
+        if (pf != 0) {
+            fs_free_file(pf);
+        }
+    }
 
     acquire(&proc_table.lock);
     proc_table.num_procs--;
@@ -434,7 +447,7 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo) {
 }
 
 int32_t fd_alloc(process_t *proc, file_t *f) {
-    for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
+    for (int i = 0; i < MAX_PROC_FDS; i++) {
         if (proc->files[i] == 0) {
             proc->files[i] = f;
             return i;
@@ -479,6 +492,10 @@ int32_t proc_read(uint32_t fd, void *buf, uint32_t size) {
         // Reading a non-open file. TODO: set errno
         return -1;
     }
+    if (!buf) {
+        // TODO: errno
+        return -1;
+    }
     int32_t nread = fs_read(f, f->position, buf, size);
     if (nread > 0) {
         f->position += nread;
@@ -493,15 +510,15 @@ int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes) {
         // Writing a non-open file. TODO: set errno
         return -1;
     }
+    if (!buf) {
+        // TODO: errno
+        return -1;
+    }
     int32_t status = fs_write(f, f->position, buf, nbytes);
     return status;
 }
 
 int32_t proc_close(uint32_t fd) {
-    if (fd <= FD_STDERR) {
-        // Can't (yet?) close one of std* fds. TODO: set errno to something useful
-        return -1;
-    }
     process_t* proc = myproc();
     // TODO: flush when we have any buffering
     file_t *f = proc->files[fd];
@@ -511,6 +528,22 @@ int32_t proc_close(uint32_t fd) {
     }
     fs_free_file(f);
     fd_free(proc, fd);
+}
+
+int32_t proc_dup(uint32_t fd) {
+    process_t* proc = myproc();
+    file_t *f = proc->files[fd];
+    if (f == 0) {
+        // duplicating a non-open file. TODO: set errno
+        return -1;
+    }
+    int32_t newfd = fd_alloc(proc, f);
+    if (newfd < 0) {
+        // TODO: set errno to indicate out of proc FDs
+        return newfd;
+    }
+    f->refcount++;
+    return newfd;
 }
 
 process_t* find_proc(uint32_t pid) {

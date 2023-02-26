@@ -178,9 +178,9 @@ int should_wake_up(process_t* proc);
 // it.
 process_t* alloc_process();
 
-// init_proc initializes a given process struct. Returns the same pointer it
-// was passed, for convenience. Must be called with proc_table.lock held.
-process_t* init_proc(process_t* proc);
+// init_proc initializes a given process struct.
+// Must be called with proc_table.lock and proc.lock held.
+void init_proc(process_t* proc);
 
 // alloc_pid returns a unique process identifier suitable to assign to a newly
 // created process.
@@ -214,6 +214,7 @@ int32_t proc_open(char const *filepath, uint32_t flags);
 int32_t proc_close(uint32_t fd);
 int32_t proc_read(uint32_t fd, void *buf, uint32_t size);
 int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes);
+int32_t proc_dup(uint32_t fd);
 
 // fd_alloc allocates a file descriptor in process's open files list and
 // assigns a file pointer to it. proc.lock must be held.

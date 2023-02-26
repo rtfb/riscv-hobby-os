@@ -45,6 +45,9 @@ typedef struct file_table_s {
 
 // defined in fs.c
 extern file_table_t ftable;
+extern file_t stdin;
+extern file_t stdout;
+extern file_t stderr;
 
 void fs_init();
 file_t* fs_alloc_file();

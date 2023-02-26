@@ -53,6 +53,11 @@ getpid:
         macro_syscall SYS_NR_getpid
         ret
 
+.globl dup
+dup:
+        macro_syscall SYS_NR_dup
+        ret
+
 .globl pipe
 pipe:
         macro_syscall SYS_NR_pipe

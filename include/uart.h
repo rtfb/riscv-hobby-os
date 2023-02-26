@@ -1,6 +1,8 @@
 #ifndef _UART_H_
 #define _UART_H_
 
+#include "fs.h"
+
 #ifndef UART_BASE
 #define UART_BASE 0x10010000
 #endif
@@ -17,6 +19,9 @@ char uart_readchar();
 void uart_writechar(char ch);
 int32_t uart_readline(char* buf, uint32_t bufsize);
 int32_t uart_print(char const* data, uint32_t size);
+
+int32_t uart_read(file_t* f, uint32_t pos, void* buf, uint32_t bufsize);
+int32_t uart_write(file_t* f, uint32_t pos, void* buf, uint32_t bufsize);
 
 // implemented in uart-print.s
 extern int32_t uart_prints(char const* data);
