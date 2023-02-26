@@ -71,6 +71,8 @@ typedef struct process_s {
     // wakeup_time should be set to zero.
     uint64_t wakeup_time;
 
+    void *chan; // pointer to an object this process is waiting on (e.g. a pipe)
+
     file_t* files[MAX_PROC_FDS];
 } process_t;
 
@@ -160,13 +162,13 @@ int32_t proc_wait();
 // scheduled userland process immediately. Use it in cases when further
 // execution is impossible (e.g. i/o is blocked) and another process should be
 // scheduled.
-void proc_yield();
+void proc_yield(void *chan);
 
 // proc_sleep implements the sleep system call.
 int32_t proc_sleep(uint64_t milliseconds);
 
 // proc_mark_for_wakeup sets proc's state to PROC_STATE_READY.
-void proc_mark_for_wakeup(uint64_t pid);
+void proc_mark_for_wakeup(void *chan);
 
 // should_wake_up checks the proc's wakeup_time against current time and
 // returns true if wakeup_time >= now.
@@ -214,6 +216,11 @@ int32_t proc_open(char const *filepath, uint32_t flags);
 int32_t proc_close(uint32_t fd);
 int32_t proc_read(uint32_t fd, void *buf, uint32_t size);
 int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes);
+
+// proc_dup takes a given file descriptor and duplicates it. It allocates a new
+// file descriptor with the lowest available number, and assigns it the same
+// file that the provided fd points to. The refcount of the underlying file is
+// incremented.
 int32_t proc_dup(uint32_t fd);
 
 // fd_alloc allocates a file descriptor in process's open files list and

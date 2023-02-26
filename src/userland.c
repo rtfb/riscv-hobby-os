@@ -306,13 +306,13 @@ int _userland u_main_cat(int argc, char const *argv[]) {
         exit(0);
     }
     char fbuf[64];
-    int32_t status = read(fd, fbuf, 64);
-    if (status == -1) {
+    int32_t nread = read(fd, fbuf, 64);
+    if (nread == -1) {
         prints("ERROR: read=-1\n");
         exit(0);
     }
-    fbuf[status] = 0;
-    prints(fbuf);
+    fbuf[nread] = 0;
+    write(1, fbuf, nread);
     close(fd);
     exit(0);
     return 0;
@@ -321,14 +321,52 @@ int _userland u_main_cat(int argc, char const *argv[]) {
 char pipe_fmt[] _user_rodata = "fd0=0x%x, fd1=0x%x\n";
 
 int _userland u_main_pipe(int argc, char const *argv[]) {
-    uint32_t fds[2];
-    int32_t status = pipe(fds);
-    if (status == -1) {
+    char const *prog1 = "cat";
+    char const *argv1[] = {"cat", "/readme.txt", 0};
+    char const *prog2 = "wc";
+    uint32_t pipefd[2];
+
+    if (pipe(pipefd) == -1) {
         prints("ERROR: pipe=-1\n");
         exit(-1);
     }
-    printf(pipe_fmt, fds[0], fds[1]);
-    close(fds[0]);
+
+    uint32_t cpid2 = -1;
+    uint32_t cpid1 = fork();
+    if (cpid1 == -1) {
+        prints("ERROR: fork 1!\n");
+        exit(-1);
+    }
+
+    if (cpid1 == 0) { // child
+        close(pipefd[0]);   // close unused read end
+        close(1);           // close stdout
+        dup(pipefd[1]);     // now replace stdout with the pipe's writing end
+        uint32_t code = execv(prog1, (char const**)argv1);
+        // normally exec doesn't return, but if it did, it's an error:
+        prints("ERROR: execv 1\n");
+        exit(-1);
+    } else { // parent
+        cpid2 = fork();
+        if (cpid2 == -1) {
+            prints("ERROR: fork 2!\n");
+            exit(-1);
+        }
+        if (cpid2 == 0) { // child
+            close(pipefd[1]);   // close unused write end
+            close(0);           // close stdin
+            dup(pipefd[0]);     // now replace stdin with the pipe's reading end
+            uint32_t code = execv(prog2, 0);
+            // normally exec doesn't return, but if it did, it's an error:
+            prints("ERROR: execv 2\n");
+            exit(-1);
+        }
+    }
+    close(pipefd[0]);
+    close(pipefd[1]);
+    wait();                 // Wait for the first child
+    // wait();              // Wait for the other child.
+                            // TODO: this deadlocks for some reason, investigate
     exit(0);
     return 0;
 }

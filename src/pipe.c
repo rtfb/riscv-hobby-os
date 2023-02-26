@@ -48,9 +48,6 @@ int32_t pipe_open(uint32_t pipefd[2]) {
         return -1;
     }
 
-    pipe->wpid = -1;
-    pipe->rpid = -1;
-
     pipe->wpos = 0;
     pipe->rpos = 0;
 
@@ -93,24 +90,14 @@ int32_t pipe_close_file(file_t *file) {
     if (file->flags & FFLAGS_READABLE) {
         // the reading end is being closed: we can clean up the entire pipe,
         // since no one will be reading, there's no point in writing
-        pipe->rpid = -1;
-        if (pipe->wpid != -1) {
-            proc_mark_for_wakeup(pipe->wpid);
-        }
+        proc_mark_for_wakeup(pipe);
         pipe->wf->fs_file = 0;
         free_pipe(pipe);
     } else if (file->flags & FFLAGS_WRITABLE) {
         // the writing end is being closed: mark it as such, but leave the pipe
         // alive for the reader to finish reading
-        pipe->wpid = -1;
         pipe->flags |= PIPE_FLAG_WRITE_CLOSED;
-        if (pipe->rpid != -1) {
-            release(&pipe->lock);
-            proc_mark_for_wakeup(pipe->rpid);
-            return 0;
-        } else {
-            // XXX: no reader. free_pipe?
-        }
+        proc_mark_for_wakeup(pipe);
     }
     release(&pipe->lock);
     return 0;
@@ -121,7 +108,6 @@ int32_t pipe_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
     process_t* proc = myproc();
     pipe_t *pipe = (pipe_t*)f->fs_file;
     acquire(&pipe->lock);
-    pipe->rpid = proc->pid;
     // nothing to read, so we have to either sleep, waiting for the writing end
     // to write something, or return EOF if the writing end is already closed
     if (pipe->rpos == pipe->wpos && ((pipe->flags & PIPE_BUF_FULL) == 0)) {
@@ -129,13 +115,11 @@ int32_t pipe_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
             release(&pipe->lock);
             return EOF;
         }
+        // it's possible the writing has filled the buffer and fell asleep.
+        // So let it know it now has some room for writing.
+        proc_mark_for_wakeup(pipe);
         release(&pipe->lock); // release the lock before sleep, otherwise the writing end will deadlock
-        if (pipe->wpid != -1) {
-            // it's possible the writing has filled the buffer and fell asleep.
-            // So let it know it now has some room for writing.
-            proc_mark_for_wakeup(pipe->wpid);
-        }
-        proc_yield();
+        proc_yield(pipe);
         acquire(&pipe->lock); // reacquire the lock after wakeup
     }
     uint8_t *rbuf = pipe->buf + pipe->rpos;
@@ -191,7 +175,6 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
     }
     acquire(&pipe->lock);
     process_t* proc = myproc();
-    pipe->wpid = proc->pid;
     int32_t nwritten = 0;
     while (1) {
         // we have (at most) two chunks available for writing: wpos til the end of
@@ -205,22 +188,20 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
             release(&pipe->lock);
             return -1;
         }
-        if (available > 0) {
-            int32_t wr = pipe_do_write(pipe, buf+nwritten, nbytes - nwritten);
-            nwritten += wr;
-            if (nwritten == nbytes) {
-                release(&pipe->lock);
-                return nwritten;
-            }
+        int32_t wr = pipe_do_write(pipe, buf+nwritten, nbytes - nwritten);
+        nwritten += wr;
+        if (nwritten == nbytes) {
+            // If we were able to write everything, report a complete
+            // successful write to the caller:
+            release(&pipe->lock);
+            return nwritten;
         }
-        // otherwise, sleep:
-        if (pipe->rpid != -1) {
-            // it's possible the reading end has already tried reading and it
-            // fell asleep. So let it know it has something to read now.
-            proc_mark_for_wakeup(pipe->rpid);
-        }
+        // Otherwise, block on a (maybe partial) write. But it's possible the
+        // reading end has already tried reading and it fell asleep. So first
+        // let it know it has something to read now.
+        proc_mark_for_wakeup(pipe);
         release(&pipe->lock); // release the lock before sleep, otherwise the reading end will deadlock
-        proc_yield();
+        proc_yield(pipe);
         if (!f->fs_file) { // the pipe was closed while we slept
             // TODO: set errno to 'broken pipe'
             return -1;

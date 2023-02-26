@@ -11,12 +11,16 @@
 #define PIPE_FLAG_WRITE_CLOSED  (1 << 1)
 #define PIPE_BUF_FULL           (1 << 2)
 
-// pipe_open takes two pids and creates a pipe between wpid.stdout and
-// rpid.stdin. It creates a file-like object pipe_t and replaces wpid.stdout
-// with it, and rpid.stdin with the same. When wpid does a write() on stdout,
-// it starts filling an internal pipe.buf if it has space remaining. When it
-// gets filled, a write blocks by calling proc_yield, which puts the writing
-// process to sleep. Same thing happens on the reading end.
+// pipe_t represents a file-like object that's allocated by pipe_open. It
+// also allocates two files for the reading and writing end of it. pipe_open
+// fills out a given array of file descriptors with the ones corresponding to
+// these files. The caller is supposed to use the first descriptor for reading
+// from the pipe and the second for writing to it.
+//
+// When the writer does a write(), it starts filling an internal pipe.buf if it
+// has space remaining. When it gets filled, a write blocks by calling
+// proc_yield, which puts the writing process to sleep. Same thing happens on
+// the reading end.
 typedef struct pipe_s {
     spinlock lock;
 
@@ -28,11 +32,9 @@ typedef struct pipe_s {
     file_t *wf;
 
     // writing end:
-    uint32_t wpid;
     uint32_t wpos;      // writer's position within buf: pos of the next byte to be written
 
     // reading end:
-    uint32_t rpid;
     uint32_t rpos;      // reader's position within buf: pos of the next byte to be read
 } pipe_t;
 

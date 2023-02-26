@@ -375,9 +375,10 @@ int32_t proc_wait() {
     return wait_or_sleep(0);
 }
 
-void proc_yield() {
-    wait_or_sleep(0);
+void proc_yield(void *chan) {
     process_t* proc = myproc();
+    proc->chan = chan;
+    wait_or_sleep(0);
     copy_trap_frame(&trap_frame, &proc->trap); // restore trap context after wakeup
 }
 
@@ -387,22 +388,22 @@ int32_t proc_sleep(uint64_t milliseconds) {
     return wait_or_sleep(now + delta);
 }
 
-void proc_mark_for_wakeup(uint64_t pid) {
+void proc_mark_for_wakeup(void *chan) {
     acquire(&proc_table.lock);
     if (proc_table.num_procs == 0) {
         release(&proc_table.lock);
         return;
     }
-    process_t* proc = find_proc(pid);
-    if (!proc) {
-        release(&proc_table.lock);
-        // TODO: panic
-        return;
+    for (int i = 0; i < MAX_PROCS; i++) {
+        process_t *p = &proc_table.procs[i];
+        if (p->state != PROC_STATE_AVAILABLE && p->chan == chan) {
+            acquire(&p->lock);
+            p->state = PROC_STATE_READY;
+            p->chan = 0;
+            release(&p->lock);
+        }
     }
-    acquire(&proc->lock);
     release(&proc_table.lock);
-    proc->state = PROC_STATE_READY;
-    release(&proc->lock);
 }
 
 uint32_t proc_plist(uint32_t *pids, uint32_t size) {
@@ -544,13 +545,4 @@ int32_t proc_dup(uint32_t fd) {
     }
     f->refcount++;
     return newfd;
-}
-
-process_t* find_proc(uint32_t pid) {
-    for (int i = 0; i < MAX_PROCS; i++) {
-        if (proc_table.procs[i].pid == pid) {
-            return &proc_table.procs[i];
-        }
-    }
-    return 0;
 }
