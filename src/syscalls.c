@@ -34,6 +34,11 @@ void syscall() {
     disable_interrupts();
     int nr = trap_frame.regs[REG_A7];
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
+    if (trap_frame.regs[REG_SP] < (regsize_t)cpu.proc->stack_page) {
+        kprintf("STACK OVERFLOW in syscall %d\n", nr);
+        trap_frame.regs[REG_A0] = -1;
+        return;
+    }
     if (nr >= 0 && nr < ARRAY_LENGTH(syscall_vector) && syscall_vector[nr] != 0) {
         int32_t (*funcPtr)(void) = syscall_vector[nr];
         trap_frame.regs[REG_A0] = (*funcPtr)();

@@ -266,8 +266,8 @@ char _userland state_to_char(uint32_t state) {
 }
 
 int _userland u_main_ps(int argc, char const *argv[]) {
-    uint32_t pids[32];
-    uint32_t num_pids = plist(pids, 32);
+    uint32_t pids[8];
+    uint32_t num_pids = plist(pids, 8);
     if (num_pids < 0) {
         prints("ERROR: plist\n");
         exit(-1);
