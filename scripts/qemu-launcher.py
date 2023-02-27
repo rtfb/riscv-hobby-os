@@ -124,12 +124,12 @@ def cleanup_gdb_files():
         os.unlink(GDBINIT_FILE)
 
 
-def make_docker_cmd(is_32bit):
+def make_docker_cmd(is_32bit, is_interactive):
     mount =  'type=bind,source={},target=/host'.format(get_full_wd())
-    cmd = [
-        'docker', 'run', '-it', '--name', 'qemu-image', '--rm',
-        '--mount', mount, '--net=host', 'qemu-image:latest',
-    ]
+    cmd = ['docker', 'run']
+    if is_interactive:
+        cmd.extend(['-it', '--name', 'qemu-image'])
+    cmd.extend(['--rm', '--mount', mount, '--net=host', 'qemu-image:latest'])
     if is_32bit:
         cmd.append('rv32')
     return cmd
@@ -148,7 +148,10 @@ def make_qemu_command(args):
     else:
         machine = 'sifive_e'
 
-    cmd = make_docker_cmd(is_32bit)
+    is_interactive = ('test' not in binary) and (
+        args.bootargs not in ['dry-run', 'smoke-test']
+    )
+    cmd = make_docker_cmd(is_32bit, is_interactive)
 
     # Override our guesses if args were passed explicitly:
     if args.qemu is not None:
