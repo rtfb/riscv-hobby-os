@@ -66,12 +66,13 @@ runb: run-baremetal
 runs: run-spike
 
 TEST_DEPS = src/baremetal-fib.s src/uart-print.s src/baremetal-poweroff.s
-USER_DEPS = src/boot.s src/uart-print.s \
-			src/baremetal-poweroff.s src/userland.c src/kernel.c src/syscalls.c \
-			src/pmp.c src/riscv.c src/fdt.c src/string.c src/proc_test.c \
-			src/spinlock.c src/proc.c src/usyscalls.S src/context.s \
-			src/pagealloc.c src/uart.c src/user-printf.s src/user-printf.c \
-			src/fs.c src/bakedinfs.c src/runflags.c src/pipe.c
+USER_DEPS = src/boot.s src/uart-print.s src/baremetal-poweroff.s src/kernel.c \
+			src/syscalls.c src/pmp.c src/riscv.c src/fdt.c src/string.c \
+			src/proc_test.c src/spinlock.c src/proc.c src/context.s \
+			src/pagealloc.c src/uart.c src/fs.c src/bakedinfs.c src/runflags.c \
+			src/pipe.c \
+			user/src/userland.c user/src/usyscalls.S user/src/user-printf.s \
+			user/src/user-printf.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
@@ -114,7 +115,7 @@ gdb: $(FREEDOM_SDK_DIR)
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
           -fno-plt -fno-pic \
-          -Tsrc/baremetal.ld -Iinclude
+          -Tsrc/baremetal.ld -Iinclude -Iuser/inc
 
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
