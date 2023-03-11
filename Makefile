@@ -72,7 +72,7 @@ USER_DEPS = src/boot.s src/uart-print.s src/baremetal-poweroff.s src/kernel.c \
 			src/pagealloc.c src/uart.c src/fs.c src/bakedinfs.c src/runflags.c \
 			src/pipe.c \
 			user/src/userland.c user/src/usyscalls.S user/src/user-printf.s \
-			user/src/user-printf.c
+			user/src/user-printf.c user/src/shell.c user/src/ustr.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
