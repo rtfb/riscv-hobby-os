@@ -38,6 +38,7 @@ file_t* fs_alloc_file() {
         if (pf->refcount == 0) {
             pf->refcount = 1;
             pf->position = 0;
+            pf->flags = 0;
             release(&ftable.lock);
             return pf;
         }

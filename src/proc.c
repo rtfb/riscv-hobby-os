@@ -515,6 +515,12 @@ int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes) {
         // TODO: errno
         return -1;
     }
+    if (nbytes == -1) {
+        // XXX: this is an ugly hack: I can't always do strlen() in the
+        // userland, because the userland currently is unable to access
+        // string literals in .rodata.
+        nbytes = kstrlen(buf);
+    }
     int32_t status = fs_write(f, f->position, buf, nbytes);
     return status;
 }

@@ -1,4 +1,5 @@
 #include "userland.h"
+#include "ustr.h"
 
 // print_radix prints a given number in a given radix. It stores the string in
 // a provided buffer, fills it starting from the end, and returns a pointer
@@ -94,7 +95,7 @@ int32_t _userland printfvec(char const* fmt, regsize_t* args) {
         dsti++;
     }
     buf[dsti] = 0;
-    return prints(buf);
+    return write(1, buf, dsti);
 }
 
 // prints is a convenience wrapper around the write() system call, it defaults

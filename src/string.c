@@ -33,3 +33,9 @@ char* strncpy(char *dest, char const *src, unsigned int num) {
     *dest = '\0';
     return orig_dest;
 }
+
+int kstrlen(char const *s) {
+    unsigned int i = 0;
+    while (*s++) i++;
+    return i;
+}

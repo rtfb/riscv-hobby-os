@@ -42,7 +42,7 @@ void free_pipe(pipe_t *pipe) {
 }
 
 int32_t pipe_open(uint32_t pipefd[2]) {
-    pipe_t *pipe = alloc_pipe();
+    pipe_t *pipe = alloc_pipe(); // acquires pipe->lock
     if (!pipe) {
         // TODO: set errno
         return -1;
@@ -68,16 +68,16 @@ int32_t pipe_open(uint32_t pipefd[2]) {
     pipe->wf = f1;
 
     process_t* proc = myproc();
-    acquire(&proc->lock);
+    // acquire(&proc->lock);
     int32_t fd0 = fd_alloc(proc, f0);
     int32_t fd1 = fd_alloc(proc, f1);
     if (fd0 == -1 || fd1 == -1) {
         // TODO: set errno to indicate out of proc FDs
         release(&pipe->lock);
-        release(&proc->lock);
+        // release(&proc->lock);
         return -1;
     }
-    release(&proc->lock);
+    // release(&proc->lock);
     release(&pipe->lock);
     pipefd[0] = fd0;
     pipefd[1] = fd1;
