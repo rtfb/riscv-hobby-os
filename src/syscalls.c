@@ -28,6 +28,8 @@ void *syscall_vector[] _text = {
     [SYS_NR_sleep]     sys_sleep,
     [SYS_NR_plist]     sys_plist,
     [SYS_NR_pinfo]     sys_pinfo,
+    [SYS_NR_pgalloc]   sys_pgalloc,
+    [SYS_NR_pgfree]    sys_pgfree,
 };
 
 void syscall() {
@@ -145,4 +147,14 @@ uint32_t sys_pinfo() {
     uint32_t pid = (uint32_t)trap_frame.regs[REG_A0];
     pinfo_t *pinfo = (pinfo_t*)trap_frame.regs[REG_A1];
     return proc_pinfo(pid, pinfo);
+}
+
+regsize_t sys_pgalloc() {
+    return (regsize_t)allocate_page();
+}
+
+regsize_t sys_pgfree() {
+    void *page = (void*)trap_frame.regs[REG_A0];
+    release_page(page);
+    return 0;
 }

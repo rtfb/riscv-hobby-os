@@ -43,6 +43,8 @@ typedef struct dirent_s {
     char name[MAX_FILENAME_LEN];
 } dirent_t;
 
+// TODO: unify the return values of syscalls
+
 void sys_restart();
 void sys_exit();
 uint32_t sys_fork();
@@ -59,6 +61,8 @@ uint32_t sys_sysinfo();
 uint32_t sys_sleep();
 uint32_t sys_plist();
 uint32_t sys_pinfo();
+regsize_t sys_pgalloc();
+regsize_t sys_pgfree();
 
 // These are implemented in assembler as of now:
 extern void poweroff();

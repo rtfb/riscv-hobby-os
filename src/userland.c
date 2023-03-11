@@ -187,6 +187,15 @@ int _userland u_main_shell(int argc, char* argv[]) {
 
 int _userland u_main_hello1() {
     prints("Hello from hellosayer 1\n");
+    void *mem = (void*)pgalloc();
+    char *s = (char*)mem;
+    s[0] = 'y';
+    s[1] = 'o';
+    s[2] = '!';
+    s[3] = '\n';
+    s[4] = 0;
+    prints(s);
+    pgfree(mem);
     exit();
     return 0;
 }

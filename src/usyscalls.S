@@ -82,3 +82,13 @@ plist:
 pinfo:
         macro_syscall SYS_NR_pinfo
         ret
+
+.globl pgalloc
+pgalloc:
+        macro_syscall SYS_NR_pgalloc
+        ret
+
+.globl pgfree
+pgfree:
+        macro_syscall SYS_NR_pgfree
+        ret

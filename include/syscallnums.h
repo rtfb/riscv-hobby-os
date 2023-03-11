@@ -23,3 +23,5 @@
 // These are non-standard syscalls
 #define SYS_NR_plist          32
 #define SYS_NR_pinfo          33
+#define SYS_NR_pgalloc        34
+#define SYS_NR_pgfree         35
