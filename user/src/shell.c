@@ -19,15 +19,20 @@ int _userland trimright(char *str) {
     return i + 1;
 }
 
+void _userland sh_init_cmd(cmd_t *cmd) {
+    cmd->buf[0] = 0;
+    for (int i = 0; i < ARGV_BUF_SIZE; i++) {
+        cmd->args[i] = 0;
+    }
+    cmd->next = 0;
+}
+
 cmdbuf_t _userland sh_init_cmd_slots(cmd_t *slots, int count) {
     cmdbuf_t buf;
     buf.pool = slots;
     buf.count = count;
     for (int i = 0; i < count; i++) {
-        slots->buf[0] = 0;
-        // slots->cmd = 0;
-        slots->args[0] = 0;
-        slots->next = 0;
+        sh_init_cmd(slots);
         slots++;
     }
     return buf;
@@ -39,6 +44,15 @@ cmd_t* _userland sh_alloc_cmd(cmdbuf_t *pool) {
     }
     pool->count--;
     return &pool->pool[pool->count];
+}
+
+void _userland sh_free_cmd_chain(cmdbuf_t *pool, cmd_t *chain) {
+    while (chain) {
+        pool->count++;
+        cmd_t *next = chain->next;
+        sh_init_cmd(chain);
+        chain = next;
+    }
 }
 
 void _userland run_program(char *name, char *argv[]) {
@@ -149,11 +163,8 @@ char const* _userland parse_command2(char const *input, cmd_t *dst) {
     while (*input == ' ') input++; // skip any leading whitespaces
     char *buf = dst->buf;
     dst->args[0] = buf;
-    // dst->cmd = buf;
     while (*input != 0 && *input != '|') {
-        // printf("*input=%c\n", *input);
         *buf = *input;
-        // printf("*buf=%c\n", *buf);
         input++;
         if (*buf == ' ') {
             *buf = 0;
@@ -162,7 +173,6 @@ char const* _userland parse_command2(char const *input, cmd_t *dst) {
                 input++;
             }
             argc++;
-            // printf("args[%d] = %p\n", argc, buf);
             dst->args[argc] = buf;
         } else {
             buf++;
@@ -222,7 +232,6 @@ void _userland traverse(cmd_t *chain) {
                 dup(left_pipe_r);   // now replace stdin with the pipe's reading end
             }
             if (node->next) {
-                // close(pipefd[0]);   // deref the read end
                 close(1);           // close stdout
                 dup(pipefd[1]);     // now replace stdout with the pipe's writing end
             }
@@ -254,7 +263,7 @@ void _userland traverse(cmd_t *chain) {
         pipefd_prev[1] = pipefd[1];
         node = node->next;
     }
-    wait(); // TODO: wait for N children
+    wait(); // wait for all children to exit
 }
 
 char prog_name_fmt[] _user_rodata = "fmt";
@@ -272,7 +281,6 @@ int _userland u_main_shell(int argc, char* argv[]) {
     cmdbuf_t cmdpool = sh_init_cmd_slots(cmd_slots, num_slots);
 
     char buf[32];
-    // char *parsed_args[8];
     for (;;) {
         buf[0] = 0;
         prints("> ");
@@ -287,17 +295,9 @@ int _userland u_main_shell(int argc, char* argv[]) {
             }
             cmd_t *cmd_chain = parse(&cmdpool, buf);
             traverse(cmd_chain);
-            /*
-            parse_command(buf, parsed_args, 8);
-            if (ustrncmp(parsed_args[0], prog_name_hanger, ARRAY_LENGTH(prog_name_hanger)) == 0) {
-                run_hanger();
-            } else {
-                run_program(parsed_args[0], parsed_args);
-            }
-            if (ustrncmp(parsed_args[0], prog_name_fmt, ARRAY_LENGTH(prog_name_fmt)) == 0) {
-                sleep(2000);
-            }
-            */
+            sh_free_cmd_chain(&cmdpool, cmd_chain);
         }
     }
+    // Note: we should pgfree(cmd_slots) here, but shell never exits, so that
+    // would be just unreachable code.
 }

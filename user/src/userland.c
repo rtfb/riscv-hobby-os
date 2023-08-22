@@ -132,16 +132,20 @@ int _userland u_main_cat(int argc, char const *argv[]) {
     uint32_t fd = open(argv[1], 0);
     if (fd == -1) {
         prints("ERROR: open=-1\n");
-        exit(0);
+        exit(-1);
     }
     char fbuf[64];
     int32_t nread = read(fd, fbuf, 64);
     if (nread == -1) {
         prints("ERROR: read=-1\n");
-        exit(0);
+        exit(-1);
     }
     fbuf[nread] = 0;
-    write(1, fbuf, nread);
+    int32_t nwrit = write(1, fbuf, nread);
+    if (nwrit == -1) {
+        prints("ERROR: write=-1\n");
+        exit(-1);
+    }
     close(fd);
     exit(0);
     return 0;

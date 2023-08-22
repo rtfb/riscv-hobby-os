@@ -50,10 +50,8 @@ file_t* fs_alloc_file() {
 
 void fs_free_file(file_t *f) {
     f->refcount--;
-    if (f->refcount == 0) {
-        if (f->flags & FFLAGS_PIPE) {
-            pipe_close_file(f);
-        }
+    if (f->flags & FFLAGS_PIPE && f->refcount < 2) {
+        pipe_close_file(f);
     }
 }
 

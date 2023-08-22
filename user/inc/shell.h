@@ -27,6 +27,8 @@ typedef struct cmdbuf {
 void _userland run_program(char *name, char *argv[]);
 
 cmdbuf_t _userland sh_init_cmd_slots(cmd_t *slots, int count);
+void _userland sh_init_cmd(cmd_t *cmd);
 cmd_t* _userland sh_alloc_cmd(cmdbuf_t *pool);
+void _userland sh_free_cmd_chain(cmdbuf_t *pool, cmd_t *chain);
 
 #endif // ifndef _SHELL_H_

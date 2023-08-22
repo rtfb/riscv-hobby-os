@@ -86,13 +86,19 @@ int32_t pipe_open(uint32_t pipefd[2]) {
 
 int32_t pipe_close_file(file_t *file) {
     pipe_t *pipe = (pipe_t*)file->fs_file;
+    if (!pipe) {
+        return 0;
+    }
     acquire(&pipe->lock);
     if (file->flags & FFLAGS_READABLE) {
-        // the reading end is being closed: we can clean up the entire pipe,
-        // since no one will be reading, there's no point in writing
+        // the reading end is being closed
         proc_mark_for_wakeup(pipe);
-        pipe->wf->fs_file = 0;
-        free_pipe(pipe);
+        if (file->refcount == 0) {
+            // that was the last ref, so we can clean up the entire pipe:
+            // since no one will be reading, there's no point in writing
+            pipe->wf->fs_file = 0;
+            free_pipe(pipe);
+        }
     } else if (file->flags & FFLAGS_WRITABLE) {
         // the writing end is being closed: mark it as such, but leave the pipe
         // alive for the reader to finish reading
