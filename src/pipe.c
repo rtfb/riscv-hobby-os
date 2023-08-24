@@ -68,16 +68,13 @@ int32_t pipe_open(uint32_t pipefd[2]) {
     pipe->wf = f1;
 
     process_t* proc = myproc();
-    // acquire(&proc->lock);
     int32_t fd0 = fd_alloc(proc, f0);
     int32_t fd1 = fd_alloc(proc, f1);
     if (fd0 == -1 || fd1 == -1) {
         // TODO: set errno to indicate out of proc FDs
         release(&pipe->lock);
-        // release(&proc->lock);
         return -1;
     }
-    // release(&proc->lock);
     release(&pipe->lock);
     pipefd[0] = fd0;
     pipefd[1] = fd1;
@@ -102,7 +99,9 @@ int32_t pipe_close_file(file_t *file) {
     } else if (file->flags & FFLAGS_WRITABLE) {
         // the writing end is being closed: mark it as such, but leave the pipe
         // alive for the reader to finish reading
-        pipe->flags |= PIPE_FLAG_WRITE_CLOSED;
+        if (file->refcount == 0) {
+            pipe->flags |= PIPE_FLAG_WRITE_CLOSED;
+        }
         proc_mark_for_wakeup(pipe);
     }
     release(&pipe->lock);

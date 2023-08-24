@@ -401,7 +401,7 @@ void proc_mark_for_wakeup(void *chan) {
     }
     for (int i = 0; i < MAX_PROCS; i++) {
         process_t *p = &proc_table.procs[i];
-        if (p->state != PROC_STATE_AVAILABLE && p->chan == chan) {
+        if (p->state == PROC_STATE_SLEEPING && p->chan == chan) {
             acquire(&p->lock);
             p->state = PROC_STATE_READY;
             p->chan = 0;
