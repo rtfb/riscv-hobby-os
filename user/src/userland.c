@@ -69,7 +69,17 @@ int _userland u_main_hanger() {
 int _userland u_main_smoke_test(int argc, char const *argv[]) {
     prints("\nInit userland smoke test!\n");
     char *sh_args[] = {"sh", "/home/smoke-test.sh"};
-    run_program("sh", sh_args);
+    uint32_t pid = fork();
+    if (pid == -1) {
+        prints("ERROR: fork!\n");
+    } else if (pid == 0) { // child
+        uint32_t code = execv("sh", (char const**)sh_args);
+        // normally exec doesn't return, but if it did, it's an error:
+        prints("ERROR: execv\n");
+        exit(code);
+    } else { // parent
+        wait();
+    }
 
     // any trailing arg will cause it to exit and not hang forever
     if (argc > 1) {
