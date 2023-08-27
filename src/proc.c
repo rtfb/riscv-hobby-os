@@ -118,7 +118,6 @@ uint32_t proc_fork() {
         release_page(sp);
         return -1;
     }
-    parent->num_children++;
     child->pid = alloc_pid();
     child->parent = parent;
     child->trap.pc = parent->trap.pc;
@@ -284,7 +283,6 @@ process_t* alloc_process() {
 // must be called with proc_table.lock and proc->lock held.
 void init_proc(process_t* proc) {
     proc->state = PROC_STATE_READY;
-    proc->num_children = 0;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
     }
@@ -337,10 +335,7 @@ void proc_exit() {
     release_page(proc->kstack_page);   // XXX: problem! Can't release kstack_page yet, until we swtch outta here
     proc->state = PROC_STATE_AVAILABLE;
     acquire(&proc->parent->lock);
-    proc->parent->num_children--;
-    if (proc->parent->num_children == 0) {
-        proc->parent->state = PROC_STATE_READY;
-    }
+    proc->parent->state = PROC_STATE_READY;
     copy_trap_frame(&trap_frame, &proc->parent->trap); // we should return to parent after child exits
     release(&proc->parent->lock);
 

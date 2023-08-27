@@ -73,9 +73,6 @@ typedef struct process_s {
 
     void *chan; // pointer to an object this process is waiting on (e.g. a pipe)
 
-    // number of children this process has, so that wait() knows when to wake up:
-    int num_children;
-
     file_t* files[MAX_PROC_FDS];
 } process_t;
 

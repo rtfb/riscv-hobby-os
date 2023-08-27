@@ -2,6 +2,12 @@
 #include "ustr.h"
 #include "pagealloc.h"
 
+
+char prog_name_hanger[] _user_rodata = "hang";
+
+cmd_t* _userland parse(cmdbuf_t *pool, char const *input);
+uint32_t _userland traverse(cmd_t *node, int depth);
+
 // trimright finds the end of the provided string and trims any trailing
 // whitespace characters (\n,\r,\t,' ') by overwriting them with 0. Returns the
 // new length of the string.
@@ -55,65 +61,18 @@ void _userland sh_free_cmd_chain(cmdbuf_t *pool, cmd_t *chain) {
     }
 }
 
-void _userland run_program(char *name, char *argv[]) {
-    uint32_t pid = fork();
-    if (pid == -1) {
-        prints("ERROR: fork!\n");
-    } else if (pid == 0) { // child
-        uint32_t code = execv(name, (char const**)argv);
-        // normally exec doesn't return, but if it did, it's an error:
-        prints("ERROR: execv\n");
-        exit();
-    } else { // parent
+// wait for as many children as traverse() has spawned, except for the hangers.
+void _userland sh_wait_for_all_children(cmd_t *cmd_chain) {
+    for (cmd_t *node = cmd_chain; node != 0; node = node->next) {
+        if (ustrncmp(node->buf, prog_name_hanger, ARRAY_LENGTH(prog_name_hanger)) == 0) {
+            sleep(1);
+            continue; // don't wait for a hanger
+        }
         wait();
     }
 }
 
-// run_hanger is like the run_program, but it's intended to run a malicious
-// program that hangs intentionally, so it doesn't wait() on it, only sleeps
-// for a bit to allow it to run briefly.
-void _userland run_hanger() {
-    uint32_t pid = fork();
-    if (pid == -1) {
-        prints("ERROR: fork!\n");
-    } else if (pid == 0) { // child
-        uint32_t code = execv("hang", 0);
-        // normally exec doesn't return, but if it did, it's an error:
-        prints("ERROR: execv\n");
-        exit();
-    } else { // parent
-        sleep(1);
-    }
-}
-
-// parse_command iterates over buf, replacing each whitespace with a zero, thus
-// making each word a terminated string. It then collects all those strings
-// into argv, terminating it with a null pointer as well.
-void _userland parse_command(char *buf, char *argv[], int argvsize) {
-    int i = 0;
-    while (*buf == ' ') buf++; // skip any leading whitespaces
-    argv[0] = buf;
-    while (*buf) {
-        buf++;
-        if (*buf == ' ') {
-            while (*buf == ' ') {
-                *buf = 0;
-                buf++;
-            }
-            i++;
-            argv[i] = buf;
-        }
-        if (i > argvsize - 1) {
-            break;
-        }
-    }
-    i++;
-    argv[i] = 0;
-}
-
-char prog_name_hanger[] _user_rodata = "hang";
-
-int _userland run_shell_script(char const *filepath) {
+int _userland run_shell_script(char const *filepath, cmdbuf_t cmdpool) {
     uint32_t fd = open(filepath, 0);
     if (fd == -1) {
         prints("ERROR: open=-1\n");
@@ -145,20 +104,18 @@ int _userland run_shell_script(char const *filepath) {
         if (!*pbuf) {
             break;
         }
-        parse_command(pbuf, parsed_args, 8);
-        if (ustrncmp(parsed_args[0], prog_name_hanger, ARRAY_LENGTH(prog_name_hanger)) == 0) {
-            run_hanger();
-        } else {
-            run_program(parsed_args[0], parsed_args);
-        }
+        cmd_t *cmd_chain = parse(&cmdpool, pbuf);
+        traverse(cmd_chain, 0);
+        sh_wait_for_all_children(cmd_chain);
+        sh_free_cmd_chain(&cmdpool, cmd_chain);
     }
     return 0;
 }
 
-// parse_command2 iterates over buf, replacing each whitespace with a zero, thus
+// parse_command iterates over buf, replacing each whitespace with a zero, thus
 // making each word a terminated string. It then collects all those strings
 // into argv, terminating it with a null pointer as well.
-char const* _userland parse_command2(char const *input, cmd_t *dst) {
+char const* _userland parse_command(char const *input, cmd_t *dst) {
     int argc = 0;
     while (*input == ' ') input++; // skip any leading whitespaces
     char *buf = dst->buf;
@@ -196,7 +153,7 @@ cmd_t* _userland parse(cmdbuf_t *pool, char const *input) {
     }
     cmd_t *head = tail;
     while (1) {
-        char const *stopped_at = parse_command2(input, tail);
+        char const *stopped_at = parse_command(input, tail);
         if (*stopped_at == '\0') {
             break;
         }
@@ -258,25 +215,22 @@ uint32_t _userland traverse(cmd_t *node, int depth) {
     if (right_pipe_w != -1) {
         close(right_pipe_w);
     }
-    if (depth == 0) {
-        wait(); // wait for all children to exit
-    }
     return pipefd[1];
 }
 
 char prog_name_fmt[] _user_rodata = "fmt";
 
 int _userland u_main_shell(int argc, char* argv[]) {
+    cmd_t *cmd_slots = (cmd_t*)pgalloc();
+    int num_slots = PAGE_SIZE / sizeof(cmd_t);
+    cmdbuf_t cmdpool = sh_init_cmd_slots(cmd_slots, num_slots);
+
     if (argc > 1) {
-        int code = run_shell_script(argv[1]);
+        int code = run_shell_script(argv[1], cmdpool);
         exit(code);
         return code;
     }
     prints("\nInit userland!\n");
-
-    cmd_t *cmd_slots = (cmd_t*)pgalloc();
-    int num_slots = PAGE_SIZE / sizeof(cmd_t);
-    cmdbuf_t cmdpool = sh_init_cmd_slots(cmd_slots, num_slots);
 
     char buf[32];
     for (;;) {
@@ -293,6 +247,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
             }
             cmd_t *cmd_chain = parse(&cmdpool, buf);
             traverse(cmd_chain, 0);
+            sh_wait_for_all_children(cmd_chain);
             sh_free_cmd_chain(&cmdpool, cmd_chain);
         }
     }
