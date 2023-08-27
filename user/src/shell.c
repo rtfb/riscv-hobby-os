@@ -211,59 +211,57 @@ cmd_t* _userland parse(cmdbuf_t *pool, char const *input) {
     return head;
 }
 
-void _userland traverse(cmd_t *chain) {
-    cmd_t *node = chain;
-    uint32_t pipefd[2] = {-1, -1};
-    uint32_t pipefd_prev[2] = {-1, -1};
-    uint32_t left_pipe_r = -1;   // reading end of the pipe on the left
-    while (1) {
-        if (node->next) {
-            if (pipe(pipefd) == -1) {
-                prints("ERROR: pipe=-1\n");
-                break;
-            }
-        }
-        uint32_t pid = fork();
-        if (pid == -1) {
-            prints("ERROR: fork!\n");
-        } else if (pid == 0) { // child
-            if (left_pipe_r != -1) {
-                close(0);           // close stdin
-                dup(left_pipe_r);   // now replace stdin with the pipe's reading end
-            }
-            if (node->next) {
-                close(1);           // close stdout
-                dup(pipefd[1]);     // now replace stdout with the pipe's writing end
-            }
-            if (pipefd[0] != -1) {
-                close(pipefd[0]);   // deref the read end
-            }
-            if (pipefd[1] != -1) {
-                close(pipefd[1]);   // deref the write end
-            }
-            uint32_t code = execv(node->args[0], node->args);
-            // normally exec doesn't return, but if it did, it's an error:
-            prints("ERROR: execv\n");
-            exit();
-        }
-
-        // deref the copies held by the shell:
-        if (pipefd_prev[0] != -1) {
-            close(pipefd_prev[0]);
-        }
-        if (pipefd_prev[1] != -1) {
-            close(pipefd_prev[1]);
-        }
-
-        if (!node->next) {
-            break;
-        }
-        left_pipe_r = pipefd[0];
-        pipefd_prev[0] = pipefd[0];
-        pipefd_prev[1] = pipefd[1];
-        node = node->next;
+uint32_t _userland traverse(cmd_t *node, int depth) {
+    if (!node) {
+        return -1;
     }
-    wait(); // wait for all children to exit
+    uint32_t right_pipe_w = traverse(node->next, depth + 1);
+
+    uint32_t pipefd[2] = {-1, -1};
+    if (depth > 0) {
+        if (pipe(pipefd) == -1) {
+            prints("ERROR: pipe=-1\n");
+            return -1;
+        }
+    }
+    uint32_t pid = fork();
+    if (pid == -1) {
+        prints("ERROR: fork!\n");
+    } else if (pid == 0) { // child
+        if (pipefd[0] != -1) {
+            close(0);           // close stdin
+            dup(pipefd[0]);     // now replace stdin with the pipe's reading end
+            close(pipefd[0]);   // close the extra copy to keep refcount right
+        }
+        if (pipefd[1] != -1) {
+            // the shell only closes the reading end of a newly allocated pipe,
+            // in order to maintain a copy of the writing end before it can be
+            // assigned to the next process. However, fork() makes an extra
+            // refcount++ on that writing end, so we need to deref it:
+            close(pipefd[1]);
+        }
+        if (right_pipe_w != -1) {
+            close(1);             // close stdout
+            dup(right_pipe_w);    // now replace stdout with the pipe's writing end
+            close(right_pipe_w);  // close the extra copy to keep refcount right
+        }
+        uint32_t code = execv(node->args[0], node->args);
+        // normally exec doesn't return, but if it did, it's an error:
+        prints("ERROR: execv\n");
+        exit(code);
+    }
+
+    // deref the copies held by the shell:
+    if (pipefd[0] != -1) {
+        close(pipefd[0]);
+    }
+    if (right_pipe_w != -1) {
+        close(right_pipe_w);
+    }
+    if (depth == 0) {
+        wait(); // wait for all children to exit
+    }
+    return pipefd[1];
 }
 
 char prog_name_fmt[] _user_rodata = "fmt";
@@ -294,7 +292,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
                 continue;
             }
             cmd_t *cmd_chain = parse(&cmdpool, buf);
-            traverse(cmd_chain);
+            traverse(cmd_chain, 0);
             sh_free_cmd_chain(&cmdpool, cmd_chain);
         }
     }

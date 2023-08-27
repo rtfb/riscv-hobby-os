@@ -114,14 +114,15 @@ int32_t pipe_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
     pipe_t *pipe = (pipe_t*)f->fs_file;
     acquire(&pipe->lock);
     // nothing to read, so we have to either sleep, waiting for the writing end
-    // to write something, or return EOF if the writing end is already closed
-    if (pipe->rpos == pipe->wpos && ((pipe->flags & PIPE_BUF_FULL) == 0)) {
+    // to write something, or return EOF if the writing end is already closed.
+    // This can happen after a wakeup, so keep doing this in a loop.
+    while (pipe->rpos == pipe->wpos && ((pipe->flags & PIPE_BUF_FULL) == 0)) {
         if (pipe->flags & PIPE_FLAG_WRITE_CLOSED) {
             release(&pipe->lock);
             return EOF;
         }
-        // it's possible the writing has filled the buffer and fell asleep.
-        // So let it know it now has some room for writing.
+        // it's possible the writing process has filled the buffer and fell
+        // asleep. So let it know it now has some room for writing.
         proc_mark_for_wakeup(pipe);
         release(&pipe->lock); // release the lock before sleep, otherwise the writing end will deadlock
         proc_yield(pipe);
