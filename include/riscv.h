@@ -21,6 +21,11 @@
 #define TRAP_DIRECT   0x00
 #define TRAP_VECTORED 0x01
 
+#define MSTATUS_MPIE_BIT  7
+
+#define MIE_MTIE_BIT   7  // mie.MTIE (Machine Timer Interrupt Enable) bit
+#define MIE_MEIE_BIT  11  // mie.MEIE (Machine External Interrupt Enable) bit
+
 unsigned int get_mhartid();
 unsigned int get_mstatus();
 void set_mstatus(unsigned int mstatus);

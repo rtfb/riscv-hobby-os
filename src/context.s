@@ -18,6 +18,13 @@ k_interrupt_timer:
         # This will restore user registers from trap_frame and then mret:
         j       ret_to_user
 
+.globl k_interrupt_plic
+k_interrupt_plic:
+        call    kernel_plic_handler
+
+        # This will restore user registers from trap_frame and then mret:
+        j       ret_to_user
+
 .globl ret_to_user
 ret_to_user:
         # load a pointer to trap_frame into t6:

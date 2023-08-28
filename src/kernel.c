@@ -4,9 +4,11 @@
 #include "proc.h"
 #include "fdt.h"
 #include "pagealloc.h"
-#include "uart.h"
+#include "drivers/uart/uart.h"
 #include "pipe.h"
 #include "runflags.h"
+#include "drivers/drivers.h"
+#include "plic.h"
 
 spinlock init_lock = 0;
 
@@ -18,7 +20,7 @@ void kinit(uintptr_t fdt_header_addr) {
         // TODO: support multi-core
         park_hart();
     }
-    uart_init();
+    drivers_init();
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());
@@ -74,6 +76,13 @@ void kernel_timer_tick() {
     enable_interrupts();
 }
 
+// kernel_plic_handler...
+void kernel_plic_handler() {
+    disable_interrupts();
+    plic_dispatch_interrupts();
+    enable_interrupts();
+}
+
 void set_mie(unsigned int value) {
     asm volatile (
         "csrs   mie, %0;"   // set mie to the requested value
@@ -92,11 +101,12 @@ void disable_interrupts() {
 void enable_interrupts() {
     // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:
     unsigned int mstatus = get_mstatus();
-    mstatus |= (1 << 7);
+    mstatus |= (1 << MSTATUS_MPIE_BIT);
     set_mstatus(mstatus);
 
     // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
-    set_mie(1 << 7);
+    unsigned int mie = (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT);
+    set_mie(mie);
 }
 
 void set_mtvec(void *ptr) {

@@ -168,6 +168,8 @@ cmd_t* _userland parse(cmdbuf_t *pool, char const *input) {
     return head;
 }
 
+char sh_exec_err_fmt[] _user_rodata = "ERROR: execv %s, %d\n";
+
 uint32_t _userland traverse(cmd_t *node, int depth) {
     if (!node) {
         return -1;
@@ -204,7 +206,7 @@ uint32_t _userland traverse(cmd_t *node, int depth) {
         }
         uint32_t code = execv(node->args[0], node->args);
         // normally exec doesn't return, but if it did, it's an error:
-        prints("ERROR: execv\n");
+        printf(sh_exec_err_fmt, node->args[0], code);
         exit(code);
     }
 
@@ -217,8 +219,6 @@ uint32_t _userland traverse(cmd_t *node, int depth) {
     }
     return pipefd[1];
 }
-
-char prog_name_fmt[] _user_rodata = "fmt";
 
 int _userland u_main_shell(int argc, char* argv[]) {
     cmd_t *cmd_slots = (cmd_t*)pgalloc();

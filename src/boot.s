@@ -282,7 +282,7 @@ interrupt_vector:
 .balign 4
         j interrupt_noop                # 10: reserved
 .balign 4
-        j interrupt_noop                # 11: machine external interrupt
+        j k_interrupt_plic              # 11: machine external interrupt
 
 exception_vector:                       # 3.1.20 Machine Cause Register (mcause), Table 3.6: Machine cause register (mcause) values after trap.
 .balign 4

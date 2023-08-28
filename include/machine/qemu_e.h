@@ -7,4 +7,8 @@
 // It's used in riscv/sifive_e and in riscv/virt machines.
 #define ONE_SECOND        (10*1000*1000)
 
+// https://github.com/qemu/qemu/blob/master/include/hw/riscv/sifive_e.h#L82
+//      SIFIVE_E_UART0_IRQ    = 3,
+#define UART0_IRQ_NO    3
+
 #endif // ifndef _QEMU_E_H_

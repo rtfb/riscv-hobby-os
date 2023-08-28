@@ -69,8 +69,9 @@ TEST_DEPS = src/baremetal-fib.s src/uart-print.s src/baremetal-poweroff.s
 USER_DEPS = src/boot.s src/uart-print.s src/baremetal-poweroff.s src/kernel.c \
 			src/syscalls.c src/pmp.c src/riscv.c src/fdt.c src/string.c \
 			src/proc_test.c src/spinlock.c src/proc.c src/context.s \
-			src/pagealloc.c src/uart.c src/fs.c src/bakedinfs.c src/runflags.c \
-			src/pipe.c \
+			src/pagealloc.c src/fs.c src/bakedinfs.c src/runflags.c \
+			src/pipe.c src/drivers/drivers.c src/drivers/uart/uart.c \
+			src/plic.c \
 			user/src/userland.c user/src/usyscalls.S user/src/user-printf.s \
 			user/src/user-printf.c user/src/shell.c user/src/ustr.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)

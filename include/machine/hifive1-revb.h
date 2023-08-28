@@ -10,4 +10,8 @@
 // system cost, can be driven by a factorytrimmed on-chip oscillator."
 #define ONE_SECOND 32768
 
+// https://github.com/sifive/freedom-e-sdk/blob/master/bsp/sifive-hifive1-revb/core.dts#L166
+//      interrupts = <3>;
+#define UART0_IRQ_NO    3
+
 #endif // ifndef _HIFIVE1_REVB_

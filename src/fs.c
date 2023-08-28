@@ -1,7 +1,7 @@
 #include "fs.h"
 #include "pipe.h"
 #include "bakedinfs.h"
-#include "uart.h"
+#include "drivers/uart/uart.h"
 
 file_table_t ftable;
 file_t stdin;

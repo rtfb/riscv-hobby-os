@@ -3,7 +3,7 @@
 #include "programs.h"
 #include "kernel.h"
 #include "string.h"
-#include "uart.h"
+#include "drivers/uart/uart.h"
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;
