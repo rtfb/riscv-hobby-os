@@ -23,6 +23,7 @@ extern int u_main_coma();
 extern int u_main_pipe();
 extern int u_main_pipe2();
 extern int u_main_wc();
+extern int u_main_gpio();
 
 user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
@@ -76,6 +77,10 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
         .entry_point = &u_main_wc,
         .name = "wc",
+    },
+    (user_program_t){
+        .entry_point = &u_main_gpio,
+        .name = "gpio",
     },
     // keep this last, it's a sentinel:
     (user_program_t){

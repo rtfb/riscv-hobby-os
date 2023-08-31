@@ -5,6 +5,7 @@
 #include "string.h"
 #include "syscalls.h"
 #include "fs.h"
+#include "gpio.h"
 
 int _userland u_main_hello1() {
     prints("Hello from hellosayer 1\n");
@@ -301,4 +302,95 @@ int _userland u_main_wc(int argc, char const *argv[]) {
 int _userland u_main_coma() {
     for (;;)
         ;
+}
+
+int _userland map_gpio_pin_num(int num) {
+    switch (num) {
+        case  0: return GPIO_PIN_0;
+        case  1: return GPIO_PIN_1;
+        case  2: return GPIO_PIN_2;
+        case  3: return GPIO_PIN_3;
+        case  4: return GPIO_PIN_4;
+        case  5: return GPIO_PIN_5;
+        case  6: return GPIO_PIN_6;
+        case  7: return GPIO_PIN_7;
+        case  8: return GPIO_PIN_8;
+        case  9: return GPIO_PIN_9;
+        case 10: return GPIO_PIN_10;
+        case 11: return GPIO_PIN_11;
+        case 12: return GPIO_PIN_12;   // XXX: doesn't work
+        case 13: return GPIO_PIN_13;
+        case 14: return -1;            // not connected
+        case 15: return GPIO_PIN_15;
+        case 16: return GPIO_PIN_16;   // XXX: doesn't work
+        case 17: return GPIO_PIN_17;
+        case 18: return GPIO_PIN_18;
+        case 19: return GPIO_PIN_19;
+        default:
+                return -1;
+    };
+}
+
+// gpio is for interacting with gpio pins.
+//      > gpio N e      enable pin N for writing
+//      > gpio N d      disable pin N for writing
+//      > gpio N 1      write 1 to pin N
+//      > gpio N 0      write 0 to pin N
+//      > gpio N t      toggle the current value of N
+char gpio_parse_err_fmt[] _user_rodata = "ERROR: parse pin_num '%s': %d\n";
+char gpio_syscall_err_fmt[] _user_rodata = "ERROR: gpio syscall: %d\n";
+int _userland u_main_gpio(int argc, char const *argv[]) {
+    if (argc < 3) {
+        prints("usage:\n"
+"gpio N e      enable pin N for writing\n"
+"gpio N d      disable pin N for writing\n"
+"gpio N 1      write 1 to pin N\n"
+"gpio N 0      write 0 to pin N\n"
+"gpio N t      toggle the current value of N\n");
+        exit(-1);
+    }
+    int parse_err = 0;
+    int pin_num = uatoi(argv[1], &parse_err);
+    if (parse_err != 0) {
+        printf(gpio_parse_err_fmt, argv[1], parse_err);
+        exit(-2);
+    }
+    if (argv[2][1] != 0) {
+        prints("ERROR: arg 2 must be a single character!\n");
+        exit(-3);
+    }
+    pin_num = map_gpio_pin_num(pin_num);
+    if (pin_num < 0) {
+        prints("ERROR: pin mapping error\n");
+        exit(-4);
+    }
+    uint32_t err = 0;
+    switch (argv[2][0]) {
+        case 'e':
+            err = gpio(pin_num, 1, 0);
+            break;
+        case 'd':
+            err = gpio(pin_num, 0, 0);
+            break;
+        case '0':
+            err = gpio(pin_num, -1, 0);
+            break;
+        case '1':
+            err = gpio(pin_num, -1, 1);
+            break;
+        case 't':
+            err = gpio(pin_num, -1, 2);
+            break;
+        default:
+            prints("ERROR: unrecognized arg 2: ");
+            prints(argv[2]);
+            prints("\n");
+            exit(-5);
+    }
+    if (err != 0) {
+        printf(gpio_syscall_err_fmt, err);
+        exit(-6);
+    }
+    exit(0);
+    return 0;
 }

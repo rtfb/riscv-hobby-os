@@ -63,6 +63,7 @@ uint32_t sys_plist();
 uint32_t sys_pinfo();
 regsize_t sys_pgalloc();
 regsize_t sys_pgfree();
+uint32_t sys_gpio();
 
 // These are implemented in assembler as of now:
 extern void poweroff();

@@ -5,6 +5,7 @@
 #include "proc.h"
 #include "pagealloc.h"
 #include "pipe.h"
+#include "gpio.h"
 
 // for fun let's pretend syscall table is kinda like 32bit Linux on x86,
 // /usr/include/asm/unistd_32.h: __NR_restart_syscall 0, __NR_exit 1, _NR_fork 2, __NR_read 3, __NR_write 4
@@ -30,6 +31,7 @@ void *syscall_vector[] _text = {
     [SYS_NR_pinfo]     sys_pinfo,
     [SYS_NR_pgalloc]   sys_pgalloc,
     [SYS_NR_pgfree]    sys_pgfree,
+    [SYS_NR_gpio]      sys_gpio,
 };
 
 void syscall() {
@@ -157,4 +159,11 @@ regsize_t sys_pgfree() {
     void *page = (void*)trap_frame.regs[REG_A0];
     release_page(page);
     return 0;
+}
+
+uint32_t sys_gpio() {
+    uint32_t pin_num = (uint32_t)trap_frame.regs[REG_A0];
+    uint32_t enable = (uint32_t)trap_frame.regs[REG_A1];
+    uint32_t value = (uint32_t)trap_frame.regs[REG_A2];
+    return gpio_do_syscall(pin_num, enable, value);
 }

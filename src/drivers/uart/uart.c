@@ -2,6 +2,7 @@
 #include "proc.h"
 #include "drivers/uart/uart.h"
 #include "plic.h"
+#include "gpio.h"
 
 uart_state_t uart0;
 

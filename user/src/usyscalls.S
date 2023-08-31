@@ -92,3 +92,8 @@ pgalloc:
 pgfree:
         macro_syscall SYS_NR_pgfree
         ret
+
+.globl gpio
+gpio:
+        macro_syscall SYS_NR_gpio
+        ret
