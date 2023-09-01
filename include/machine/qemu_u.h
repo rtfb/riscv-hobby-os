@@ -9,4 +9,8 @@
 //      SIFIVE_U_UART0_IRQ = 4,
 #define UART0_IRQ_NO    4
 
+// https://github.com/qemu/qemu/blob/master/hw/riscv/sifive_u.c#L84
+//      SIFIVE_U_DEV_GPIO = 0x10060000
+#define GPIO_BASE 0x10060000
+
 #endif // ifndef _QEMU_U_H_

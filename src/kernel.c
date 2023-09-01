@@ -5,6 +5,7 @@
 #include "fdt.h"
 #include "pagealloc.h"
 #include "drivers/uart/uart.h"
+#include "drivers/hd44780/hd44780.h"
 #include "pipe.h"
 #include "runflags.h"
 #include "drivers/drivers.h"
@@ -22,6 +23,9 @@ void kinit(uintptr_t fdt_header_addr) {
     }
     plic_init();
     drivers_init();
+    lcd_init();
+    lcd_print("CAN I HAZ LCD?");
+
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());

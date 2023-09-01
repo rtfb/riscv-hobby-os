@@ -1,3 +1,4 @@
+lcd_init
 kinit: cpu 0
 Reading FDT...
 FDT ok

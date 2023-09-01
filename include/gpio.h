@@ -35,10 +35,6 @@
 #define GPIO_PIN_18     12
 #define GPIO_PIN_19     13
 
-#ifndef GPIO_BASE
-#define GPIO_BASE 0x10012000
-#endif
-
 #define GPIO_PIN_INPUT_VAL  0x00
 #define GPIO_PIN_INPUT_EN   0x04
 #define GPIO_PIN_OUT_EN     0x08
