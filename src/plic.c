@@ -2,6 +2,12 @@
 #include "plic.h"
 #include "drivers/uart/uart.h"
 
+void plic_init() {
+    for (int i = 0; i < PLIC_NUM_INTR_SOURCES; i++) {
+        plic_set_intr_priority(i, 0);
+    }
+}
+
 void plic_enable_intr(int intr_no) {
     *(uint32_t*)(PLIC_ENABLE) = 1 << intr_no;
 }

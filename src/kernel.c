@@ -20,6 +20,7 @@ void kinit(uintptr_t fdt_header_addr) {
         // TODO: support multi-core
         park_hart();
     }
+    plic_init();
     drivers_init();
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
