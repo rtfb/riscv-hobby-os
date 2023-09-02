@@ -37,6 +37,11 @@ SECTIONS
   bss_end = .;
   .sdata : { *(.sdata) }
   .debug : { *(.debug) }
+
+  /* align stack to 16 bytes as required by the ABI. It could be relaxed to 4
+   * bytes on RV32E, but not worth the effort.
+   */
+  . = ALIGN(16);
   stack_bottom = .;
   . += STACK_SIZE;
   stack_top = .;
