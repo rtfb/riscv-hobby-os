@@ -4,7 +4,6 @@ Reading FDT...
 FDT ok
 bootargs: smoke-test
 kprintf test several params: foo, 0xF10A, 0
-
 Init userland smoke test!
 Total RAM: 32
 Free RAM: 24

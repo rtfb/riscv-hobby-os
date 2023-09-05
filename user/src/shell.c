@@ -230,12 +230,12 @@ int _userland u_main_shell(int argc, char* argv[]) {
         exit(code);
         return code;
     }
-    prints("\nInit userland!\n");
+    prints("Init userland!\n");
 
     char buf[32];
     for (;;) {
         buf[0] = 0;
-        prints("> ");
+        prints(">");
         int32_t nread = read(0, buf, 31);
         if (nread < 0) {
             prints("ERROR: read\n");

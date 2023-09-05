@@ -3,6 +3,7 @@
 #include "drivers/hd44780/hd44780.h"
 #include "riscv.h"
 #include "gpio.h"
+#include "string.h"
 
 #define LOW  0
 #define HIGH 1
@@ -17,7 +18,25 @@ void lcd_init() {
     lcd.data_pins[2] = GPIO_PIN_6;
     lcd.data_pins[3] = GPIO_PIN_7;
     lcd.display_function = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;
-    lcd_begin(20, 4);
+    lcd_init_buffer(&lcd.buf);
+    lcd.last_cursor_row = 0;
+    lcd.last_cursor_col = 0;
+    lcd_begin(LCD_NUM_COLS, LCD_NUM_ROWS);
+}
+
+void lcd_init_buffer(lcd_buffer_t *buf) {
+    buf->screen_is_full = 0;
+    buf->curr_line = 0;
+    buf->pos = 0;
+    for (int i = 0; i < LCD_NUM_ROWS; i++) {
+        for (int j = 0; j < LCD_NUM_COLS; j++) {
+            buf->data[j + (i * LCD_NUM_COLS)] = ' ';
+        }
+    }
+    buf->lines[0] = buf->data;
+    buf->lines[1] = buf->data + LCD_NUM_COLS;
+    buf->lines[2] = buf->data + LCD_NUM_COLS*2;
+    buf->lines[3] = buf->data + LCD_NUM_COLS*3;
 }
 
 void _init_4_bit_mode() {
@@ -87,9 +106,8 @@ void lcd_no_display() {
 }
 
 void lcd_set_cursor(uint8_t col, uint8_t row) {
-    const int max_lines = 4;
-    if (row >= max_lines) {
-        row = max_lines - 1;    // we count rows starting w/0
+    if (row >= LCD_NUM_ROWS) {
+        row = LCD_NUM_ROWS - 1;  // we count rows starting w/0
     }
     if (row >= lcd.num_lines) {
         row = lcd.num_lines - 1; // we count rows starting w/0
@@ -133,6 +151,108 @@ void lcd_print(char const *str) {
     while (*str) {
         lcd_write(*str);
         str++;
+    }
+}
+
+// _clear_line_if_full clears the current line if screen_is_full, preparing it
+// for overwriting.
+void _clear_line_if_full() {
+    if (!lcd.buf.screen_is_full) {
+        return;
+    }
+    char *line = lcd.buf.lines[lcd.buf.curr_line];
+    for (int i = 0; i < LCD_NUM_COLS; i++) {
+        line[i] = ' ';
+    }
+}
+
+int _printn_to_buf(char const* data, uint32_t size) {
+    int i = 0;
+    lcd_buffer_t *b = &lcd.buf;
+    int curr_line_advanced = 0;
+    int lines_advanced = 0;
+    while (i < size) {
+        curr_line_advanced = 0;
+        if (data[i] == '\n') {
+            b->curr_line++;
+            curr_line_advanced = 1;
+            b->pos = 0;
+        } else {
+            b->lines[b->curr_line][b->pos] = data[i];
+            b->pos++;
+        }
+        if (b->pos == LCD_NUM_COLS) {
+            b->curr_line++;
+            curr_line_advanced = 1;
+            b->pos = 0;
+        }
+        if (b->curr_line == LCD_NUM_ROWS) {
+            b->screen_is_full = 1;
+            b->curr_line = 0;
+        }
+        if (curr_line_advanced) {
+            lines_advanced++;
+            _clear_line_if_full();
+        }
+        i++;
+    }
+    return lines_advanced;
+}
+
+void _clear_screen_and_scroll_up() {
+    lcd_clear();
+    lcd_buffer_t *b = &lcd.buf;
+    // curr_line is the bottom-most line now and we're typing into it.
+    // So curr_line+1 has to be the topmost:
+    int buf_line = b->curr_line + 1;
+    if (buf_line == LCD_NUM_ROWS) {
+        buf_line = 0;
+    }
+    int lcd_line = 0;
+    while (buf_line != b->curr_line) {
+        lcd_set_cursor(0, lcd_line);
+        for (int i = 0; i < LCD_NUM_COLS; i++) {
+            lcd_write(b->lines[buf_line][i]);
+        }
+        lcd_line++;
+        buf_line++;
+        if (buf_line == LCD_NUM_ROWS) {
+            buf_line = 0;
+        }
+    }
+    lcd_set_cursor(0, lcd_line);
+    lcd.last_cursor_row = lcd_line;
+    lcd.last_cursor_col = 0;
+    for (int i = 0; i < b->pos; i++) {
+        lcd_write(b->lines[b->curr_line][i]);
+        lcd.last_cursor_col++;
+    }
+}
+
+void lcd_printn(char const* data, uint32_t size) {
+    int lines_advanced = _printn_to_buf(data, size);
+    lcd_buffer_t *b = &lcd.buf;
+    if (b->screen_is_full && lines_advanced > 0) {
+        _clear_screen_and_scroll_up();
+        return;
+    }
+    int i = 0;
+    while (i < size) {
+        if (data[i] == '\n') {
+            lcd.last_cursor_row++;
+            lcd.last_cursor_col = 0;
+            lcd_set_cursor(lcd.last_cursor_col, lcd.last_cursor_row);
+            i++;
+            continue;
+        }
+        lcd_write(data[i]);
+        i++;
+        lcd.last_cursor_col++;
+        if (lcd.last_cursor_col == LCD_NUM_COLS) {
+            lcd.last_cursor_row++;
+            lcd.last_cursor_col = 0;
+            lcd_set_cursor(lcd.last_cursor_col, lcd.last_cursor_row);
+        }
     }
 }
 

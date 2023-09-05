@@ -1,6 +1,7 @@
 #include "sys.h"
 #include "proc.h"
 #include "drivers/uart/uart.h"
+#include "drivers/hd44780/hd44780.h"
 #include "plic.h"
 #include "gpio.h"
 
@@ -85,6 +86,7 @@ int uart_enqueue_chars() {
             uart0.rx_num_newlines++;
             proc_mark_for_wakeup(&uart0);
         }
+        lcd_printn(&ch, 1);
         uart_writechar(ch); // echo back to console
         uart0.rxbuf[wpos] = ch;
         wpos++;
@@ -153,8 +155,10 @@ int32_t uart_readline(char* buf, uint32_t bufsize) {
 
 int32_t uart_print(char const* data, uint32_t size) {
     if (size == -1) {
+        lcd_print(data);
         return uart_prints(data);
     }
+    lcd_printn(data, size);
     int i = 0;
     while (i < size) {
         uart_printc(data[i]);

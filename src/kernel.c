@@ -24,8 +24,6 @@ void kinit(uintptr_t fdt_header_addr) {
     plic_init();
     drivers_init();
     lcd_init();
-    lcd_print("CAN I HAZ LCD?");
-
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());

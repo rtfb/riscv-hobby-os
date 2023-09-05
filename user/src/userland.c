@@ -68,7 +68,7 @@ int _userland u_main_hanger() {
 }
 
 int _userland u_main_smoke_test(int argc, char const *argv[]) {
-    prints("\nInit userland smoke test!\n");
+    prints("Init userland smoke test!\n");
     char *sh_args[] = {"sh", "/home/smoke-test.sh"};
     uint32_t pid = fork();
     if (pid == -1) {

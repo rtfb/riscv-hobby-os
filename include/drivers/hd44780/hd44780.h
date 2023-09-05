@@ -39,6 +39,20 @@
 #define LCD_5x10DOTS        0x04
 #define LCD_5x8DOTS         0x00
 
+#define LCD_NUM_ROWS        4
+#define LCD_NUM_COLS        20
+
+// lcd_buffer_t maintains all the text that was printed to the LCD screen so
+// that we can replay most of it when new text forces a scroll up by one line.
+typedef struct lcd_buffer_s {
+    char data[LCD_NUM_ROWS * LCD_NUM_COLS];
+
+    char* lines[LCD_NUM_ROWS];   // pointers into data[]
+    uint8_t curr_line;           // which line we're currently writing to
+    uint8_t pos;                 // position in curr_line
+    uint8_t screen_is_full;      // false until we fill all 4 lines
+} lcd_buffer_t;
+
 typedef struct lcd_s {
     uint8_t rs_pin;       // LOW: command.  HIGH: character.
     uint8_t enable_pin;   // activated by a HIGH pulse.
@@ -50,11 +64,19 @@ typedef struct lcd_s {
 
     uint8_t num_lines;
     uint8_t row_offsets[4];
+
+    lcd_buffer_t buf;
+
+    // maintains the current LCD cursor position so that we know when to
+    // lcd_set_cursor to the next line.
+    uint8_t last_cursor_row;
+    uint8_t last_cursor_col;
 } lcd_t;
 
 extern lcd_t lcd;  // defined in lcd.c
 
 void lcd_init();
+void lcd_init_buffer(lcd_buffer_t *buf);
 void lcd_begin(uint8_t cols, uint8_t rows);
 void lcd_set_row_offsets(int row0, int row1, int row2, int row3);
 void lcd_display();
@@ -67,6 +89,7 @@ void lcd_cursor();
 void lcd_no_blink();
 void lcd_blink();
 void lcd_print(char const *str);
+void lcd_printn(char const* data, uint32_t size);
 
 // internal:
 void lcd_command(uint8_t value);
