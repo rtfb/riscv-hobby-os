@@ -230,7 +230,7 @@ int _userland u_main_shell(int argc, char* argv[]) {
         exit(code);
         return code;
     }
-    prints("Init userland!\n");
+    prints("Welcome to sHELL!\n");
 
     char buf[32];
     for (;;) {

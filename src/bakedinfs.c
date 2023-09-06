@@ -24,11 +24,17 @@ void bifs_init() {
 
     bifs_file_t *f1 = &bifs_all_files[1];
     f1->flags = BIFS_READABLE | BIFS_RAW;
-    f1->parent = home;
-    f1->name = "read.me";
-    f1->data = "This Is File One. File Zero is at root.\n";
+    f1->parent = bifs_root;
+    f1->name = "file";
+    f1->data = "A very short text.\n";
 
-    bifs_file_t *st = &bifs_all_files[2];
+    bifs_file_t *f2 = &bifs_all_files[2];
+    f2->flags = BIFS_READABLE | BIFS_RAW;
+    f2->parent = home;
+    f2->name = "read.me";
+    f2->data = "This Is File One. File Zero is at root.\n";
+
+    bifs_file_t *st = &bifs_all_files[3];
     st->flags = BIFS_READABLE | BIFS_RAW;
     st->parent = home;
     st->name = "smoke-test.sh";
