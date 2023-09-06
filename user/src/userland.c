@@ -114,7 +114,7 @@ int _userland u_main_ps(int argc, char const *argv[]) {
         return -1;
     }
     int skip_self = 0;
-    uint32_t my_pid = 0;
+    uint32_t my_pid = -1;
     if (argc > 1 && !ustrncmp(ps_dash_s_flag, argv[1], 2)) {
         skip_self = 1;
         my_pid = getpid();
