@@ -112,7 +112,7 @@ uint32_t proc_fork() {
     parent->trap.pc = trap_frame.pc;
     copy_trap_frame(&parent->trap, &trap_frame);
 
-    process_t* child = alloc_process();
+    process_t* child = alloc_process(sp, ksp);
     if (!child) {
         release_page(ksp);
         release_page(sp);
@@ -121,8 +121,6 @@ uint32_t proc_fork() {
     child->pid = alloc_pid();
     child->parent = parent;
     child->trap.pc = parent->trap.pc;
-    child->stack_page = sp;
-    child->kstack_page = ksp;
     copy_page(child->stack_page, parent->stack_page);
     copy_page(child->kstack_page, parent->kstack_page);
     copy_trap_frame(&child->trap, &parent->trap);
@@ -235,7 +233,8 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     release_page(proc->stack_page);
     proc->stack_page = sp;
     regsize_t argc = len_argv(argv);
-    sp_argv_t sp_argv = copy_argv(sp + PAGE_SIZE, argc, argv);
+    void *top_of_sp = sp + PAGE_SIZE - sizeof(regsize_t);
+    sp_argv_t sp_argv = copy_argv(top_of_sp, argc, argv);
     proc->trap.regs[REG_RA] = (regsize_t)proc->trap.pc;
     proc->trap.regs[REG_SP] = sp_argv.new_sp;
     proc->trap.regs[REG_FP] = sp_argv.new_sp;
@@ -259,7 +258,7 @@ uint32_t alloc_pid() {
     return pid;
 }
 
-process_t* alloc_process() {
+process_t* alloc_process(void *sp, void *ksp) {
     acquire(&proc_table.lock);
     for (int i = 0; i < MAX_PROCS; i++) {
         process_t *proc = &proc_table.procs[i];
@@ -268,7 +267,7 @@ process_t* alloc_process() {
         }
         acquire(&proc->lock);
         if (proc->state == PROC_STATE_AVAILABLE) {
-            init_proc(proc);
+            init_proc(proc, sp, ksp);
             release(&proc->lock);
             release(&proc_table.lock);
             return proc;
@@ -281,7 +280,9 @@ process_t* alloc_process() {
 }
 
 // must be called with proc_table.lock and proc->lock held.
-void init_proc(process_t* proc) {
+void init_proc(process_t* proc, void *sp, void *ksp) {
+    proc->stack_page = sp;
+    proc->kstack_page = ksp;
     proc->state = PROC_STATE_READY;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
@@ -293,6 +294,12 @@ void init_proc(process_t* proc) {
         proc->ctx.regs[i] = 0;
     }
     proc->ctx.regs[REG_RA] = (regsize_t)forkret;
+
+    // sacrifice the first word of kstack_page for a sentinel that will be used
+    // to detect stack overflows on the kernel side:
+    proc->magic = (uint32_t*)proc->kstack_page;
+    *proc->magic = PROC_MAGIC_STACK_SENTINEL;
+
     proc_table.num_procs++;
 }
 

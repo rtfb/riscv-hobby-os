@@ -36,6 +36,11 @@
 // wait()).
 #define PROC_STATE_SLEEPING 3
 
+// PROC_MAGIC_STACK_SENTINEL sits between stack_page and kstack_page and must
+// never be modified. If something modified it, it must've been a stack
+// overflow on the kernel side and we check for that upon exit from a syscall.
+#define PROC_MAGIC_STACK_SENTINEL 0xdeadf00d
+
 typedef struct trap_frame_s {
     regsize_t regs[31]; // all registers except r0
     regsize_t pc;
@@ -58,6 +63,8 @@ typedef struct process_s {
     // can later pass it to release_page(), as well as when copying the entire
     // stack around, e.g. during fork().
     void *stack_page;
+
+    uint32_t *magic;    // a magic number for detection of kstack_page overflows
     void *kstack_page;
 
     // state contains the state of the process, as well as the process table
@@ -178,11 +185,11 @@ int should_wake_up(process_t* proc);
 // address. It will immediately acquire the process lock when it finds the
 // slot. It is the caller's responsibility to release it when it's done with
 // it.
-process_t* alloc_process();
+process_t* alloc_process(void *sp, void *ksp);
 
 // init_proc initializes a given process struct.
 // Must be called with proc_table.lock and proc.lock held.
-void init_proc(process_t* proc);
+void init_proc(process_t* proc, void *sp, void *ksp);
 
 // alloc_pid returns a unique process identifier suitable to assign to a newly
 // created process.

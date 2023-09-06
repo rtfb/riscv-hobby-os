@@ -39,7 +39,7 @@ void syscall() {
     int nr = trap_frame.regs[REG_A7];
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
     if (trap_frame.regs[REG_SP] < (regsize_t)cpu.proc->stack_page) {
-        kprintf("STACK OVERFLOW in syscall %d\n", nr);
+        kprintf("STACK OVERFLOW in userland before pid:syscall %d:%d\n", cpu.proc->pid, nr);
         trap_frame.regs[REG_A0] = -1;
         return;
     }
@@ -47,8 +47,15 @@ void syscall() {
         int32_t (*funcPtr)(void) = syscall_vector[nr];
         trap_frame.regs[REG_A0] = (*funcPtr)();
     } else {
-        kprintf("BAD syscall %d\n", nr);
+        kprintf("BAD pid:syscall %d:%d\n", cpu.proc->pid, nr);
         trap_frame.regs[REG_A0] = -1;
+    }
+    if (*cpu.proc->magic != PROC_MAGIC_STACK_SENTINEL) {
+        kprintf("STACK OVERFLOW in kernel pid:syscall %d:%d (magic=0x%x)\n",
+            cpu.proc->pid, nr, *cpu.proc->magic);
+        trap_frame.regs[REG_A0] = -1;
+        // TODO: panic
+        return;
     }
     enable_interrupts();
 }
