@@ -257,35 +257,15 @@ void lcd_printn(char const* data, uint32_t size) {
 }
 
 void lcd_command(uint8_t value) {
-    lcd_send(value, LOW);
-}
-
-void lcd_write(uint8_t value) {
-    lcd_send(value, HIGH);
-}
-
-// write either command or data, with automatic 4/8-bit selection
-void lcd_send(uint8_t value, uint8_t mode) {
-    gpio_set_pin(lcd.rs_pin, mode);
-    // if there is a RW pin indicated, set it low to Write
+    gpio_set_pin(lcd.rs_pin, LOW);
     lcd_write_4bits(value >> 4);
     lcd_write_4bits(value);
 }
 
-void lcd_write_4bits(uint8_t value) {
-    for (int i = 0; i < 4; i++) {
-        gpio_set_pin(lcd.data_pins[i], (value >> i) & 0x01);
-    }
-    lcd_pulse_enable();
-}
-
-void lcd_pulse_enable() {
-    gpio_set_pin(lcd.enable_pin, LOW);
-    busy_loop_delay_tiny();
-    gpio_set_pin(lcd.enable_pin, HIGH);
-    busy_loop_delay_tiny();
-    gpio_set_pin(lcd.enable_pin, LOW);
-    busy_loop_delay_millis(1);
+void lcd_write(uint8_t value) {
+    gpio_set_pin(lcd.rs_pin, HIGH);
+    lcd_write_4bits(value >> 4);
+    lcd_write_4bits(value);
 }
 
 void busy_loop_delay_tiny() {

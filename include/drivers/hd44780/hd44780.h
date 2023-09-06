@@ -42,6 +42,17 @@
 #define LCD_NUM_ROWS        4
 #define LCD_NUM_COLS        20
 
+#define lcd_write_4bits(value)                                  \
+    for (int i = 0; i < 4; i++) {                               \
+        gpio_set_pin(lcd.data_pins[i], (value >> i) & 0x01);    \
+    }                                                           \
+    gpio_set_pin(lcd.enable_pin, LOW);                          \
+    busy_loop_delay_tiny();                                     \
+    gpio_set_pin(lcd.enable_pin, HIGH);                         \
+    busy_loop_delay_tiny();                                     \
+    gpio_set_pin(lcd.enable_pin, LOW);                          \
+    busy_loop_delay_millis(1);
+
 // lcd_buffer_t maintains all the text that was printed to the LCD screen so
 // that we can replay most of it when new text forces a scroll up by one line.
 typedef struct lcd_buffer_s {
@@ -94,10 +105,6 @@ void lcd_printn(char const* data, uint32_t size);
 // internal:
 void lcd_command(uint8_t value);
 void lcd_write(uint8_t value);
-
-void lcd_send(uint8_t value, uint8_t mode);
-void lcd_write_4bits(uint8_t data);
-void lcd_pulse_enable();
 
 // busy_loop_delay_millis spins a busy loop for a specified number of milliseconds.
 void busy_loop_delay_millis(uint32_t milliseconds);
