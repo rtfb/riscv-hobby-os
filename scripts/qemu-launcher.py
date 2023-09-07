@@ -12,6 +12,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 
 
 DEBUG_SESSION_FILE = '.debug-session'
@@ -210,6 +211,7 @@ def run(args):
                     print('\nqemu-launcher: killing qemu due to timeout')
                     p.terminate()
                     break
+            time.sleep(0.001)  # yield CPU
         # write the remainder:
         pipe_bytes(reader, sys.stdout)
     cleanup_gdb_files()
