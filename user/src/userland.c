@@ -93,17 +93,19 @@ int _userland u_main_smoke_test(int argc, char const *argv[]) {
 char ps_header_fmt[] _user_rodata = "PID  STATE  NAME\n";
 char ps_process_info_fmt[] _user_rodata = "%d    %c      %s\n";
 char ps_dash_s_flag[] _user_rodata = "-s";
+char ps_state_lookup_table[] _user_rodata = {
+    'A', // 0, available
+    'G', // 1, ready (read: good)
+    'R', // 2, running
+    'S', // 3, sleeping
+    'Z', // 4, zombie
+};
 
 char _userland state_to_char(uint32_t state) {
-    switch (state) {
-        case 0: return 'A'; // available
-        case 1: return 'G'; // ready (read: good)
-        case 2: return 'R'; // running
-        case 3: return 'S'; // sleeping
-        case 4: return 'Z'; // zombie
-        default: return 'U'; // unknown
+    if (state < 0 || state > ARRAY_LENGTH(ps_state_lookup_table)) {
+        return 'U';
     }
-    return 'U';
+    return ps_state_lookup_table[state];
 }
 
 int _userland u_main_ps(int argc, char const *argv[]) {
