@@ -100,6 +100,7 @@ char _userland state_to_char(uint32_t state) {
         case 1: return 'G'; // ready (read: good)
         case 2: return 'R'; // running
         case 3: return 'S'; // sleeping
+        case 4: return 'Z'; // zombie
         default: return 'U'; // unknown
     }
     return 'U';

@@ -36,6 +36,8 @@
 // wait()).
 #define PROC_STATE_SLEEPING 3
 
+#define PROC_STATE_ZOMBIE 4
+
 // PROC_MAGIC_STACK_SENTINEL sits between stack_page and kstack_page and must
 // never be modified. If something modified it, it must've been a stack
 // overflow on the kernel side and we check for that upon exit from a syscall.
@@ -86,7 +88,7 @@ typedef struct process_s {
 typedef struct proc_table_s {
     spinlock lock;
     process_t procs[MAX_PROCS];
-    int num_procs;
+    int num_procs;  // XXX: do we really need it?
     uint32_t pid_counter;
 } proc_table_t;
 

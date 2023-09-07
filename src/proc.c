@@ -339,8 +339,7 @@ void save_sp(regsize_t sp) {
 void proc_exit() {
     process_t* proc = myproc();
     release_page(proc->stack_page);
-    release_page(proc->kstack_page);   // XXX: problem! Can't release kstack_page yet, until we swtch outta here
-    proc->state = PROC_STATE_AVAILABLE;
+    proc->state = PROC_STATE_ZOMBIE;
     acquire(&proc->parent->lock);
     proc->parent->state = PROC_STATE_READY;
     copy_trap_frame(&trap_frame, &proc->parent->trap); // we should return to parent after child exits
@@ -359,13 +358,34 @@ void proc_exit() {
     swtch(&proc->ctx, &cpu.context);
 }
 
+// check_exited_children iterates over process table looking for zombie
+// children of a given process. If there are any, the first found is cleaned up
+// and its pid is returned. Otherwise, -1 is returned.
+int32_t check_exited_children(process_t *proc) {
+    for (int i = 0; i < MAX_PROCS; i++) {
+        process_t *p = &proc_table.procs[i];
+        if (p->parent == proc ) {
+            acquire(&p->lock);
+            if (p->state == PROC_STATE_ZOMBIE) {
+                uint32_t pid = p->pid;
+                release_page(p->kstack_page);
+                p->state = PROC_STATE_AVAILABLE;
+                release(&p->lock);
+                return pid;
+            }
+            release(&p->lock);
+        }
+    }
+    return -1;
+}
+
 int32_t wait_or_sleep(uint64_t wakeup_time) {
     process_t* proc = myproc();
     proc->state = PROC_STATE_SLEEPING;
     proc->wakeup_time = wakeup_time;
     copy_trap_frame(&proc->trap, &trap_frame); // save trap context before sleep
     swtch(&proc->ctx, &cpu.context);
-    return 0;
+    return check_exited_children(proc);
 }
 
 void sched() {
@@ -379,6 +399,11 @@ void sched() {
 }
 
 int32_t proc_wait() {
+    process_t* proc = myproc();
+    int32_t chpid = check_exited_children(proc);
+    if (chpid >= 0) {
+        return chpid;
+    }
     return wait_or_sleep(0);
 }
 
