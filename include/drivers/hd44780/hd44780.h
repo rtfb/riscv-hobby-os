@@ -101,6 +101,7 @@ void lcd_no_blink();
 void lcd_blink();
 void lcd_print(char const *str);
 void lcd_printn(char const* data, uint32_t size);
+void lcd_backspace();
 
 // internal:
 void lcd_command(uint8_t value);

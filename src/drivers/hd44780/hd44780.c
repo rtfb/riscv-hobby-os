@@ -256,6 +256,16 @@ void lcd_printn(char const* data, uint32_t size) {
     }
 }
 
+void lcd_backspace() {
+    lcd.last_cursor_col--;
+    if (lcd.last_cursor_col < 0) {
+        lcd.last_cursor_col = 0;
+    }
+    lcd_set_cursor(lcd.last_cursor_col, lcd.last_cursor_row);
+    lcd_write(' ');
+    lcd_set_cursor(lcd.last_cursor_col, lcd.last_cursor_row);
+}
+
 void lcd_command(uint8_t value) {
     gpio_set_pin(lcd.rs_pin, LOW);
     lcd_write_4bits(value >> 4);

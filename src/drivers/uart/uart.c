@@ -74,6 +74,7 @@ int uart_enqueue_chars() {
                 if (uart0.rx_buff_full) {
                     uart0.rx_buff_full = 0;
                 }
+                lcd_backspace();
             }
             continue;
         }
