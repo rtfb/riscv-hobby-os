@@ -17,6 +17,7 @@ import time
 
 DEBUG_SESSION_FILE = '.debug-session'
 GDBINIT_FILE = '.gdbinit'
+CID_FILE = 'out/cidfile'
 
 
 class _Getch:
@@ -127,7 +128,9 @@ def cleanup_gdb_files():
 
 def make_docker_cmd(is_32bit, is_interactive):
     mount =  'type=bind,source={},target=/host'.format(get_full_wd())
-    cmd = ['docker', 'run']
+    # --cidfile will write the container ID to CID_FILE, which we will use
+    # later to terminate:
+    cmd = ['docker', 'run', '--cidfile', CID_FILE]
     if is_interactive:
         cmd.extend(['-it', '--name', 'qemu-image'])
     cmd.extend(['--rm', '--mount', mount, '--net=host', 'qemu-image:latest'])
@@ -173,6 +176,12 @@ def make_qemu_command(args):
     return cmd, machine, binary, is_32bit
 
 
+def kill_container():
+    cid = io.open(CID_FILE).read()
+    subprocess.run(['docker', 'kill', cid])
+    os.unlink(CID_FILE)
+
+
 def run(args):
     """Runs qemu in a bit more user-friendly way, capturing stdout+stderr to a
     file, allowing to terminate it with C-c and optionally exit automatically
@@ -209,7 +218,7 @@ def run(args):
             if timeout is not None:
                 if start + timeout < datetime.now():
                     print('\nqemu-launcher: killing qemu due to timeout')
-                    p.terminate()
+                    kill_container()
                     break
             time.sleep(0.001)  # yield CPU
         # write the remainder:
