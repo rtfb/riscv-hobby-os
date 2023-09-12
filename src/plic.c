@@ -24,7 +24,7 @@ void plic_set_threshold(int threshold) {
 void plic_dispatch_interrupts() {
     uint32_t intr_no = *(uint32_t*)(PLIC_CLAIM_RW);  // claim this interrupt
     switch (intr_no) {
-        case UART0_IRQ_NO:
+        case UART0_IRQ_NUM:
             uart_handle_interrupt();
             break;
     }

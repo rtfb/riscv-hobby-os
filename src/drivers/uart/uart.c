@@ -26,8 +26,8 @@ void uart_init() {
     // experimentally. Furthermore, it's the default on HiFive1-revB board):
     *(uint32_t*)(UART_BASE + UART_BAUD_RATE_DIVISOR) = 138;
 
-    plic_enable_intr(UART0_IRQ_NO);
-    plic_set_intr_priority(UART0_IRQ_NO, PLIC_MAX_PRIORITY);
+    plic_enable_intr(UART0_IRQ_NUM);
+    plic_set_intr_priority(UART0_IRQ_NUM, PLIC_MAX_PRIORITY);
     plic_set_threshold(PLIC_MAX_PRIORITY - 1);
 }
 

@@ -12,7 +12,7 @@
 
 // https://github.com/sifive/freedom-e-sdk/blob/master/bsp/sifive-hifive1-revb/core.dts#L166
 //      interrupts = <3>;
-#define UART0_IRQ_NO    3
+#define UART0_IRQ_NUM   3
 
 // https://github.com/sifive/freedom-e-sdk/blob/master/bsp/sifive-hifive1-revb/core.dts#L142
 //      reg = <0x10012000 0x1000>;
