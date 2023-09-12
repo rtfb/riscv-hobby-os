@@ -31,14 +31,14 @@ ret_to_user:
         la      t6, trap_frame
 
         lx      t0, 31, (t6)
-        csrw    mepc, t0
+        csrw    sepc, t0
 
         # now restore user's t6 to t6:
         lx      t6, 30, (t6)
         # and now the trick: swap user's t6 with mscratch, which also contains the
         # address of trap_frame. Now t6 is the pointer again and mscratch
         # preserves the value of user t6 until we can swap them back:
-        csrrw   t6, mscratch, t6
+        csrrw   t6, sscratch, t6
 
         # now we're ready to restore all registers from trap_frame:
         lx       x1,  0, (t6)
@@ -74,14 +74,14 @@ ret_to_user:
 
         # x31 is the same as t6, restore it from mscratch, and mscratch will
         # again preserve trap_frame for the next interrupt:
-        csrrw   t6, mscratch, t6
+        csrrw   t6, sscratch, t6
 
         # TODO: shouldn't we call set_user_mode here? We now only call it from
         # schedule_user_process, which means that we often return to userland
         # while the hart is in M-mode.
 
         # return to userland:
-        mret
+        sret
 
 # Context switch
 #

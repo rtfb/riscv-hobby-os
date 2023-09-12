@@ -1,4 +1,5 @@
 #include "string.h"
+#include "kernel.h"
 
 int strncmp(char const *a, char const *b, unsigned int num) {
     unsigned int i = 0;
@@ -12,6 +13,7 @@ int strncmp(char const *a, char const *b, unsigned int num) {
         if (!*b) {
             return 1;
         }
+        kprintf("strncmp: b[%d] = '%d'\n", i, *b);
         if (*a != *b) {
             break;
         }

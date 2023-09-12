@@ -49,6 +49,7 @@ BINS := $(OUT)/test_sifive_u \
 	$(OUT)/test_sifive_u32 \
 	$(OUT)/user_sifive_u32 \
 	$(OUT)/user_hifive1_revb \
+	$(OUT)/user_ox64_u \
 	$(OUT)/test_virt \
 	$(OUT)/user_virt
 
@@ -123,6 +124,19 @@ $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
 		-Wa,--defsym,NUM_HARTS=2 -g \
 		-include include/machine/qemu_u.h \
 		${USER_SIFIVE_U_DEPS} -o $@
+
+$(OUT)/user_ox64_u: ${USER_SIFIVE_U_DEPS}
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
+		-Wl,--defsym,RAM_START=0x50000000 -Wa,--defsym,NUM_HARTS=1 -Wa,--defsym,UART=0x30002000 -g \
+		-include include/machine/ox64.h \
+		-D UART_BASE=0x30002000 \
+		${USER_SIFIVE_U_DEPS} -o $@
+
+$(OUT)/user_ox64_u.bin: $(OUT)/user_ox64_u
+	$(RISCV64_OBJCOPY) -O binary $< $@
+
+$(OUT)/user_ox64_u.s: $(OUT)/user_ox64_u
+	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
 $(OUT)/user_sifive_u32: ${USER_SIFIVE_U32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \

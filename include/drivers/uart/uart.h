@@ -7,7 +7,8 @@
 #define UART_BASE 0x10010000
 #endif
 
-#define UART_TXDATA 0x00
+/*
+#define UART_TXDATA 0x88
 #define UART_RXDATA 0x04
 #define UART_TXCTRL 0x08
 #define UART_RXCTRL 0x0c
@@ -17,6 +18,13 @@
 
 #define UART_IE_TXWM 1
 #define UART_IE_RXWM 2
+*/
+
+#define UART_REG_STATUS      0x30
+#define UART_FIFO_CONFIG_1   0x84
+#define UART_REG_TXFIFO      0x88
+
+#define UART_TX_FIFO_CNT_MSK 63
 
 #define ASCII_DEL 0x7f
 

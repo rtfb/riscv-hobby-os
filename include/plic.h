@@ -1,9 +1,13 @@
 #ifndef _PLIC_H_
 #define _PLIC_H_
 
-#define PLIC_NUM_INTR_SOURCES       53
+// #define PLIC_NUM_INTR_SOURCES       53
+#define PLIC_NUM_INTR_SOURCES       21
 
-#define PLIC_BASE                   0x0c000000
+#define IRQ_NUM_BASE                16
+
+// #define PLIC_BASE                   0x0c000000
+#define PLIC_BASE                   0xe0000000
 #define PLIC_PRIORITY  (PLIC_BASE + 0x00000000)
 #define PLIC_PENDING   (PLIC_BASE + 0x00001000)
 #define PLIC_ENABLE    (PLIC_BASE + 0x00002000)

@@ -3,11 +3,33 @@
 .equ HALT_ON_EXCEPTION, 1
 .equ CLINT0_BASE_ADDRESS, 0x2000000
 .equ BOOT_HART_ID, 0
+.equ RISCV_HEADER_VERSION, 0x2
 
 .balign 4
 .section .text
+
 .globl _start
 _start:
+	/* jump to start kernel */
+	j _start_kernel
+	/* reserved */
+	.word 0
+	.balign 8
+	/* Image load offset(2MB) from start of RAM */
+	.dword 0x200000
+	/* Effective size of kernel image */
+	.dword _end - _start
+	.dword 0
+	.word RISCV_HEADER_VERSION
+	.word 0
+	.dword 0
+	.ascii "RISCV\0\0\0"
+	.balign 4
+	.ascii "RSC\x05"
+	.word 0
+
+.globl _start_kernel
+_start_kernel:
                                         # if not specified otherwise, the source for quotations is:
                                         #       The RISC-V Instruction Set Manual
                                         #       Volume II: Privileged Architecture
@@ -15,14 +37,14 @@ _start:
 
                                         # from: sifive-interrupt-cookbook-v1p2.pdf
                                         # 2.1.3 Early Boot: Setup mtvec Register
-        csrwi   mie, 0                  # > It is recommended to disable interrupts globally using mstatus.mie prior to changing mtvec.
+        csrwi   sie, 0                  # > It is recommended to disable interrupts globally using mstatus.mie prior to changing mtvec.
                                         # > For sanity's sake we set up an early trap vector that just does nothing.
-        la      t0, early_trap_vector
-        csrw    mtvec, t0
+        # la      t0, early_trap_vector
+        # csrw    stvec, t0
 
 .ifndef NO_S_MODE
-        csrwi   mideleg, 0              # disable trap delegation, all interrupts and exceptions will be handled in machine mode
-        csrwi   medeleg, 0              # 3.1.8 Machine Trap Delegation Registers (medeleg and mideleg)
+        # csrwi   sideleg, 0              # disable trap delegation, all interrupts and exceptions will be handled in machine mode
+        # csrwi   sedeleg, 0              # 3.1.8 Machine Trap Delegation Registers (medeleg and mideleg)
                                         # > In systems with S-mode, the medeleg and mideleg registers must exist, and
                                         # > setting a bit in medeleg or mideleg will delegate the corresponding trap,
                                         # > when occurring in S-mode or U-mode, to the S-mode trap handler. In systems
@@ -31,7 +53,8 @@ _start:
 
                                         # setup stack pointer:
         la      t0, stack_top           # set it at stack_top for hart0,
-        csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
+        # csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
+        li t1, 0
         li      t2, 512
         mul     t1, t1, t2
         add     t0, t0, t1
@@ -41,29 +64,30 @@ _start:
         # all other harts continue to run hart_sync_code, then unconditionally
         # jump to init.
         li      t0, BOOT_HART_ID
-        csrr    t1, mhartid
+        # csrr    t1, mhartid
+        li t1, 0
         beq     t0, t1, init_segments
 
-hart_sync_code:
-        # Only non-boot harts run this code:
-        # Step 1: every non-boot hart writes 1 to MSIP register:
-        csrr    t2, mhartid   # t2 = hart ID
-        li      t0, 1
-        li      t1, CLINT0_BASE_ADDRESS  # t1 = Core-Local Interrupt Controller base address
-        slli    t2, t2, 2     # t2 = hartID*4
-        add     t1, t1, t2    # t1 = address of MSIP mem-mapped register
-        sw      t0, (t1)      # MSIP is 32 bits wide on all XLENs, so use sw
-        fence   w,rw
-
-        # Step 2: now busy-wait until the boot hart will clear that bit. When
-        # it does, we're safe to proceed:
-1:
-        lw      t0, (t1)
-        bnez    t0, 1b
-
-        # now that we've gone through hart sync dance, continue to higher level
-        # init code where each hart is allowed to run:
-        j       init
+# hart_sync_code:
+#         # Only non-boot harts run this code:
+#         # Step 1: every non-boot hart writes 1 to MSIP register:
+#         csrr    t2, mhartid   # t2 = hart ID
+#         li      t0, 1
+#         li      t1, CLINT0_BASE_ADDRESS  # t1 = Core-Local Interrupt Controller base address
+#         slli    t2, t2, 2     # t2 = hartID*4
+#         add     t1, t1, t2    # t1 = address of MSIP mem-mapped register
+#         sw      t0, (t1)      # MSIP is 32 bits wide on all XLENs, so use sw
+#         fence   w,rw
+# 
+#         # Step 2: now busy-wait until the boot hart will clear that bit. When
+#         # it does, we're safe to proceed:
+# 1:
+#         lw      t0, (t1)
+#         bnez    t0, 1b
+# 
+#         # now that we've gone through hart sync dance, continue to higher level
+#         # init code where each hart is allowed to run:
+#         j       init
 
 init_segments:
 
@@ -86,38 +110,38 @@ clean_bss_loop:
         # are 1. When all 1s are read from all harts, write 0s back to all of
         # them, allowing them all to proceed.
 synchronize_harts:
-        li      t0, 0                   # t0 = hart ID
-        li      t1, CLINT0_BASE_ADDRESS # t1 = Core-Local Interrupt Controller base address
-        li      t5, NUM_HARTS           # t4 = NUM_HARTS
-        li      t6, BOOT_HART_ID        # t6 = boot hart ID, so that we can skip over it
-
-        # if we're running on a single-harted machine, there's nothing to sync,
-        # so jump over:
-        beq     t0, t5, init
-
-        # Read loop: wait for MSIP=1 from each hart
-per_hart_read_loop:
-        beq     t0, t6, skip_boot_hart
-        slli    t2, t0, 2               # t2 = hartID*4
-        add     t3, t1, t2              # t3 = address of MSIP mem-mapped register
-        lw      t4, (t3)                # MSIP is 32 bits wide on all XLENs, so use lw
-        beq     t4, zero, per_hart_read_loop
-
-skip_boot_hart:
-        addi    t0, t0, 1
-        blt     t0, t5, per_hart_read_loop    # jump if hartID < NUM_HARTS
-
-        # Write loop: write MSIP=0 for each hart
-        li      t0, 0                   # t0 = hart ID
-per_hart_write_loop:
-        beq     t0, t6, skip_boot_hart2
-        slli    t2, t0, 2               # t2 = hartID*4
-        add     t3, t1, t2              # t3 = address of MSIP mem-mapped register
-        sw      zero, (t3)
-
-skip_boot_hart2:
-        addi    t0, t0, 1
-        blt     t0, t5, per_hart_write_loop  # jump if hartID < NUM_HARTS
+#         li      t0, 0                   # t0 = hart ID
+#         li      t1, CLINT0_BASE_ADDRESS # t1 = Core-Local Interrupt Controller base address
+#         li      t5, NUM_HARTS           # t4 = NUM_HARTS
+#         li      t6, BOOT_HART_ID        # t6 = boot hart ID, so that we can skip over it
+# 
+#         # if we're running on a single-harted machine, there's nothing to sync,
+#         # so jump over:
+#         beq     t0, t5, init
+# 
+#         # Read loop: wait for MSIP=1 from each hart
+# per_hart_read_loop:
+#         beq     t0, t6, skip_boot_hart
+#         slli    t2, t0, 2               # t2 = hartID*4
+#         add     t3, t1, t2              # t3 = address of MSIP mem-mapped register
+#         lw      t4, (t3)                # MSIP is 32 bits wide on all XLENs, so use lw
+#         beq     t4, zero, per_hart_read_loop
+# 
+# skip_boot_hart:
+#         addi    t0, t0, 1
+#         blt     t0, t5, per_hart_read_loop    # jump if hartID < NUM_HARTS
+# 
+#         # Write loop: write MSIP=0 for each hart
+#         li      t0, 0                   # t0 = hart ID
+# per_hart_write_loop:
+#         beq     t0, t6, skip_boot_hart2
+#         slli    t2, t0, 2               # t2 = hartID*4
+#         add     t3, t1, t2              # t3 = address of MSIP mem-mapped register
+#         sw      zero, (t3)
+# 
+# skip_boot_hart2:
+#         addi    t0, t0, 1
+#         blt     t0, t5, per_hart_write_loop  # jump if hartID < NUM_HARTS
 
 init:
 
@@ -144,9 +168,9 @@ init:
                                         # > For sanity's sake we set up an early trap vector that just does nothing.
                                         # > If you end up here then there's a bug in the early boot code somewhere.
 early_trap_vector:
-1:      csrr    t0, mcause
-        csrr    t1, mepc
-        csrr    t2, mtval
+1:      csrr    t0, scause
+        csrr    t1, sepc
+        csrr    t2, stval
         j       1b                      # loop indefinitely
 
                                         # 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)
@@ -186,7 +210,7 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
         # swap t6 and mscratch. t6 now points to trap_frame and the
         # actual value of t6 is saved in mscratch until we can restore it a bit
         # later:
-        csrrw   t6, mscratch, t6
+        csrrw   t6, sscratch, t6
 
         # save all user registers in trap_frame:
         sx       x1,  0, (t6)
@@ -222,10 +246,10 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
 
         # x31 is the same as t6, so store it below with a bit of juggling:
         mv      t0, t6
-        csrrw   t6, mscratch, t6
+        csrrw   t6, sscratch, t6
         sx      t6, 30, (t0)
 
-        csrr    t6, mepc
+        csrr    t6, sepc
         sx      t6, 31, (t0)
 
         # Restore sp from cpu.proc->ctx[REG_SP].
@@ -243,14 +267,15 @@ trap_vector:                            # 3.1.20 Machine Cause Register (mcause)
 set_global_stack:
         # set the same stack location as we do during the boot time.
         la      t0, stack_top           # set it at stack_top for hart0,
-        csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
+        # csrr    t1, mhartid             # at stack_top+512 for hart1, etc.
+        li t1, 0
         li      t2, 512
         mul     t1, t1, t2
         add     t0, t0, t1
         mv      sp, t0
 
 stack_done:
-        csrr    t0, mcause
+        csrr    t0, scause
         bgez    t0, exception_dispatch
 
         slli    t0, t0, 2               # clears the top bit and multiplies the interrupt index by 4 at the same time
@@ -268,17 +293,17 @@ interrupt_vector:
 .balign 4
         j interrupt_noop                #  3: machine software interrupt
 .balign 4
-        j interrupt_timer               #  4: user timer interrupt
+        j k_interrupt_timer             #  4: user timer interrupt
 .balign 4
-        j interrupt_timer               #  5: supervisor timer interrupt
+        j k_interrupt_timer             #  5: supervisor timer interrupt
 .balign 4
         j interrupt_noop                #  6: reserved
 .balign 4
         j k_interrupt_timer             #  7: machine timer interrupt
 .balign 4
-        j interrupt_noop                #  8: user external interrupt
+        j k_interrupt_plic              #  8: user external interrupt
 .balign 4
-        j interrupt_noop                #  9: supervisor external interrupt
+        j k_interrupt_plic              #  9: supervisor external interrupt
 .balign 4
         j interrupt_noop                # 10: reserved
 .balign 4
@@ -324,7 +349,7 @@ exception_vector_end:
 
 exception_dispatch:
         la      t0, exception_vector
-        csrr    t1, mcause
+        csrr    t1, scause
         slli    t1, t1, 2
         add     t0, t0, t1              # jump -> exception_vector + mcause * 4
                                         # check out-of-bounds
@@ -360,7 +385,7 @@ exception_epilogue:
         j       ret_to_user
 
 interrupt_epilogue:
-        mret
+        sret
 
 
 ### Exception, Interrupt & Syscall Handlers ###################################
@@ -386,9 +411,9 @@ exception:
         sx      x30, 30, (sp)
         sx      x31, 31, (sp)           # t6 :: x31
 
-        csrr    t0, mcause
-        csrr    t1, mepc
-        csrr    t2, mtval
+        csrr    t0, scause
+        csrr    t1, sepc
+        csrr    t2, stval
         la      t3, user_payload
         la      t4, stack_top
         stackalloc_x 5

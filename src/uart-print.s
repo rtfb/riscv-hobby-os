@@ -9,7 +9,13 @@
 MACHINE NOT SUPPORTED!
 .endif
 
-.equ UART_REG_TXFIFO,   0
+.equ UART_REG_STATUS,      0x30
+.equ UART_FIFO_CONFIG_1,   0x84
+.equ UART_REG_TXFIFO,      0x88
+
+
+.equ UART_TX_FIFO_CNT_MSK, 63
+
 
 .section .text
 .global uart_printf                     # C-like print formatted string. Supports formatting: %s, %c, %d, %i, %u, %x, %o, %p
@@ -77,13 +83,20 @@ kprintf:
 uart_printf:
 0:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         bnez    t0, 1f
+        li      t2, UART_BASE
+20:     lw      t1, UART_REG_STATUS(t2) # read status register
+        andi    t1, t1, 1               # leave only TX-busy bit
+        bnez    t1, 20b                 # if busy, go back
         ret                             # while not null
 
 1:      li      t1, '%'                 # handle %
         beq     t0, t1, 10f
 2:      li      t2, UART_BASE
-3:      lw      t1, UART_REG_TXFIFO(t2) # read from serial
-        bltz    t1, 3b                  # until >= 0
+# 3:      lw      t1, UART_REG_TXFIFO(t2) # read from serial
+#         bltz    t1, 3b                  # until >= 0
+3:      lw      t1, UART_FIFO_CONFIG_1(t2)      # read fifo status
+        andi    t1, t1, UART_TX_FIFO_CNT_MSK    # leave only TX count bits
+        beqz    t1, 3b                  # if count is zero, go back
         sw      t0, UART_REG_TXFIFO(t2) # write to serial
         addi    a0, a0, 1               # increment a0
         j       0b                      # continue
@@ -170,8 +183,9 @@ uart_printf:
 .global uart_printc
 uart_printc:                            # @param[in] a0 char
         li      a1, UART_BASE
-1:      lw      t1, UART_REG_TXFIFO(a1) # read from serial
-        bltz    t1, 1b                  # until >= 0
+1:      lw      t1, UART_FIFO_CONFIG_1(a1)      # read fifo status
+        andi    t1, t1, UART_TX_FIFO_CNT_MSK    # leave only TX count bits
+        beqz    t1, 1b                  # if count is zero, go back
         sw      a0, UART_REG_TXFIFO(a1) # write to serial
         ret
 
@@ -181,8 +195,11 @@ uart_prints:                            # @param[in] a0 address of NULL terminat
         mv      t2, a0                  # backup a0 for size calculation before ret
 1:      lbu     t0, (a0)                # load and zero-extend byte from address a0
         beqz    t0, 3f                  # while not null
-2:      lw      t1, UART_REG_TXFIFO(a1) # read from serial
-        bltz    t1, 2b                  # until >= 0
+# 2:      lw      t1, UART_REG_TXFIFO(a1) # read from serial
+#         bltz    t1, 2b                  # until >= 0
+2:      lw      t1, UART_FIFO_CONFIG_1(a1)      # read fifo status
+        andi    t1, t1, UART_TX_FIFO_CNT_MSK    # leave only TX count bits
+        beqz    t1, 2b                  # if count is zero, go back
         sw      t0, UART_REG_TXFIFO(a1) # write to serial
         addi    a0, a0, 1               # increment a0
         j       1b

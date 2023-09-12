@@ -13,9 +13,43 @@
 
 spinlock init_lock = 0;
 
+// #define OX64_UART0_BASE        0x2000a000
+#define OX64_UART0_BASE        UART_BASE
+
+#define OX64_UART_REG_UTX_CONFIG   0x00
+#define OX64_UART_REG_INT_MASK     0x24
+#define OX64_UART_REG_INT_EN       0x2c
+
+#define OX64_UART_TX_ENABLE        (1 << 0)
+#define OX64_UART_ENABLE_FREERUN   (1 << 2)
+
+#define OX64_UART_TX_BREAK_BIT_CNT (4 << 10)
+#define OX64_UART_TX_DATA_BIT_CNT  (7 << 8)
+
+void uart_init_freerun() {
+    *(uint32_t*)(OX64_UART0_BASE + OX64_UART_REG_UTX_CONFIG) = (
+          OX64_UART_TX_BREAK_BIT_CNT
+        | OX64_UART_TX_DATA_BIT_CNT
+        | OX64_UART_ENABLE_FREERUN
+        | OX64_UART_TX_ENABLE
+    );
+    *(uint32_t*)(OX64_UART0_BASE + OX64_UART_REG_INT_MASK) = ~0;
+}
+
+uint32_t get_uart_utx_config() {
+    return *(uint32_t*)(OX64_UART0_BASE + OX64_UART_REG_UTX_CONFIG);
+}
+
+uint32_t get_uart_int_en() {
+    return *(uint32_t*)(OX64_UART0_BASE + OX64_UART_REG_INT_EN);
+}
+
 void kinit(uintptr_t fdt_header_addr) {
+    kprintf("k! int_en: %d\n", get_uart_int_en());
+    uart_init_freerun();
+    // kprintf("k!\n");
     acquire(&init_lock);
-    unsigned int cpu_id = get_mhartid();
+    unsigned int cpu_id = 0; // get_mhartid();
     if (cpu_id > 0) {
         release(&init_lock);
         // TODO: support multi-core
@@ -23,9 +57,10 @@ void kinit(uintptr_t fdt_header_addr) {
     }
     plic_init();
     drivers_init();
-    lcd_init();
-    kprintf("kinit: cpu %d\n", cpu_id);
-    fdt_init(fdt_header_addr);
+    // lcd_init();
+    // kprintf("kinit: cpu %d\n", cpu_id);
+    kprintf("let's try printing a longish fixed string via UART\n");
+    // fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());
     uint32_t runflags = parse_runflags();
     init_trap_vector();
@@ -39,8 +74,25 @@ void kinit(uintptr_t fdt_header_addr) {
     init_global_trap_frame();
     init_pipes();
     fs_init();
+    uint32_t *ctl_reg = (uint32_t*)OX64_TCCR_REG;
+    uint32_t reg_val = *ctl_reg;
+    kprintf("initial TCCR value=0x%x\n", reg_val);
+    timer_init();
+    reg_val = *ctl_reg;
+    kprintf("TCCR value after init=0x%x\n", reg_val);
+    uint64_t t0 = time_get_now();
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     release(&init_lock);
+    kprintf("scheduler()...\n");
+    uint64_t t1 = time_get_now();
+    kprintf("t0=%d\n", t0);
+    kprintf("t1=%d\n", t1);
+    // uint64_t *stimecmp = (uint64_t*)STIMECMP;
+    // kprintf("stimecmp=%d\n", *stimecmp);
+    // enable_interrupts();
+    // uint64_t sstatus = get_mstatus();
+    // kprintf("sstatusH=0x%x\n", sstatus >> 32);
+    // kprintf("sstatusL=0x%x\n", sstatus & 0xffffffff);
     scheduler(); // done init'ing, now run the scheduler, forever
 }
 
@@ -74,6 +126,7 @@ void init_trap_vector() {
 // run.
 void kernel_timer_tick() {
     disable_interrupts();
+    kprintf("T");
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     sched();
     enable_interrupts();
@@ -82,39 +135,43 @@ void kernel_timer_tick() {
 // kernel_plic_handler...
 void kernel_plic_handler() {
     disable_interrupts();
+    kprintf("plic\n");
     plic_dispatch_interrupts();
     enable_interrupts();
 }
 
-void set_mie(unsigned int value) {
+void set_mie(uint64_t value) {
     asm volatile (
-        "csrs   mie, %0;"   // set mie to the requested value
+        "csrs   sie, %0;"   // set mie to the requested value
         :                   // no output
         : "r"(value)        // input in value
     );
 }
 
 void disable_interrupts() {
-    unsigned int mstatus = get_mstatus();
-    mstatus &= ~(1 << 3);
+    uint64_t mstatus = get_mstatus();
+    // mstatus &= ~(1 << 3);
+    mstatus &= ~(1 << 1);
     set_mstatus(mstatus);
     set_mie(0);
 }
 
 void enable_interrupts() {
     // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:
-    unsigned int mstatus = get_mstatus();
-    mstatus |= (1 << MSTATUS_MPIE_BIT);
+    uint64_t mstatus = get_mstatus();
+    // mstatus |= (1 << MSTATUS_MPIE_BIT);
+    mstatus |= (1 << MSTATUS_SPIE_BIT);
     set_mstatus(mstatus);
 
     // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
-    unsigned int mie = (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT);
+    // unsigned int mie = (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT);
+    uint64_t mie = (1 << MIE_STIE_BIT) | (1 << MIE_SEIE_BIT);
     set_mie(mie);
 }
 
 void set_mtvec(void *ptr) {
     asm volatile (
-        "csrw   mtvec, %0;" // set mtvec to the requested value
+        "csrw   stvec, %0;" // set mtvec to the requested value
         :                   // no output
         : "r"(ptr)          // input in ptr
     );

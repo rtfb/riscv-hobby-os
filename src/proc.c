@@ -20,7 +20,7 @@ void init_process_table(uint32_t runflags) {
     for (int i = 0; i < 14; i++) {
         cpu.context.regs[i] = 0;
     }
-    unsigned int hart_id = get_mhartid();
+    unsigned int hart_id = 0; // get_mhartid();
     cpu.context.regs[REG_SP] = (regsize_t)(&stack_top - hart_id*PAGE_SIZE);
 }
 
@@ -38,12 +38,24 @@ void sleep_scheduler() {
     // flag immediately, instead of setting the MPIE flag. That's because we
     // don't call mret in this code path, which reacts to the pending interrupt
     // enable flag.
-    unsigned int mstatus = get_mstatus();
-    mstatus |= ((1 << 3) | (1 << 7));
+    uint64_t mstatus = get_mstatus();
+    // mstatus |= ((1 << 3) | (1 << 7));
+    mstatus |= ((1 << MSTATUS_SIE_BIT) | (1 << MSTATUS_SPIE_BIT));
     set_mstatus(mstatus);
-    set_mie(1 << 7);
+    // set_mie(1 << 7);
+    set_mie((1 << MIE_SEIE_BIT) | (1 << MIE_STIE_BIT));
+
+    uint64_t sstatus = get_mstatus();
+    kprintf("sstatusH=0x%x\n", sstatus >> 32);
+    kprintf("sstatusL=0x%x\n", sstatus & 0xffffffff);
 
     park_hart();
+//    for (int i = 0; ; i++) {
+//        if (i % 1000000 == 0) {
+//            uint64_t tm = time_get_now();
+//            kprintf("tm=%d\n", tm);
+//        }
+//    }
 }
 
 void scheduler() {
@@ -55,6 +67,7 @@ void scheduler() {
                 // we have checked all procs and didn't find anything to run,
                 // so enable interrupts and sleep, as there's nothing to
                 // schedule now
+                kprintf("sleep_scheduler()");
                 sleep_scheduler();
             }
             process_t *p = &proc_table.procs[i];
@@ -74,6 +87,7 @@ void scheduler() {
                 cpu.proc = p;
                 // switch context into p. This will not return until p itself
                 // does not call swtch().
+                kprintf("swtch()");
                 swtch(&cpu.context, &p->ctx);
                 i_after_wakeup = i;
                 new_loop = 0;

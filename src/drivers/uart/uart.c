@@ -16,19 +16,19 @@ void uart_init() {
     uart0.rx_buff_full = 0;
 
     // enable reading:
-    *(uint32_t*)(UART_BASE + UART_RXCTRL) = 1;
+    //*(uint32_t*)(UART_BASE + UART_RXCTRL) = 1;
 
     // enable read interrupts:
-    *(uint32_t*)(UART_BASE + UART_IE) = UART_IE_RXWM;
+    // *(uint32_t*)(UART_BASE + UART_IE) = UART_IE_RXWM;
 
     // set baud divisor (the SiFive FE310-G002 manual lists a table of possible
     // values in Section 18.9, determined this particular choice
     // experimentally. Furthermore, it's the default on HiFive1-revB board):
-    *(uint32_t*)(UART_BASE + UART_BAUD_RATE_DIVISOR) = 138;
+    // *(uint32_t*)(UART_BASE + UART_BAUD_RATE_DIVISOR) = 138;
 
-    plic_enable_intr(UART0_IRQ_NUM);
-    plic_set_intr_priority(UART0_IRQ_NUM, PLIC_MAX_PRIORITY);
-    plic_set_threshold(PLIC_MAX_PRIORITY - 1);
+    // plic_enable_intr(UART0_IRQ_NUM);
+    // plic_set_intr_priority(UART0_IRQ_NUM, PLIC_MAX_PRIORITY);
+    // plic_set_threshold(PLIC_MAX_PRIORITY - 1);
 }
 
 void uart_handle_interrupt() {
@@ -54,6 +54,7 @@ int _decrement_wpos(int wpos) {
 }
 
 int uart_enqueue_chars() {
+    /*
     volatile int32_t* rx = (int32_t*)(UART_BASE + UART_RXDATA);
     int wpos = uart0.rx_wpos;
     int num_enqueued = 0;
@@ -101,13 +102,15 @@ int uart_enqueue_chars() {
     }
     uart0.rx_wpos = wpos;
     return num_enqueued;
+    */
+    return 0;
 }
 
-void uart_writechar(char ch) {
-    volatile int32_t* tx = (int32_t*)(UART_BASE + UART_TXDATA);
-    while ((int32_t)(*tx) < 0);
-    *tx = ch;
-}
+// void uart_writechar(char ch) {
+//     volatile int32_t* tx = (int32_t*)(UART_BASE + UART_TXDATA);
+//     while ((int32_t)(*tx) < 0);
+//     *tx = ch;
+// }
 
 // _can_read_from checks whether the internal state of a given uart device
 // allows reading from it.
@@ -156,15 +159,22 @@ int32_t uart_readline(char* buf, uint32_t bufsize) {
 
 int32_t uart_print(char const* data, uint32_t size) {
     if (size == -1) {
-        lcd_print(data);
+        // lcd_print(data);
         return uart_prints(data);
     }
-    lcd_printn(data, size);
+    // lcd_printn(data, size);
     int i = 0;
     while (i < size) {
         uart_printc(data[i]);
         i++;
     }
+
+    // spin while TX status is busy
+    volatile int32_t* status_reg = (int32_t*)(UART_BASE + UART_REG_STATUS);
+    uint32_t status = 0;
+    do {
+        status = *status_reg;
+    } while((status & 1) != 0);
     return i;
 }
 
