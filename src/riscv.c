@@ -109,6 +109,22 @@ void set_mscratch(void* ptr) {
     );
 }
 
+void set_mie(unsigned int value) {
+    asm volatile (
+        "csrs   mie, %0;"   // set mie to the requested value
+        :                   // no output
+        : "r"(value)        // input in value
+    );
+}
+
+void set_mtvec(void *ptr) {
+    asm volatile (
+        "csrw   mtvec, %0;" // set mtvec to the requested value
+        :                   // no output
+        : "r"(ptr)          // input in ptr
+    );
+}
+
 void set_timer_after(uint64_t delta) {
     unsigned int hart_id = get_mhartid();
     uint64_t *mtime = (uint64_t*)MTIME;

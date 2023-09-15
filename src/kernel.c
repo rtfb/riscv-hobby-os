@@ -86,14 +86,6 @@ void kernel_plic_handler() {
     enable_interrupts();
 }
 
-void set_mie(unsigned int value) {
-    asm volatile (
-        "csrs   mie, %0;"   // set mie to the requested value
-        :                   // no output
-        : "r"(value)        // input in value
-    );
-}
-
 void disable_interrupts() {
     unsigned int mstatus = get_mstatus();
     mstatus &= ~(1 << 3);
@@ -110,12 +102,4 @@ void enable_interrupts() {
     // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
     unsigned int mie = (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT);
     set_mie(mie);
-}
-
-void set_mtvec(void *ptr) {
-    asm volatile (
-        "csrw   mtvec, %0;" // set mtvec to the requested value
-        :                   // no output
-        : "r"(ptr)          // input in ptr
-    );
 }
