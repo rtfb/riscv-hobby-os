@@ -18,7 +18,7 @@
 extern void* user_payload;
 extern void* rodata;
 
-// defined in baremetal.ld:
+// defined in kernel.ld:
 extern void* stack_bottom;
 extern void* stack_top;
 

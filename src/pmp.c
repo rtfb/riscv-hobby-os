@@ -18,7 +18,7 @@
 // > PMP entries are statically prioritized. The lowest-numbered PMP entry that matches any byte
 // > of an access determines whether that access succeeds or fails.
 
-// defined in baremetal.ld:
+// defined in kernel.ld:
 extern void* RAM_START;
 extern void* RAM_SIZE;
 

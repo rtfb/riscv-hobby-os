@@ -116,7 +116,7 @@ gdb: $(FREEDOM_SDK_DIR)
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
           -fno-plt -fno-pic \
-          -Tsrc/baremetal.ld -Iinclude -Iuser/inc
+          -Tsrc/kernel.ld -Iinclude -Iuser/inc
 
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
