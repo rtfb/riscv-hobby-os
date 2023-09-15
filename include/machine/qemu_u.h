@@ -13,4 +13,6 @@
 //      SIFIVE_U_DEV_GPIO = 0x10060000
 #define GPIO_BASE 0x10060000
 
+#define CLINT0_BASE_ADDRESS   0x2000000
+
 #endif // ifndef _QEMU_U_H_

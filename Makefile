@@ -66,7 +66,7 @@ runb: run-baremetal
 runs: run-spike
 
 TEST_DEPS = src/baremetal-fib.s src/uart-print.s src/baremetal-poweroff.s
-USER_DEPS = src/boot.s src/uart-print.s src/baremetal-poweroff.s src/kernel.c \
+USER_DEPS = src/boot.S src/uart-print.s src/baremetal-poweroff.s src/kernel.c \
 			src/syscalls.c src/pmp.c src/riscv.c src/fdt.c src/string.c \
 			src/proc_test.c src/spinlock.c src/proc.c src/context.s \
 			src/pagealloc.c src/fs.c src/bakedinfs.c src/runflags.c \

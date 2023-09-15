@@ -18,4 +18,6 @@
 //      reg = <0x10012000 0x1000>;
 #define GPIO_BASE 0x10012000
 
+#define CLINT0_BASE_ADDRESS   0x2000000
+
 #endif // ifndef _HIFIVE1_REVB_
