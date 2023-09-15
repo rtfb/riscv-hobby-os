@@ -18,14 +18,14 @@ _start:
         la      t0, early_trap_vector
         csrw    mtvec, t0
 
-.ifndef NO_S_MODE
+#ifndef NO_S_MODE
         csrwi   mideleg, 0              // disable trap delegation, all interrupts and exceptions will be handled in machine mode
         csrwi   medeleg, 0              // 3.1.8 Machine Trap Delegation Registers (medeleg and mideleg)
                                         // > In systems with S-mode, the medeleg and mideleg registers must exist, and
                                         // > setting a bit in medeleg or mideleg will delegate the corresponding trap,
                                         // > when occurring in S-mode or U-mode, to the S-mode trap handler. In systems
                                         // > without S-mode, the medeleg and mideleg registers should not exist.
-.endif
+#endif
 
                                         // setup stack pointer:
         la      t0, stack_top           // set it at stack_top for hart0,

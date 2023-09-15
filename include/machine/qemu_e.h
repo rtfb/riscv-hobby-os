@@ -17,4 +17,6 @@
 
 #define CLINT0_BASE_ADDRESS   0x2000000
 
+#define NUM_HARTS   1
+
 #endif // ifndef _QEMU_E_H_

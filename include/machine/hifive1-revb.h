@@ -20,4 +20,8 @@
 
 #define CLINT0_BASE_ADDRESS   0x2000000
 
+#define NO_S_MODE   1
+
+#define NUM_HARTS   1
+
 #endif // ifndef _HIFIVE1_REVB_
