@@ -13,7 +13,7 @@
             srci++;                                                    \
             c = fmt[srci];                                             \
             if (c == '%') {                                            \
-                buf[dsti] = '%';                                       \
+                _PRINTF_WRITE_CHAR('%');                               \
             } else {                                                   \
                 char const* tmp;                                       \
                 switch (c) {                                           \
@@ -29,6 +29,10 @@
                         int i = args[argnum++];                        \
                         tmp = _PRINT_RADIX(i, 10, rbuf, rbufsz);       \
                         break;                                         \
+                    case 'p':                                          \
+                        /* do a 0x, then fallthrough to do %x: */      \
+                        _PRINTF_WRITE_CHAR('0');                       \
+                        _PRINTF_WRITE_CHAR('x');                       \
                     case 'x':                                          \
                         ;                                              \
                         int h = args[argnum++];                        \
@@ -39,7 +43,7 @@
                         break;                                         \
                 }                                                      \
                 for (; *tmp != 0; tmp++) {                             \
-                    buf[dsti] = *tmp;                                  \
+                    _PRINTF_WRITE_CHAR(*tmp);                          \
                     dsti++;                                            \
                     if (dsti >= bufsize) {                             \
                         return dsti;                                   \
@@ -48,7 +52,7 @@
                 dsti--;                                                \
             }                                                          \
         } else {                                                       \
-            buf[dsti] = c;                                             \
+            _PRINTF_WRITE_CHAR(c);                                     \
         }                                                              \
         srci++;                                                        \
         dsti++;                                                        \

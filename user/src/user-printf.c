@@ -11,8 +11,10 @@ char const* _userland print_radix(regsize_t num, int radix, char *buf, unsigned 
 }
 
 int32_t _userland printfvecbuf(char const* fmt, regsize_t* args, int nargs, char *buf, int bufsize) {
+    #define _PRINTF_WRITE_CHAR(c) buf[dsti] = c
     #define _PRINT_RADIX print_radix
     PRINTF_IMPL;
+    #undef _PRINTF_WRITE_CHAR
     #undef _PRINT_RADIX
 }
 

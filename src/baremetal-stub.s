@@ -7,7 +7,7 @@
 _start:
         csrr    a0, mhartid             # read hardware thread id (`hart` stands for `hardware thread`)
         la      sp, stack_top           # setup stack pointer
-                                        # will allocate uart_printf() arguments on the stack
+                                        # will allocate kprintf() arguments on the stack
 
         li      t0, STACK_PER_HART      # stack size per hart
         mul     t0, t0, a0
@@ -16,7 +16,7 @@ _start:
         bnez    a0, park
 
         la      a0, print_hello_str
-        call    uart_printf
+        call    kprintf
 
 park:
         wfi

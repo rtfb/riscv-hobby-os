@@ -24,7 +24,9 @@ void set_timer_after(uint64_t delta);
 // point, so will just leave this note here as a reminder and we can implement
 // it later.
 // (docs: https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Function-Attributes.html)
-void kprintf(char const *msg, ...);
+extern void kprintf(char const *msg, ...);
+
+extern int32_t kprintfvec(char const* fmt, regsize_t* args);
 
 // implemented in userland.c
 extern void user_entry_point();
