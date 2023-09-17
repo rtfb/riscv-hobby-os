@@ -3,6 +3,6 @@ kinit: cpu 0
 Reading FDT...
 FDT ok
 bootargs: dry-run
-kprintf test several params: foo, 0xF10A, 0
+kprintf test several params: foo, 0xf10a, 0
 
 qemu-launcher: killing qemu due to timeout
