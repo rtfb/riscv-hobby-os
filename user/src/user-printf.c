@@ -37,16 +37,19 @@ char const* _userland print_radix(regsize_t num, int radix, char *buf, unsigned 
 }
 
 // printfvec does formatted output. It formats the output into an internal
-// buffer and then calls sys_puts with it. The buffer is limited to 96
-// characters, which, together with other stack variables is more than 1/4th of
-// our entire stack frame, we can't afford more.
+// buffer and then calls sys_puts with it. The buffer is an entire page, and
+// it's freed at the end of function. If allocation fails, printfvec returns
+// -1.
 //
 // Returns the size of the resulting formatted string.
 //
 // It supports the following verbs: %c, %d, %s, %x.
 int32_t _userland printfvec(char const* fmt, regsize_t* args) {
     int argnum = 0;
-    char buf[96];
+    char* buf = (char*)pgalloc();
+    if (!buf) {
+        return -1;
+    }
     int srci = 0;
     int dsti = 0;
     const int rbufsz = 16;
@@ -95,7 +98,9 @@ int32_t _userland printfvec(char const* fmt, regsize_t* args) {
         dsti++;
     }
     buf[dsti] = 0;
-    return write(1, buf, dsti);
+    int32_t nwritten = write(1, buf, dsti);
+    pgfree(buf);
+    return nwritten;
 }
 
 // prints is a convenience wrapper around the write() system call, it defaults
