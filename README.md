@@ -31,25 +31,7 @@ Make targets
 ------------
 
 * `make prereqs` -- apt-get the prerequisites.
-* `make clone` -- clone the relevant source code.
 * `make qemu` -- build Qemu for RISC-V.
-
-RISC-V ELF executable in SPIKE
-==============================
-
-Run a RISC-V ELF executable in [SPIKE][spike] a standard RISC-V ISA simulator.
-
-As of this writing, these are the latest versions of the software involved:
-* Qemu: `v5.1.0`
-* Spike" `v1.0.1-dev`
-* RISC-V GNU toolchain: `10.1.0`
-
-TODO: install Spike
-
-Make targets
-------------
-
-`make run-spike` -- build RISC-V ELF executable and launch it via SPIKE.
 
 RISC-V Quick References
 =======================
@@ -64,7 +46,6 @@ RISC-V Quick References
 [custom-kernel-tutorial]: http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
 [riscv-hello-asm]: https://github.com/noteed/riscv-hello-asm
 [riscv-hello-asm2]: https://theintobooks.wordpress.com/2019/12/28/hello-world-on-risc-v-with-qemu
-[spike]: https://github.com/riscv/riscv-isa-sim
 
 [riscv-asm-sheet]: https://github.com/jameslzhu/riscv-card/blob/master/riscv-card.pdf
 [riscv-asm-man]: https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md

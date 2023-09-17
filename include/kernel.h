@@ -28,8 +28,4 @@ extern void kprintf(char const *msg, ...);
 
 extern int32_t kprintfvec(char const* fmt, regsize_t* args);
 
-// implemented in userland.c
-extern void user_entry_point();
-extern void user_entry_point2();
-
 #endif // ifndef _KERNEL_H_

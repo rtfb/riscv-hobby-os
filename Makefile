@@ -15,16 +15,6 @@ RISCV64_OBJCOPY ?= riscv64-linux-gnu-objcopy
 ifeq (, $(shell which $(RISCV64_OBJCOPY)))
 	RISCV64_OBJCOPY = riscv64-unknown-elf-objcopy
 endif
-# Spike, the RISC-V ISA Simulator (https://github.com/riscv/riscv-isa-sim)
-SPIKE ?= ./riscv-isa-sim/build/build/bin/spike
-ifeq ($(wildcard $(SPIKE)),)
-	SPIKE = spike
-endif
-# Proxy Kernel, a lightweight app execution environment that can host RISC-V ELF binaries (https://github.com/riscv/riscv-pk)
-RISCV_PK ?= riscv-pk/build/build/riscv64-linux-gnu/bin/pk
-ifeq ($(wildcard $(RISCV_PK)),)
-	RISCV_PK = pk
-endif
 
 FREEDOM_SDK_DIR := sifive-freedom-toolchain
 GDB := $(FREEDOM_SDK_DIR)/*/bin/riscv64-unknown-elf-gdb
@@ -59,7 +49,6 @@ baremetal: all
 run32: run-baremetal32
 runm: run-baremetal
 runb: run-baremetal
-runs: run-spike
 
 USER_DEPS = src/boot.S src/kprintf.c src/kprintf.s src/baremetal-poweroff.s src/kernel.c \
 			src/syscalls.c src/pmp.c src/riscv.c src/fdt.c src/string.c \
@@ -209,9 +198,6 @@ debug-board: $(OUT)/user_hifive1_revb
 	JLinkGDBServer -device RISC-V -port 1234 &
 	$(GDB) $< -ex "set remotetimeout 240" -ex "target extended-remote localhost:1234"
 
-run-spike: elf
-	$(SPIKE) $(RISCV_PK) generic-elf/hello bbl loader
-
 clean:
 	rm -Rf $(OUT)
 
@@ -227,10 +213,6 @@ $(FREEDOM_SDK_DIR):
 	mkdir -p $@
 	wget -qO- "$(SIFIVE_TOOLCHAIN_URL)" | tar xzv -C "$@"
 
-clone:
-	git clone https://github.com/riscv/riscv-isa-sim
-	git clone https://github.com/riscv/riscv-pk
-
 .PHONY: qemu
 qemu:
 	./scripts/build-qemu.sh
@@ -241,7 +223,3 @@ QEMU_DOCKER_IMG_NAME := qemu-image
 .PHONY: build-qemu-image
 build-qemu-image:
 	docker build -f scripts/Dockerfile -t ${QEMU_DOCKER_IMG_NAME} .
-
-$(OUT)/generic-elf/hello:
-	@mkdir -p $(OUT)/generic-elf
-	$(RISCV64_GCC) -static -o $@ src/generic-elf/hello.c src/generic-elf/hiasm.S
