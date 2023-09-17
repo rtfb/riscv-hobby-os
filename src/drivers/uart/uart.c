@@ -154,6 +154,21 @@ int32_t uart_readline(char* buf, uint32_t bufsize) {
     return nread;
 }
 
+int32_t uart_prints(char const* data) {
+    while (*data) {
+        uart_printc(*data++);
+    }
+}
+
+int32_t uart_printc(char c) {
+    uint32_t *tx_fifo = (uint32_t*)(UART_BASE + UART_TXDATA);
+    int32_t tx = -1;
+    while (tx < 0) {
+        tx = *tx_fifo;
+    }
+    *tx_fifo = c;
+}
+
 int32_t uart_print(char const* data, uint32_t size) {
     if (size == -1) {
         lcd_print(data);

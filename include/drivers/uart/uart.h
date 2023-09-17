@@ -62,9 +62,7 @@ int32_t uart_print(char const* data, uint32_t size);
 
 int32_t uart_read(file_t* f, uint32_t pos, void* buf, uint32_t bufsize);
 int32_t uart_write(file_t* f, uint32_t pos, void* buf, uint32_t bufsize);
-
-// implemented in uart-print.s
-extern int32_t uart_prints(char const* data);
-extern int32_t uart_printc(char c);
+int32_t uart_prints(char const* data);
+int32_t uart_printc(char c);
 
 #endif // ifndef _UART_H_
