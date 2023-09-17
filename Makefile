@@ -61,7 +61,6 @@ runm: run-baremetal
 runb: run-baremetal
 runs: run-spike
 
-TEST_DEPS = src/baremetal-fib.s src/kprintf.c src/uart-print.s src/baremetal-poweroff.s
 USER_DEPS = src/boot.S src/kprintf.c src/kprintf.s src/baremetal-poweroff.s src/kernel.c \
 			src/syscalls.c src/pmp.c src/riscv.c src/fdt.c src/string.c \
 			src/proc_test.c src/spinlock.c src/proc.c src/context.s \
@@ -156,47 +155,6 @@ $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 		-D UART_BASE=0x10013000 \
 		-include include/machine/hifive1-revb.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
-
-$(OUT)/test_sifive_u: ${TEST_SIFIVE_U_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-include include/machine/qemu_u.h \
-		${TEST_SIFIVE_U_DEPS} -o $@
-
-$(OUT)/test_sifive_u32: ${TEST_SIFIVE_U32_DEPS}
-	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
-		-Wa,--defsym,XLEN=32 \
-		-include include/machine/qemu_u.h \
-		${TEST_SIFIVE_U32_DEPS} -o $@
-
-$(OUT)/test_sifive_e: ${TEST_SIFIVE_E_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wl,--defsym,ROM_START=0x20400000 \
-		-D UART_BASE=0x10013000 \
-		-include include/machine/qemu_e.h \
-		${TEST_SIFIVE_E_DEPS} -o $@
-
-$(OUT)/test_sifive_e32: ${TEST_SIFIVE_E32_DEPS}
-	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
-		-Wl,--defsym,ROM_START=0x20400000 \
-		-Wa,--defsym,XLEN=32 \
-		-D UART_BASE=0x10013000 \
-		-include include/machine/qemu_e.h \
-		${TEST_SIFIVE_E32_DEPS} -o $@
-
-$(OUT)/test_virt: ${TEST_VIRT_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wa,--defsym,QEMU_EXIT=0x100000 \
-		-D UART_BASE=0x10000000 \
-		-include include/machine/qemu_e.h \
-		${TEST_VIRT_DEPS} -o $@
-
-.PHONY: test
-test: $(OUT)/test-output.txt
-	@diff -u testdata/want-output.txt $<
-	@echo "OK"
-
-$(OUT)/test-output.txt: $(OUT)/test_virt
-	@$(QEMU_LAUNCHER) --machine=virt --binary=$< > $@
 
 $(OUT)/test-output-u64.txt: $(OUT)/user_sifive_u
 	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
