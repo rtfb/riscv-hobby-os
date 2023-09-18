@@ -1,4 +1,3 @@
-.include "src/machine-word.inc"
 #include "syscallnums.h"
 
 .macro  macro_syscall nr

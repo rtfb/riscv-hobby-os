@@ -50,13 +50,13 @@ run32: run-baremetal32
 runm: run-baremetal
 runb: run-baremetal
 
-USER_DEPS = src/boot.S src/kprintf.c src/kprintf.s src/baremetal-poweroff.s src/kernel.c \
+USER_DEPS = src/boot.S src/kprintf.c src/kprintf.S src/baremetal-poweroff.S src/kernel.c \
 			src/syscalls.c src/pmp.c src/riscv.c src/fdt.c src/string.c \
-			src/proc_test.c src/spinlock.c src/proc.c src/context.s \
+			src/proc_test.c src/spinlock.c src/proc.c src/context.S \
 			src/pagealloc.c src/fs.c src/bakedinfs.c src/runflags.c \
 			src/pipe.c src/drivers/drivers.c src/drivers/uart/uart.c \
 			src/drivers/hd44780/hd44780.c src/plic.c src/gpio.c \
-			user/src/userland.c user/src/usyscalls.S user/src/user-printf.s \
+			user/src/userland.c user/src/usyscalls.S user/src/user-printf.S \
 			user/src/user-printf.c user/src/shell.c user/src/ustr.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 USER_SIFIVE_U_DEPS = $(USER_DEPS)
@@ -101,6 +101,7 @@ GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
           -fno-plt -fno-pic \
           --param=case-values-threshold=20 \
+          -Wa,-Iinclude \
           -Tsrc/kernel.ld -Iinclude -Iuser/inc
 
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}

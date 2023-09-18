@@ -1,4 +1,4 @@
-.include "src/machine-word.inc"
+#include "asm.h"
 .balign 4
 
 .section .text

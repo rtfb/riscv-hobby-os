@@ -1,4 +1,4 @@
-.include "src/machine-word.inc"
+#include "asm.h"
 .equ HALT_ON_EXCEPTION, 1
 .equ BOOT_HART_ID, 0
 
@@ -187,55 +187,55 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
         csrrw   t6, mscratch, t6
 
         // save all user registers in trap_frame:
-        sx       x1,  0, (t6)
-        sx       x2,  1, (t6)
-        sx       x3,  2, (t6)
-        sx       x4,  3, (t6)
-        sx       x5,  4, (t6)
-        sx       x6,  5, (t6)
-        sx       x7,  6, (t6)
-        sx       x8,  7, (t6)
-        sx       x9,  8, (t6)
-        sx      x10,  9, (t6)
-        sx      x11, 10, (t6)
-        sx      x12, 11, (t6)
-        sx      x13, 12, (t6)
-        sx      x14, 13, (t6)
-        sx      x15, 14, (t6)
-        sx      x16, 15, (t6)
-        sx      x17, 16, (t6)
-        sx      x18, 17, (t6)
-        sx      x19, 18, (t6)
-        sx      x20, 19, (t6)
-        sx      x21, 20, (t6)
-        sx      x22, 21, (t6)
-        sx      x23, 22, (t6)
-        sx      x24, 23, (t6)
-        sx      x25, 24, (t6)
-        sx      x26, 25, (t6)
-        sx      x27, 26, (t6)
-        sx      x28, 27, (t6)
-        sx      x29, 28, (t6)
-        sx      x30, 29, (t6)
+        OP_STOR  x1,  0*REGSZ(t6)
+        OP_STOR  x2,  1*REGSZ(t6)
+        OP_STOR  x3,  2*REGSZ(t6)
+        OP_STOR  x4,  3*REGSZ(t6)
+        OP_STOR  x5,  4*REGSZ(t6)
+        OP_STOR  x6,  5*REGSZ(t6)
+        OP_STOR  x7,  6*REGSZ(t6)
+        OP_STOR  x8,  7*REGSZ(t6)
+        OP_STOR  x9,  8*REGSZ(t6)
+        OP_STOR x10,  9*REGSZ(t6)
+        OP_STOR x11, 10*REGSZ(t6)
+        OP_STOR x12, 11*REGSZ(t6)
+        OP_STOR x13, 12*REGSZ(t6)
+        OP_STOR x14, 13*REGSZ(t6)
+        OP_STOR x15, 14*REGSZ(t6)
+        OP_STOR x16, 15*REGSZ(t6)
+        OP_STOR x17, 16*REGSZ(t6)
+        OP_STOR x18, 17*REGSZ(t6)
+        OP_STOR x19, 18*REGSZ(t6)
+        OP_STOR x20, 19*REGSZ(t6)
+        OP_STOR x21, 20*REGSZ(t6)
+        OP_STOR x22, 21*REGSZ(t6)
+        OP_STOR x23, 22*REGSZ(t6)
+        OP_STOR x24, 23*REGSZ(t6)
+        OP_STOR x25, 24*REGSZ(t6)
+        OP_STOR x26, 25*REGSZ(t6)
+        OP_STOR x27, 26*REGSZ(t6)
+        OP_STOR x28, 27*REGSZ(t6)
+        OP_STOR x29, 28*REGSZ(t6)
+        OP_STOR x30, 29*REGSZ(t6)
 
         // x31 is the same as t6, so store it below with a bit of juggling:
         mv      t0, t6
         csrrw   t6, mscratch, t6
-        sx      t6, 30, (t0)
+        OP_STOR t6, 30*REGSZ(t0)
 
         csrr    t6, mepc
-        sx      t6, 31, (t0)
+        OP_STOR t6, 31*REGSZ(t0)
 
         // Restore sp from cpu.proc->ctx[REG_SP].
         la      t0, cpu
-        lx      t0, 0, (t0)  # t0 = cpu.proc
+        OP_LOAD t0, 0*REGSZ(t0)  // t0 = cpu.proc
         // cpu.proc may be NULL, so we check for that and if so, jump to
         // set_global_stack. This can happen if the CPU had nothing to schedule
         // and was idling.
         beq     x0, t0, set_global_stack
-        lx      sp, 2, (t0)  // (*process_t)[0] => lock
-                             // (*process_t)[1] => ctx[0] (RA)
-                             // (*process_t)[2] => ctx[1] (SP)
+        OP_LOAD sp, 2*REGSZ(t0)  // (*process_t)[0] => lock
+                                 // (*process_t)[1] => ctx[0] (RA)
+                                 // (*process_t)[2] => ctx[1] (SP)
         j       stack_done
 
 set_global_stack:
@@ -333,22 +333,22 @@ exception_dispatch:
 syscall_dispatch:
         call    syscall
         la      t0, cpu
-        lx      t0,  0,  (t0)  // t0 = cpu.proc
-                               // (*process_t)[0] => lock, we skip that
-        sx      ra,  1,  (t0)  // (*process_t)[1] => ctx[0] (RA)
-        sx      sp,  2,  (t0)  // (*process_t)[2] => ctx[1] (SP)
-        sx      s0,  3,  (t0)  // (*process_t)[3] => ctx[2] (S0, etc)
-        sx      s1,  4,  (t0)  // (*process_t)[4] => ctx[3]
-        sx      s2,  5,  (t0)  // (*process_t)[5] => ctx[4]
-        sx      s3,  6,  (t0)  // (*process_t)[6] => ctx[5]
-        sx      s4,  7,  (t0)  // (*process_t)[7] => ctx[6]
-        sx      s5,  8,  (t0)  // (*process_t)[8] => ctx[7]
-        sx      s6,  9,  (t0)  // (*process_t)[9] => ctx[8]
-        sx      s7,  10, (t0)  // (*process_t)[10] => ctx[9]
-        sx      s8,  11, (t0)  // (*process_t)[11] => ctx[10]
-        sx      s9,  12, (t0)  // (*process_t)[12] => ctx[11]
-        sx      s10, 13, (t0)  // (*process_t)[13] => ctx[12]
-        sx      s11, 14, (t0)  // (*process_t)[14] => ctx[13]
+        OP_LOAD t0,  0*REGSZ(t0)   // t0 = cpu.proc
+                                   // (*process_t)[0] => lock, we skip that
+        OP_STOR ra,   1*REGSZ(t0)  // (*process_t)[1] => ctx[0] (RA)
+        OP_STOR sp,   2*REGSZ(t0)  // (*process_t)[2] => ctx[1] (SP)
+        OP_STOR s0,   3*REGSZ(t0)  // (*process_t)[3] => ctx[2] (S0, etc)
+        OP_STOR s1,   4*REGSZ(t0)  // (*process_t)[4] => ctx[3]
+        OP_STOR s2,   5*REGSZ(t0)  // (*process_t)[5] => ctx[4]
+        OP_STOR s3,   6*REGSZ(t0)  // (*process_t)[6] => ctx[5]
+        OP_STOR s4,   7*REGSZ(t0)  // (*process_t)[7] => ctx[6]
+        OP_STOR s5,   8*REGSZ(t0)  // (*process_t)[8] => ctx[7]
+        OP_STOR s6,   9*REGSZ(t0)  // (*process_t)[9] => ctx[8]
+        OP_STOR s7,  10*REGSZ(t0)  // (*process_t)[10] => ctx[9]
+        OP_STOR s8,  11*REGSZ(t0)  // (*process_t)[11] => ctx[10]
+        OP_STOR s9,  12*REGSZ(t0)  // (*process_t)[12] => ctx[11]
+        OP_STOR s10, 13*REGSZ(t0)  // (*process_t)[13] => ctx[12]
+        OP_STOR s11, 14*REGSZ(t0)  // (*process_t)[14] => ctx[13]
         j       ret_to_user
 
 exception_epilogue:
@@ -369,51 +369,51 @@ exception:
                                         //                  t0, t1 - done in exception_dispatch
                                         //                  sp, gp, tp - not changed
                                         //                  s0..s7 - preserved inside functions
-        sx      x1,   1, (sp)           // ra :: x1
-        sx      x7,   7, (sp)           // t2 :: x7
-        sx      x10, 10, (sp)           // a0 :: x10
-        sx      x11, 11, (sp)
-        sx      x12, 12, (sp)
-        sx      x13, 13, (sp)
-        sx      x14, 14, (sp)
-        sx      x15, 15, (sp)
-        sx      x16, 16, (sp)
-        sx      x17, 17, (sp)           // a7 :: x17
-        sx      x28, 28, (sp)           // t3 :: x28
-        sx      x29, 29, (sp)
-        sx      x30, 30, (sp)
-        sx      x31, 31, (sp)           // t6 :: x31
+        OP_STOR x1,   1*REGSZ(sp)       // ra :: x1
+        OP_STOR x7,   7*REGSZ(sp)       // t2 :: x7
+        OP_STOR x10, 10*REGSZ(sp)       // a0 :: x10
+        OP_STOR x11, 11*REGSZ(sp)
+        OP_STOR x12, 12*REGSZ(sp)
+        OP_STOR x13, 13*REGSZ(sp)
+        OP_STOR x14, 14*REGSZ(sp)
+        OP_STOR x15, 15*REGSZ(sp)
+        OP_STOR x16, 16*REGSZ(sp)
+        OP_STOR x17, 17*REGSZ(sp)       // a7 :: x17
+        OP_STOR x28, 28*REGSZ(sp)       // t3 :: x28
+        OP_STOR x29, 29*REGSZ(sp)
+        OP_STOR x30, 30*REGSZ(sp)
+        OP_STOR x31, 31*REGSZ(sp)       // t6 :: x31
 
         csrr    t0, mcause
         csrr    t1, mepc
         csrr    t2, mtval
         la      t3, user_payload
         la      t4, stack_top
-        stackalloc_x 5
-        sx      t0, 0, (sp)
-        sx      t1, 1, (sp)
-        sx      t2, 2, (sp)
-        sx      t3, 3, (sp)
-        sx      t4, 4, (sp)
+        addi    sp, sp, -5*REGSZ
+        OP_STOR t0, 0*REGSZ(sp)
+        OP_STOR t1, 1*REGSZ(sp)
+        OP_STOR t2, 2*REGSZ(sp)
+        OP_STOR t3, 3*REGSZ(sp)
+        OP_STOR t4, 4*REGSZ(sp)
         la      a0, msg_exception
         mv      a1, sp
         call    kprintfvec
-        stackfree_x 5
+        addi    sp, sp, 5*REGSZ
 
-        lx      x1,   1, (sp)           // ra :: x1
-        lx      x7,   7, (sp)           // t2 :: x7
-        lx      x10, 10, (sp)           // a0 :: x10
-        lx      x11, 11, (sp)
-        lx      x12, 12, (sp)
-        lx      x13, 13, (sp)
-        lx      x14, 14, (sp)
-        lx      x15, 15, (sp)
-        lx      x16, 16, (sp)
-        lx      x17, 17, (sp)           // a7 :: x17
-        lx      x28, 28, (sp)           // t3 :: x28
-        lx      x29, 29, (sp)
-        lx      x30, 30, (sp)
-        lx      x31, 31, (sp)           // t6 :: x31
+        OP_LOAD x1,   1*REGSZ(sp)       // ra :: x1
+        OP_LOAD x7,   7*REGSZ(sp)       // t2 :: x7
+        OP_LOAD x10, 10*REGSZ(sp)       // a0 :: x10
+        OP_LOAD x11, 11*REGSZ(sp)
+        OP_LOAD x12, 12*REGSZ(sp)
+        OP_LOAD x13, 13*REGSZ(sp)
+        OP_LOAD x14, 14*REGSZ(sp)
+        OP_LOAD x15, 15*REGSZ(sp)
+        OP_LOAD x16, 16*REGSZ(sp)
+        OP_LOAD x17, 17*REGSZ(sp)       // a7 :: x17
+        OP_LOAD x28, 28*REGSZ(sp)       // t3 :: x28
+        OP_LOAD x29, 29*REGSZ(sp)
+        OP_LOAD x30, 30*REGSZ(sp)
+        OP_LOAD x31, 31*REGSZ(sp)       // t6 :: x31
         j       exception_epilogue
 
 interrupt_noop:
@@ -435,26 +435,12 @@ loop:      wfi                  // parked hart will sleep waiting for interrupt
 .globl user_payload
 user_payload:
 
-a_string_in_user_mem:
-        .string "This is a test string in user memory"
-.globl a_string_in_user_mem_ptr
-a_string_in_user_mem_ptr:
-        pointer a_string_in_user_mem
-.globl msg_m_hello_ptr
-msg_m_hello_ptr:
-        pointer msg_m_hello
-
-msg_call_printf:
-        .string "Illegal call to function in protected memory: "  // XXX: unused
-
 //## Data ######################################################################
 //
 
 .section .rodata
 .globl rodata
 rodata:
-msg_m_hello:
-        .string "Hello from M-mode!\n"
 msg_exception:
         .string "Exception occurred, mcause:%p mepc:%p mtval:%p (user payload at:%p, stack top:%p).\n"
 
