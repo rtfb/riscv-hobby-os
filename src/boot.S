@@ -397,7 +397,7 @@ exception:
         sx      t4, 4, (sp)
         la      a0, msg_exception
         mv      a1, sp
-        call    kprintf
+        call    kprintfvec
         stackfree_x 5
 
         lx      x1,   1, (sp)           // ra :: x1
