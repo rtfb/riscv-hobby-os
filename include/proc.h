@@ -128,7 +128,7 @@ void swtch(context_t *old, context_t *new);
 void init_test_processes(uint32_t runflags);
 void assign_init_program(char const* prog);
 
-void init_process_table(uint32_t runflags);
+void init_process_table(uint32_t runflags, unsigned int hart_id);
 void scheduler();
 void sched();
 void forkret();

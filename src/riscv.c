@@ -2,12 +2,7 @@
 #include "asm.h"
 
 unsigned int get_mhartid() {
-    register unsigned int a0 asm ("a0");
-    asm volatile (
-        "csrr a0, mhartid"
-        : "=r"(a0)   // output in a0
-    );
-    return a0;
+    return 0; // XXX: change that when SMP gets implemented
 }
 
 void* shift_right_addr(void* addr, int bits) {

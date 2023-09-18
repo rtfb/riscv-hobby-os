@@ -9,7 +9,7 @@ proc_table_t proc_table;
 trap_frame_t trap_frame;
 cpu_t cpu;
 
-void init_process_table(uint32_t runflags) {
+void init_process_table(uint32_t runflags, unsigned int hart_id) {
     cpu.proc = 0;
     proc_table.pid_counter = 0;
     for (int i = 0; i < MAX_PROCS; i++) {
@@ -20,7 +20,6 @@ void init_process_table(uint32_t runflags) {
     for (int i = 0; i < 14; i++) {
         cpu.context.regs[i] = 0;
     }
-    unsigned int hart_id = get_mhartid();
     cpu.context.regs[REG_SP] = (regsize_t)(&stack_top - hart_id*PAGE_SIZE);
 }
 

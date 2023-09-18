@@ -27,9 +27,12 @@ _start:
                                         // > without S-mode, the medeleg and mideleg registers should not exist.
 #endif
 
+#ifdef TARGET_M_MODE
+        csrr    a0, mhartid             // set a0 to mhartid to be compatible with boot in S-mode
+#endif
                                         // setup stack pointer:
         la      t0, stack_top           // set it at stack_top for hart0,
-        csrr    t1, mhartid             // at stack_top+512 for hart1, etc.
+        mv      t1, a0                  // at stack_top+512 for hart1, etc.
         li      t2, 512
         mul     t1, t1, t2
         add     t0, t0, t1
@@ -39,13 +42,13 @@ _start:
         // all other harts continue to run hart_sync_code, then unconditionally
         // jump to init.
         li      t0, BOOT_HART_ID
-        csrr    t1, mhartid
+        mv      t1, a0
         beq     t0, t1, init_segments
 
 hart_sync_code:
         // Only non-boot harts run this code:
         // Step 1: every non-boot hart writes 1 to MSIP register:
-        csrr    t2, mhartid   // t2 = hart ID
+        mv      t2, a0        // t2 = hart ID
         li      t0, 1
         li      t1, CLINT0_BASE_ADDRESS  // t1 = Core-Local Interrupt Controller base address
         slli    t2, t2, 2     // t2 = hartID*4
@@ -128,7 +131,6 @@ init:
                                         // >      ... code that might fail due to lack of support in CPU
                                         // > 1:
 
-        mv      a0, a1                  // a1 contains the address of FDT header, pass it to kinit
         call    kinit                   // kinit() will set up the kernel for
                                         // further operations and never return.
 
@@ -241,7 +243,11 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
 set_global_stack:
         // set the same stack location as we do during the boot time.
         la      t0, stack_top           // set it at stack_top for hart0,
-        csrr    t1, mhartid             // at stack_top+512 for hart1, etc.
+
+        // XXX: change that when SMP gets implemented
+        // csrr    t1, mhartid             // at stack_top+512 for hart1, etc.
+        mv      t1, zero
+
         li      t2, 512
         mul     t1, t1, t2
         add     t0, t0, t1

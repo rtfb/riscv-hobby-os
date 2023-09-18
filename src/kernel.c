@@ -13,9 +13,9 @@
 
 spinlock init_lock = 0;
 
-void kinit(uintptr_t fdt_header_addr) {
+void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     acquire(&init_lock);
-    unsigned int cpu_id = get_mhartid();
+    unsigned int cpu_id = hartid;
     if (cpu_id > 0) {
         release(&init_lock);
         // TODO: support multi-core
@@ -35,7 +35,7 @@ void kinit(uintptr_t fdt_header_addr) {
     kprintf("kprintf test several params: %s, %p, %d\n", str, p, cpu_id);
     int running_tests = runflags & RUNFLAGS_TESTS;
     init_paged_memory(paged_mem_end, !running_tests);
-    init_process_table(runflags);
+    init_process_table(runflags, hartid);
     init_global_trap_frame();
     init_pipes();
     fs_init();

@@ -7,7 +7,7 @@
 
 #define KERNEL_SCHEDULER_TICK_TIME (ONE_SECOND)
 
-void kinit(uintptr_t fdt_header_addr);
+void kinit(regsize_t hartid, uintptr_t fdt_header_addr);
 void init_trap_vector();
 void kernel_timer_tick();
 void set_timer();
