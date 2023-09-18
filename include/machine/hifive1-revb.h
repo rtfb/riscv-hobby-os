@@ -1,6 +1,9 @@
 #ifndef _HIFIVE1_REVB_
 #define _HIFIVE1_REVB_
 
+#define TARGET_M_MODE   1
+#define NO_S_MODE       1
+
 // SiFive FE310-G002 Manual v1p1
 // Chapter 16 - Real-Time Clock (RTC)
 //
@@ -19,8 +22,6 @@
 #define GPIO_BASE 0x10012000
 
 #define CLINT0_BASE_ADDRESS   0x2000000
-
-#define NO_S_MODE   1
 
 #define NUM_HARTS   1
 

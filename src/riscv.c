@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "asm.h"
 
 unsigned int get_mhartid() {
     register unsigned int a0 asm ("a0");
@@ -61,7 +62,7 @@ void set_pmpcfg0(unsigned long value) {
 unsigned int get_mstatus() {
     register unsigned int a0 asm ("a0");
     asm volatile (
-        "csrr a0, mstatus"
+        "csrr a0, " REG_STATUS
         : "=r"(a0)   // output in a0
     );
     return a0;
@@ -69,7 +70,7 @@ unsigned int get_mstatus() {
 
 void set_mstatus(unsigned int value) {
     asm volatile (
-        "csrw mstatus, %0"
+        "csrw " REG_STATUS ", %0"
         :            // no output
         : "r"(value) // input in value
     );
@@ -78,7 +79,7 @@ void set_mstatus(unsigned int value) {
 void* get_mepc() {
     register void* a0 asm ("a0");
     asm volatile (
-        "csrr a0, mepc"
+        "csrr a0, " REG_EPC
         : "=r"(a0)   // output in a0
     );
     return a0;
@@ -86,9 +87,9 @@ void* get_mepc() {
 
 void set_jump_address(void *func) {
     asm volatile (
-        "csrw   mepc, %0;"  // set mepc to userland function
-        :                   // no output
-        : "r"(func)         // input in func
+        "csrw " REG_EPC ", %0;"  // set mepc to userland function
+        :                        // no output
+        : "r"(func)              // input in func
     );
 }
 
@@ -103,7 +104,7 @@ void set_user_mode() {
 
 void set_mscratch(void* ptr) {
     asm volatile (
-        "csrw mscratch, %0"
+        "csrw " REG_SCRATCH ", %0"
         :            // no output
         : "r"(ptr)   // input in value
     );
@@ -111,17 +112,17 @@ void set_mscratch(void* ptr) {
 
 void set_mie(unsigned int value) {
     asm volatile (
-        "csrs   mie, %0;"   // set mie to the requested value
-        :                   // no output
-        : "r"(value)        // input in value
+        "csrs " REG_IE ", %0;"  // set mie to the requested value
+        :                       // no output
+        : "r"(value)            // input in value
     );
 }
 
 void set_mtvec(void *ptr) {
     asm volatile (
-        "csrw   mtvec, %0;" // set mtvec to the requested value
-        :                   // no output
-        : "r"(ptr)          // input in ptr
+        "csrw  " REG_TVEC ", %0;"   // set mtvec to the requested value
+        :                           // no output
+        : "r"(ptr)                  // input in ptr
     );
 }
 

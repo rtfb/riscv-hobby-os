@@ -13,10 +13,10 @@ _start:
 
                                         // from: sifive-interrupt-cookbook-v1p2.pdf
                                         // 2.1.3 Early Boot: Setup mtvec Register
-        csrwi   mie, 0                  // > It is recommended to disable interrupts globally using mstatus.mie prior to changing mtvec.
+        csrwi   REG_IE, 0               // > It is recommended to disable interrupts globally using mstatus.mie prior to changing mtvec.
                                         // > For sanity's sake we set up an early trap vector that just does nothing.
         la      t0, early_trap_vector
-        csrw    mtvec, t0
+        csrw    REG_TVEC, t0
 
 #ifndef NO_S_MODE
         csrwi   mideleg, 0              // disable trap delegation, all interrupts and exceptions will be handled in machine mode
@@ -142,9 +142,9 @@ init:
                                         // > For sanity's sake we set up an early trap vector that just does nothing.
                                         // > If you end up here then there's a bug in the early boot code somewhere.
 early_trap_vector:
-1:      csrr    t0, mcause
-        csrr    t1, mepc
-        csrr    t2, mtval
+1:      csrr    t0, REG_CAUSE
+        csrr    t1, REG_EPC
+        csrr    t2, REG_TVAL
         j       1b                      // loop indefinitely
 
                                         // 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)
@@ -184,7 +184,7 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
         // swap t6 and mscratch. t6 now points to trap_frame and the
         // actual value of t6 is saved in mscratch until we can restore it a bit
         // later:
-        csrrw   t6, mscratch, t6
+        csrrw   t6, REG_SCRATCH, t6
 
         // save all user registers in trap_frame:
         OP_STOR  x1,  0*REGSZ(t6)
@@ -220,10 +220,10 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
 
         // x31 is the same as t6, so store it below with a bit of juggling:
         mv      t0, t6
-        csrrw   t6, mscratch, t6
+        csrrw   t6, REG_SCRATCH, t6
         OP_STOR t6, 30*REGSZ(t0)
 
-        csrr    t6, mepc
+        csrr    t6, REG_EPC
         OP_STOR t6, 31*REGSZ(t0)
 
         // Restore sp from cpu.proc->ctx[REG_SP].
@@ -248,7 +248,7 @@ set_global_stack:
         mv      sp, t0
 
 stack_done:
-        csrr    t0, mcause
+        csrr    t0, REG_CAUSE
         bgez    t0, exception_dispatch
 
         slli    t0, t0, 2               // clears the top bit and multiplies the interrupt index by 4 at the same time
@@ -322,7 +322,7 @@ exception_vector_end:
 
 exception_dispatch:
         la      t0, exception_vector
-        csrr    t1, mcause
+        csrr    t1, REG_CAUSE
         slli    t1, t1, 2
         add     t0, t0, t1              // jump -> exception_vector + mcause * 4
                                         // check out-of-bounds
@@ -358,7 +358,7 @@ exception_epilogue:
         j       ret_to_user
 
 interrupt_epilogue:
-        mret
+        OP_xRET
 
 
 //## Exception, Interrupt & Syscall Handlers ###################################
@@ -384,9 +384,9 @@ exception:
         OP_STOR x30, 30*REGSZ(sp)
         OP_STOR x31, 31*REGSZ(sp)       // t6 :: x31
 
-        csrr    t0, mcause
-        csrr    t1, mepc
-        csrr    t2, mtval
+        csrr    t0, REG_CAUSE
+        csrr    t1, REG_EPC
+        csrr    t2, REG_TVAL
         la      t3, user_payload
         la      t4, stack_top
         addi    sp, sp, -5*REGSZ
