@@ -63,10 +63,10 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
 // Exceptions set pc to BASE, interrupts set pc to BASE+4*cause.
 //
 // Trap vector mode is encoded in 2 bits: Direct = 0b00, Vectored = 0b01
-// and is stored in 0:1 bits of mtvect CSR (mtvec.mode)
+// and is stored in 0:1 bits of mtvec CSR (mtvec.mode)
 void init_trap_vector() {
     extern void* trap_vector;  // defined in boot.s
-    set_mtvec(&trap_vector);
+    set_tvec_csr(&trap_vector);
 }
 
 // kernel_timer_tick will be called from timer to give kernel time to do its
@@ -87,19 +87,19 @@ void kernel_plic_handler() {
 }
 
 void disable_interrupts() {
-    unsigned int mstatus = get_mstatus();
-    mstatus &= ~(1 << 3);
-    set_mstatus(mstatus);
-    set_mie(0);
+    unsigned int status_csr = get_status_csr();
+    status_csr &= ~(1 << 3);
+    set_status_csr(status_csr);
+    set_ie_csr(0);
 }
 
 void enable_interrupts() {
     // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:
-    unsigned int mstatus = get_mstatus();
-    mstatus |= (1 << MSTATUS_MPIE_BIT);
-    set_mstatus(mstatus);
+    unsigned int status_csr = get_status_csr();
+    status_csr |= (1 << MSTATUS_MPIE_BIT);
+    set_status_csr(status_csr);
 
     // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
     unsigned int mie = (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT);
-    set_mie(mie);
+    set_ie_csr(mie);
 }

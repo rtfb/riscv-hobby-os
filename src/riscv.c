@@ -1,7 +1,7 @@
 #include "kernel.h"
 #include "asm.h"
 
-unsigned int get_mhartid() {
+unsigned int get_hartid() {
     return 0; // XXX: change that when SMP gets implemented
 }
 
@@ -54,7 +54,7 @@ void set_pmpcfg0(unsigned long value) {
     );
 }
 
-unsigned int get_mstatus() {
+unsigned int get_status_csr() {
     register unsigned int a0 asm ("a0");
     asm volatile (
         "csrr a0, " REG_STATUS
@@ -63,7 +63,7 @@ unsigned int get_mstatus() {
     return a0;
 }
 
-void set_mstatus(unsigned int value) {
+void set_status_csr(unsigned int value) {
     asm volatile (
         "csrw " REG_STATUS ", %0"
         :            // no output
@@ -71,7 +71,7 @@ void set_mstatus(unsigned int value) {
     );
 }
 
-void* get_mepc() {
+void* get_epc_csr() {
     register void* a0 asm ("a0");
     asm volatile (
         "csrr a0, " REG_EPC
@@ -91,13 +91,13 @@ void set_jump_address(void *func) {
 // Privilege levels are encoded in 2 bits: User = 0b00, Supervisor = 0b01,
 // Machine = 0b11 and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
 void set_user_mode() {
-    unsigned int mstatus = get_mstatus();
-    mstatus &= MODE_MASK;   // zero out mode bits 11:12
-    mstatus |= MODE_U;      // set them to user mode
-    set_mstatus(mstatus);
+    unsigned int status_csr = get_status_csr();
+    status_csr &= MODE_MASK;   // zero out mode bits 11:12
+    status_csr |= MODE_U;      // set them to user mode
+    set_status_csr(status_csr);
 }
 
-void set_mscratch(void* ptr) {
+void set_scratch_csr(void* ptr) {
     asm volatile (
         "csrw " REG_SCRATCH ", %0"
         :            // no output
@@ -105,7 +105,7 @@ void set_mscratch(void* ptr) {
     );
 }
 
-void set_mie(unsigned int value) {
+void set_ie_csr(unsigned int value) {
     asm volatile (
         "csrs " REG_IE ", %0;"  // set mie to the requested value
         :                       // no output
@@ -113,7 +113,7 @@ void set_mie(unsigned int value) {
     );
 }
 
-void set_mtvec(void *ptr) {
+void set_tvec_csr(void *ptr) {
     asm volatile (
         "csrw  " REG_TVEC ", %0;"   // set mtvec to the requested value
         :                           // no output
@@ -122,7 +122,7 @@ void set_mtvec(void *ptr) {
 }
 
 void set_timer_after(uint64_t delta) {
-    unsigned int hart_id = get_mhartid();
+    unsigned int hart_id = get_hartid();
     uint64_t *mtime = (uint64_t*)MTIME;
     uint64_t *mtimecmp = (uint64_t*)(MTIMECMP_BASE) + 8*hart_id;
     uint64_t now = *mtime;

@@ -24,7 +24,7 @@ void init_process_table(uint32_t runflags, unsigned int hart_id) {
 }
 
 void init_global_trap_frame() {
-    set_mscratch(&trap_frame);
+    set_scratch_csr(&trap_frame);
 }
 
 // sleep_scheduler is called when there's nothing to schedule; this either
@@ -37,10 +37,10 @@ void sleep_scheduler() {
     // flag immediately, instead of setting the MPIE flag. That's because we
     // don't call mret in this code path, which reacts to the pending interrupt
     // enable flag.
-    unsigned int mstatus = get_mstatus();
-    mstatus |= ((1 << 3) | (1 << 7));
-    set_mstatus(mstatus);
-    set_mie(1 << 7);
+    unsigned int status_csr = get_status_csr();
+    status_csr |= ((1 << 3) | (1 << 7));
+    set_status_csr(status_csr);
+    set_ie_csr(1 << 7);
 
     park_hart();
 }

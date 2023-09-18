@@ -26,12 +26,12 @@
 #define MIE_MTIE_BIT   7  // mie.MTIE (Machine Timer Interrupt Enable) bit
 #define MIE_MEIE_BIT  11  // mie.MEIE (Machine External Interrupt Enable) bit
 
-unsigned int get_mhartid();
-unsigned int get_mstatus();
-void set_mstatus(unsigned int mstatus);
-void* get_mepc();
-void set_mie(unsigned int value);
-void set_mtvec(void *ptr);
+unsigned int get_hartid();
+unsigned int get_status_csr();
+void set_status_csr(unsigned int status);
+void* get_epc_csr();
+void set_ie_csr(unsigned int value);
+void set_tvec_csr(void *ptr);
 
 void set_pmpaddr0(void* addr);
 void set_pmpaddr1(void* addr);
@@ -41,7 +41,7 @@ void set_pmpcfg0(unsigned long value);
 
 void set_user_mode();
 void set_jump_address(void *func);
-void set_mscratch(void* ptr);
+void set_scratch_csr(void* ptr);
 
 // implemented in boot.s
 void park_hart();
