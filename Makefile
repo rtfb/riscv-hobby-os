@@ -36,6 +36,7 @@ BINS := \
 	$(OUT)/user_sifive_e32 \
 	$(OUT)/user_sifive_u32 \
 	$(OUT)/user_hifive1_revb \
+	$(OUT)/user_ox64_u \
 	$(OUT)/user_virt
 
 # This target makes all the binaries depend on existence (but not timestamp) of
@@ -55,19 +56,20 @@ USER_DEPS = src/boot.S src/kprintf.c src/kprintf.S src/baremetal-poweroff.S src/
 			src/proc_test.c src/spinlock.c src/proc.c src/context.S \
 			src/pagealloc.c src/fs.c src/bakedinfs.c src/runflags.c \
 			src/pipe.c src/drivers/drivers.c src/drivers/uart/uart.c \
-			src/drivers/hd44780/hd44780.c src/plic.c src/gpio.c src/timer.c \
+			src/drivers/hd44780/hd44780.c src/plic.c src/gpio.c \
 			user/src/userland.c user/src/usyscalls.S user/src/user-printf.S \
 			user/src/user-printf.c user/src/shell.c user/src/ustr.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
-USER_SIFIVE_U_DEPS = $(USER_DEPS)
+USER_SIFIVE_U_DEPS = $(USER_DEPS) src/timer.c
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
-USER_SIFIVE_E_DEPS = $(USER_DEPS)
+USER_SIFIVE_E_DEPS = $(USER_DEPS) src/timer.c
 TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
-USER_SIFIVE_E32_DEPS = $(USER_DEPS)
+USER_SIFIVE_E32_DEPS = $(USER_DEPS) src/timer.c
 TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
-USER_SIFIVE_U32_DEPS = $(USER_DEPS)
+USER_SIFIVE_U32_DEPS = $(USER_DEPS) src/timer.c
+USER_OX64_U_DEPS = $(USER_DEPS) src/machine/ox64/timer.c
 TEST_VIRT_DEPS = $(TEST_DEPS)
-USER_VIRT_DEPS = $(USER_DEPS)
+USER_VIRT_DEPS = $(USER_DEPS) src/timer.c
 
 .PHONY: run-baremetal
 run-baremetal: $(OUT)/user_sifive_u
@@ -146,6 +148,19 @@ $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 		-D UART_BASE=0x10013000 \
 		-include include/machine/hifive1-revb.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
+
+$(OUT)/user_ox64_u: ${USER_OX64_U_DEPS}
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
+		-Wl,--defsym,RAM_START=0x50000000 -g \
+		-include include/machine/ox64.h \
+		-D UART_BASE=0x30002000 \
+		${USER_OX64_U_DEPS} -o $@
+
+$(OUT)/user_ox64_u.bin: $(OUT)/user_ox64_u
+	$(RISCV64_OBJCOPY) -O binary $< $@
+
+$(OUT)/user_ox64_u.s: $(OUT)/user_ox64_u
+	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
 $(OUT)/test-output-u64.txt: $(OUT)/user_sifive_u
 	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@

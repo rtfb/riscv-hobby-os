@@ -18,7 +18,7 @@ _start:
         la      t0, early_trap_vector
         csrw    REG_TVEC, t0
 
-#ifndef NO_S_MODE
+#ifndef NO_TRAP_DELEGATION
         csrwi   mideleg, 0              // disable trap delegation, all interrupts and exceptions will be handled in machine mode
         csrwi   medeleg, 0              // 3.1.8 Machine Trap Delegation Registers (medeleg and mideleg)
                                         // > In systems with S-mode, the medeleg and mideleg registers must exist, and

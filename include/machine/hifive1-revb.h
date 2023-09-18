@@ -1,8 +1,8 @@
 #ifndef _HIFIVE1_REVB_
 #define _HIFIVE1_REVB_
 
-#define TARGET_M_MODE   1
-#define NO_S_MODE       1
+#define TARGET_M_MODE       1
+#define NO_TRAP_DELEGATION  1
 
 // SiFive FE310-G002 Manual v1p1
 // Chapter 16 - Real-Time Clock (RTC)
