@@ -55,7 +55,7 @@ USER_DEPS = src/boot.S src/kprintf.c src/kprintf.S src/baremetal-poweroff.S src/
 			src/proc_test.c src/spinlock.c src/proc.c src/context.S \
 			src/pagealloc.c src/fs.c src/bakedinfs.c src/runflags.c \
 			src/pipe.c src/drivers/drivers.c src/drivers/uart/uart.c \
-			src/drivers/hd44780/hd44780.c src/plic.c src/gpio.c \
+			src/drivers/hd44780/hd44780.c src/plic.c src/gpio.c src/timer.c \
 			user/src/userland.c user/src/usyscalls.S user/src/user-printf.S \
 			user/src/user-printf.c user/src/shell.c user/src/ustr.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)

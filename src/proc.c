@@ -3,6 +3,7 @@
 #include "programs.h"
 #include "kernel.h"
 #include "string.h"
+#include "timer.h"
 #include "drivers/uart/uart.h"
 
 proc_table_t proc_table;

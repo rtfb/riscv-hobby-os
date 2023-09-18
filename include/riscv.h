@@ -12,12 +12,6 @@
 #define MODE_M      3 << 11
 #define MODE_MASK ~(3 << 11)
 
-// These addresses are taken from the SiFive E31 core manual[1],
-// Chapter 8: Core Local Interruptor (CLINT)
-// [1] https://static.dev.sifive.com/E31-RISCVCoreIP.pdf
-#define MTIME             0x200bff8
-#define MTIMECMP_BASE     0x2004000
-
 #define TRAP_DIRECT   0x00
 #define TRAP_VECTORED 0x01
 
@@ -43,10 +37,7 @@ void set_user_mode();
 void set_jump_address(void *func);
 void set_scratch_csr(void* ptr);
 
-// implemented in boot.s
+// implemented in boot.S
 void park_hart();
-
-void set_timer_after(uint64_t delta);
-uint64_t time_get_now();
 
 #endif // ifndef _RISCV_H_

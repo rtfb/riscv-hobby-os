@@ -4,6 +4,7 @@
 #include "riscv.h"
 #include "gpio.h"
 #include "string.h"
+#include "timer.h"
 
 #define LOW  0
 #define HIGH 1
