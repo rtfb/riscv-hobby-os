@@ -100,6 +100,7 @@ gdb: $(FREEDOM_SDK_DIR)
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
           -fno-plt -fno-pic \
+          --param=case-values-threshold=20 \
           -Tsrc/kernel.ld -Iinclude -Iuser/inc
 
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
