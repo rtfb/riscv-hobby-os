@@ -1,11 +1,40 @@
 #include "asm.h"
 .equ HALT_ON_EXCEPTION, 1
 .equ BOOT_HART_ID, 0
+.equ RISCV_HEADER_VERSION, 0x2
 
 .balign 4
 .section .text
+
+// This section between _start and _start_kernel is a hardcoded Linux kernel
+// signature. Functionally, it does nothing, but immediately jumps to
+// _start_kernel. It is only here to be found in the first few bytes of the
+// binary by the bootloader, otherwise it refuses to recognize the binary and
+// load it as kernel.
+//
+// More info about the header format here:
+// https://www.kernel.org/doc/html/v5.8/riscv/boot-image-header.html
 .globl _start
 _start:
+        j _start_kernel
+        // reserved
+        .word 0
+        .balign 8
+        // Image load offset(2MB) from start of RAM
+        .dword 0x200000
+        // Effective size of kernel image
+        .dword _end - _start
+        .dword 0
+        .word RISCV_HEADER_VERSION
+        .word 0
+        .dword 0
+        .ascii "RISCV\0\0\0"
+        .balign 4
+        .ascii "RSC\x05"
+        .word 0
+
+.globl _start_kernel
+_start_kernel:
                                         // if not specified otherwise, the source for quotations is:
                                         //       The RISC-V Instruction Set Manual
                                         //       Volume II: Privileged Architecture
