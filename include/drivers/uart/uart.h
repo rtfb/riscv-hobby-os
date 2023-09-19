@@ -4,7 +4,7 @@
 #include "fs.h"
 
 #ifndef UART_BASE
-#define UART_BASE 0x10010000
+#error "UART_BASE undefined"
 #endif
 
 #define UART_TXDATA 0x00
@@ -50,9 +50,6 @@ void uart_handle_interrupt();
 // woken up to get them a chance to continue reading.
 int uart_enqueue_chars();
 
-// uart_writechar writes a single char to UART synchronously.
-void uart_writechar(char ch);
-
 // uart_readline attempts to read a full line of characters from rxbuf. If
 // rxbuf is empty or does not contain a newline character, the calling process
 // yields execution and goes to sleep.
@@ -63,6 +60,18 @@ int32_t uart_print(char const* data, uint32_t size);
 int32_t uart_read(file_t* f, uint32_t pos, void* buf, uint32_t bufsize);
 int32_t uart_write(file_t* f, uint32_t pos, void* buf, uint32_t bufsize);
 int32_t uart_prints(char const* data);
-int32_t uart_printc(char c);
+
+//
+// Functions below are implemented in machine-specific uart-*.c files
+//
+
+// uart_machine_init performs machine-specific initialization.
+extern void uart_machine_init();
+
+// uart_writechar writes a single char to UART synchronously.
+extern void uart_writechar(char ch);
+
+// uart_machine_wait_status waits for UART to report it's no longer busy.
+extern void uart_machine_wait_status();
 
 #endif // ifndef _UART_H_

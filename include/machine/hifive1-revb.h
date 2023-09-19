@@ -1,6 +1,8 @@
 #ifndef _HIFIVE1_REVB_
 #define _HIFIVE1_REVB_
 
+#define CONFIG_LCD_ENABLED  1
+
 #define TARGET_M_MODE       1
 #define NO_TRAP_DELEGATION  1
 
@@ -16,6 +18,8 @@
 // https://github.com/sifive/freedom-e-sdk/blob/master/bsp/sifive-hifive1-revb/core.dts#L166
 //      interrupts = <3>;
 #define UART0_IRQ_NUM   3
+
+#define UART_BASE       0x10013000
 
 // https://github.com/sifive/freedom-e-sdk/blob/master/bsp/sifive-hifive1-revb/core.dts#L142
 //      reg = <0x10012000 0x1000>;

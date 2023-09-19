@@ -13,7 +13,7 @@ char const* kprint_radix(regsize_t num, int radix, char *buf, unsigned int size)
 int32_t kprintfvec(char const* fmt, regsize_t* args) {
     int bufsize = PAGE_SIZE;
     int nargs = 7;
-    #define _PRINTF_WRITE_CHAR(c) uart_printc(c)
+    #define _PRINTF_WRITE_CHAR(c) uart_writechar(c)
     #define _PRINT_RADIX kprint_radix
     PRINTF_IMPL;
     #undef _PRINTF_WRITE_CHAR

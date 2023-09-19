@@ -60,16 +60,17 @@ USER_DEPS = src/boot.S src/kprintf.c src/kprintf.S src/baremetal-poweroff.S src/
 			user/src/userland.c user/src/usyscalls.S user/src/user-printf.S \
 			user/src/user-printf.c user/src/shell.c user/src/ustr.c
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
-USER_SIFIVE_U_DEPS = $(USER_DEPS) src/timer.c
+USER_SIFIVE_U_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
-USER_SIFIVE_E_DEPS = $(USER_DEPS) src/timer.c
+USER_SIFIVE_E_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
-USER_SIFIVE_E32_DEPS = $(USER_DEPS) src/timer.c
+USER_SIFIVE_E32_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
-USER_SIFIVE_U32_DEPS = $(USER_DEPS) src/timer.c
-USER_OX64_U_DEPS = $(USER_DEPS) src/machine/ox64/timer.c
+USER_SIFIVE_U32_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_VIRT_DEPS = $(TEST_DEPS)
-USER_VIRT_DEPS = $(USER_DEPS) src/timer.c
+USER_VIRT_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+USER_OX64_U_DEPS = $(USER_DEPS) \
+			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
 
 .PHONY: run-baremetal
 run-baremetal: $(OUT)/user_sifive_u
@@ -119,8 +120,7 @@ $(OUT)/user_sifive_u32: ${USER_SIFIVE_U32_DEPS}
 
 $(OUT)/user_sifive_e: ${USER_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wl,--defsym,ROM_START=0x20400000 \
-		-g -D UART_BASE=0x10013000 \
+		-Wl,--defsym,ROM_START=0x20400000 -g \
 		-include include/machine/qemu_e.h \
 		${USER_SIFIVE_E_DEPS} -o $@
 
@@ -129,15 +129,13 @@ $(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 		-Wl,--defsym,ROM_START=0x20400000 \
 		-Wa,--defsym,XLEN=32 \
 		-g -Wl,--defsym,RAM_SIZE=0x4000 \
-		-D UART_BASE=0x10013000 \
 		-include include/machine/qemu_e.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/user_virt: ${USER_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wa,--defsym,QEMU_EXIT=0x100000 \
-		-g -D UART_BASE=0x10000000 \
-		-include include/machine/qemu_e.h \
+		-Wa,--defsym,QEMU_EXIT=0x100000 -g \
+		-include include/machine/qemu_virt.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
 $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
@@ -145,7 +143,6 @@ $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 		-Wl,--defsym,ROM_START=0x20010000 \
 		-Wa,--defsym,XLEN=32 \
 		-Wl,--defsym,RAM_SIZE=0x4000 \
-		-D UART_BASE=0x10013000 \
 		-include include/machine/hifive1-revb.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
@@ -153,7 +150,6 @@ $(OUT)/user_ox64_u: ${USER_OX64_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,RAM_START=0x50000000 -g \
 		-include include/machine/ox64.h \
-		-D UART_BASE=0x30002000 \
 		${USER_OX64_U_DEPS} -o $@
 
 $(OUT)/user_ox64_u.bin: $(OUT)/user_ox64_u

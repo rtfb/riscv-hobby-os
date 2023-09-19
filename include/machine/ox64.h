@@ -14,6 +14,8 @@
 // interrupts = <0x14 0x04>;
 #define UART0_IRQ_NUM   0x14
 
+#define UART_BASE       0x30002000
+
 // reg = <0x200008c4 0x1000>;
 #define GPIO_BASE 0x200008c4
 

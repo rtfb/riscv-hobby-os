@@ -13,6 +13,8 @@
 //      SIFIVE_E_UART0_IRQ    = 3,
 #define UART0_IRQ_NUM   3
 
+#define UART_BASE       0x10013000
+
 // https://github.com/qemu/qemu/blob/master/hw/riscv/sifive_e.c#L61
 //      SIFIVE_E_DEV_GPIO0 = 0x10012000
 #define GPIO_BASE 0x10012000

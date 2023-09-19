@@ -1,34 +1,21 @@
 #include "sys.h"
 #include "proc.h"
 #include "drivers/uart/uart.h"
+
+#ifdef CONFIG_LCD_ENABLED
 #include "drivers/hd44780/hd44780.h"
-#include "plic.h"
-#include "gpio.h"
+#endif
 
 uart_state_t uart0;
 
 void uart_init() {
+    uart_machine_init();
     uart0.rx_rpos = 0;
     uart0.rx_wpos = 0;
     uart0.tx_rpos = 0;
     uart0.tx_wpos = 0;
     uart0.rx_num_newlines = 0;
     uart0.rx_buff_full = 0;
-
-    // enable reading:
-    *(uint32_t*)(UART_BASE + UART_RXCTRL) = 1;
-
-    // enable read interrupts:
-    *(uint32_t*)(UART_BASE + UART_IE) = UART_IE_RXWM;
-
-    // set baud divisor (the SiFive FE310-G002 manual lists a table of possible
-    // values in Section 18.9, determined this particular choice
-    // experimentally. Furthermore, it's the default on HiFive1-revB board):
-    *(uint32_t*)(UART_BASE + UART_BAUD_RATE_DIVISOR) = 138;
-
-    plic_enable_intr(UART0_IRQ_NUM);
-    plic_set_intr_priority(UART0_IRQ_NUM, PLIC_MAX_PRIORITY);
-    plic_set_threshold(PLIC_MAX_PRIORITY - 1);
 }
 
 void uart_handle_interrupt() {
@@ -74,7 +61,9 @@ int uart_enqueue_chars() {
                 if (uart0.rx_buff_full) {
                     uart0.rx_buff_full = 0;
                 }
+#ifdef CONFIG_LCD_ENABLED
                 lcd_backspace();
+#endif
             }
             continue;
         }
@@ -87,7 +76,9 @@ int uart_enqueue_chars() {
             uart0.rx_num_newlines++;
             proc_mark_for_wakeup(&uart0);
         }
+#ifdef CONFIG_LCD_ENABLED
         lcd_printn(&ch, 1);
+#endif
         uart_writechar(ch); // echo back to console
         uart0.rxbuf[wpos] = ch;
         wpos++;
@@ -101,12 +92,6 @@ int uart_enqueue_chars() {
     }
     uart0.rx_wpos = wpos;
     return num_enqueued;
-}
-
-void uart_writechar(char ch) {
-    volatile int32_t* tx = (int32_t*)(UART_BASE + UART_TXDATA);
-    while ((int32_t)(*tx) < 0);
-    *tx = ch;
 }
 
 // _can_read_from checks whether the internal state of a given uart device
@@ -156,30 +141,27 @@ int32_t uart_readline(char* buf, uint32_t bufsize) {
 
 int32_t uart_prints(char const* data) {
     while (*data) {
-        uart_printc(*data++);
+        uart_writechar(*data++);
     }
-}
-
-int32_t uart_printc(char c) {
-    uint32_t *tx_fifo = (uint32_t*)(UART_BASE + UART_TXDATA);
-    int32_t tx = -1;
-    while (tx < 0) {
-        tx = *tx_fifo;
-    }
-    *tx_fifo = c;
+    uart_machine_wait_status();
 }
 
 int32_t uart_print(char const* data, uint32_t size) {
     if (size == -1) {
+#ifdef CONFIG_LCD_ENABLED
         lcd_print(data);
+#endif
         return uart_prints(data);
     }
+#ifdef CONFIG_LCD_ENABLED
     lcd_printn(data, size);
+#endif
     int i = 0;
     while (i < size) {
-        uart_printc(data[i]);
+        uart_writechar(data[i]);
         i++;
     }
+    uart_machine_wait_status();
     return i;
 }
 
