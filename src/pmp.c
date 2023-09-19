@@ -28,6 +28,7 @@ void* init_pmp() {
     regsize_t ram_size = (regsize_t)&RAM_SIZE;
     void* paged_mem_end = (void*)(ram_start + ram_size);
 
+#ifdef TARGET_M_MODE
     // define 4 memory address ranges for Physical Memory Protection
     // 0 :: [0 .. user_payload]
     // 1 :: [user_payload .. .rodata]
@@ -53,5 +54,7 @@ void* init_pmp() {
     unsigned long access_flags =   ((PMP_X | PMP_R) * PMP_1)
                                  | ((PMP_W | PMP_R) * PMP_3);
     set_pmpcfg0(mode | access_flags);
+#endif
+
     return paged_mem_end;
 }
