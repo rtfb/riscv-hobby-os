@@ -26,6 +26,18 @@ void uart_writechar(char ch) {
     *tx = ch;
 }
 
+int uart_rx_num_avail() {
+    volatile int32_t* rx = (int32_t*)(UART_BASE + UART_RXDATA);
+    int32_t word = *rx;
+    return word > 0;
+}
+
+char uart_readchar() {
+    volatile int32_t* rx = (int32_t*)(UART_BASE + UART_RXDATA);
+    int32_t word = *rx;
+    return word & 0xff;
+}
+
 void uart_machine_wait_status() {
     // no-op
 }

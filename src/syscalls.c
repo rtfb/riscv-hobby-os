@@ -34,9 +34,13 @@ void *syscall_vector[] _text = {
     [SYS_NR_gpio]      sys_gpio,
 };
 
+void dump_trap_frame(trap_frame_t *f);
 void syscall() {
     disable_interrupts();
     int nr = trap_frame.regs[REG_A7];
+    // kprintf("syscall %d\n", nr);
+    // uintptr_t sstatus = get_status_csr();
+    // kprintf("sstatus: %p\n", sstatus);
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
     if (trap_frame.regs[REG_SP] < (regsize_t)cpu.proc->stack_page) {
         kprintf("STACK OVERFLOW in userland before pid:syscall %d:%d\n", cpu.proc->pid, nr);
@@ -44,7 +48,12 @@ void syscall() {
         return;
     }
     if (nr >= 0 && nr < ARRAY_LENGTH(syscall_vector) && syscall_vector[nr] != 0) {
-        int32_t (*funcPtr)(void) = syscall_vector[nr];
+        uintptr_t funcAddr = (uintptr_t)syscall_vector[nr];
+#ifndef TARGET_M_MODE
+        funcAddr |= 0x00200000;
+#endif
+        int32_t (*funcPtr)(void) = (void*)funcAddr;
+        // kprintf("syscall call %p\n", funcPtr);
         trap_frame.regs[REG_A0] = (*funcPtr)();
     } else {
         kprintf("BAD pid:syscall %d:%d\n", cpu.proc->pid, nr);
@@ -63,6 +72,11 @@ void syscall() {
     // so ensure we will go back to U-mode, not back to one of the privileged
     // ones:
     set_user_mode();
+
+    // uintptr_t sstatus = get_status_csr();
+    // kprintf("sstatus: %p\n", sstatus);
+    // dump_trap_frame(&trap_frame);
+    // kprintf("returning from syscall...\n");
 }
 
 void sys_restart() {

@@ -1,6 +1,7 @@
 #include "shell.h"
 #include "ustr.h"
 #include "pagealloc.h"
+#include "riscv.h"
 
 
 char prog_name_hanger[] _user_rodata = "hang";
@@ -220,7 +221,14 @@ uint32_t _userland traverse(cmd_t *node, int depth) {
     return pipefd[1];
 }
 
+extern void uart_writechar(char c);
+extern void kprintf(char const *msg, ...);
+
 int _userland u_main_shell(int argc, char* argv[]) {
+    // uart_writechar('U');
+    // kprintf("u_main_shell can kprintf()!\n");
+    // uintptr_t sstatus = get_status_csr();
+    // kprintf("sstatus in 'U'-mode: %p\n", sstatus);
     cmd_t *cmd_slots = (cmd_t*)pgalloc();
     int num_slots = PAGE_SIZE / sizeof(cmd_t);
     cmdbuf_t cmdpool = sh_init_cmd_slots(cmd_slots, num_slots);

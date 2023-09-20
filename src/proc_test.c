@@ -90,6 +90,53 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
 };
 
 void init_test_processes(uint32_t runflags) {
+#ifndef TARGET_M_MODE
+    for (int i = 0; i < MAX_USERLAND_PROGS; i++) {
+        user_program_t *p = &userland_programs[i];
+        if (!p->name && !p->entry_point) {
+            break;
+        }
+        uintptr_t addr = (uintptr_t)p->name;
+        addr |= 0x0200000;
+        p->name = (char*)addr;
+        addr = (uintptr_t)p->entry_point;
+        addr |= 0x0200000;
+        p->entry_point = (char*)addr;
+    }
+#endif
+
+    /*
+    userland_programs[0].entry_point = &u_main_shell;
+    userland_programs[0].name = "sh";
+    userland_programs[1].entry_point = &u_main_hello1;
+    userland_programs[1].name = "hello1";
+    userland_programs[2].entry_point = &u_main_hello2;
+    userland_programs[2].name = "hello2";
+    userland_programs[3].entry_point = &u_main_sysinfo;
+    userland_programs[3].name = "sysinfo";
+    userland_programs[4].entry_point = &u_main_fmt;
+    userland_programs[4].name = "fmt";
+    userland_programs[5].entry_point = &u_main_smoke_test;
+    userland_programs[5].name = "smoke-test";
+    userland_programs[6].entry_point = &u_main_hanger;
+    userland_programs[6].name = "hang";
+    userland_programs[7].entry_point = &u_main_ps;
+    userland_programs[7].name = "ps";
+    userland_programs[8].entry_point = &u_main_cat;
+    userland_programs[8].name = "cat";
+    userland_programs[9].entry_point = &u_main_coma;
+    userland_programs[9].name = "coma";
+    userland_programs[10].entry_point = &u_main_pipe;
+    userland_programs[10].name = "pp";
+    userland_programs[11].entry_point = &u_main_pipe2;
+    userland_programs[11].name = "pp2";
+    userland_programs[12].entry_point = &u_main_wc;
+    userland_programs[12].name = "wc";
+    userland_programs[13].entry_point = &u_main_gpio;
+    userland_programs[13].name = "gpio";
+    userland_programs[14].entry_point = 0;
+    userland_programs[14].name = 0;
+    */
     if (runflags == RUNFLAGS_DRY_RUN) {
         return;
     }
@@ -111,8 +158,12 @@ void assign_init_program(char const* prog) {
         // TODO: panic
         return;
     }
-    user_program_t *program = find_user_program(prog);
+    // user_program_t *program = find_user_program(prog);
+    user_program_t *program = &userland_programs[0];
+    kprintf("program=%p\n", program);
+    kprintf("prog.entry_point=%p, prog.name=%p\n", program->entry_point, program->name);
     process_t* p0 = alloc_process(sp, ksp);
+    kprintf("p0=%p\n", p0);
     acquire(&p0->lock);
 
     // extra initialization on top of what init_proc does for us:

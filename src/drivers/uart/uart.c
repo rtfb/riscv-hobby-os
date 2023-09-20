@@ -20,6 +20,8 @@ void uart_init() {
 
 void uart_handle_interrupt() {
     int nenq = uart_enqueue_chars();
+    // TODO: interrupt handing as in bflb_uart_interrupt():
+    // https://lore.kernel.org/lkml/20230522-cedar-undertow-a4f274ef1cec@wendy/T/
 }
 
 // _decrement_wpos attempts to decrement a given wpos. It doesn't decrement
@@ -41,15 +43,20 @@ int _decrement_wpos(int wpos) {
 }
 
 int uart_enqueue_chars() {
-    volatile int32_t* rx = (int32_t*)(UART_BASE + UART_RXDATA);
+    // volatile int32_t* rx = (int32_t*)(UART_BASE + UART_RXDATA);
     int wpos = uart0.rx_wpos;
     int num_enqueued = 0;
+// int uart_rx_num_avail();
     while (1) {
-        int32_t word = *rx;
-        if (word < 0) {
+        // int32_t word = *rx;
+        // if (word < 0) {
+        //     break;
+        // }
+        if (uart_rx_num_avail() == 0) {
             break;
         }
-        char ch = word & 0xff;
+        // char ch = word & 0xff;
+        char ch = uart_readchar();
         if (ch == ASCII_DEL) {
             int new_wpos = _decrement_wpos(wpos);
             if (new_wpos != wpos) {

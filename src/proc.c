@@ -25,6 +25,10 @@ void init_process_table(uint32_t runflags, unsigned int hart_id) {
 }
 
 void init_global_trap_frame() {
+    for (int i = 0; i < 31; i++) {
+        trap_frame.regs[1] = 0;
+    }
+    trap_frame.pc = 0;
     set_scratch_csr(&trap_frame);
 }
 
@@ -44,6 +48,12 @@ void sleep_scheduler() {
     park_hart();
 }
 
+void dump_ctx(context_t *ctx) {
+    for (int i = 0; i < 14; i++) {
+        kprintf("regs[%d] = %p\n", i, ctx->regs[i]);
+    }
+}
+
 void scheduler() {
     int i_after_wakeup = -1;
     int new_loop = 0;
@@ -53,6 +63,8 @@ void scheduler() {
                 // we have checked all procs and didn't find anything to run,
                 // so enable interrupts and sleep, as there's nothing to
                 // schedule now
+                // int rx_num_avail = uart_rx_num_avail();
+                // kprintf(".%d", rx_num_avail);
                 sleep_scheduler();
             }
             process_t *p = &proc_table.procs[i];
@@ -68,10 +80,19 @@ void scheduler() {
                 // trap_frame.regs[REG_RA] = p->trap.regs[REG_RA];
             }
             if (p->state == PROC_STATE_READY) {
+//                if (p->name) {
+//                    kprintf("proc ready: '%s'\n", p->name);
+//                } else {
+//                    kprintf("proc ready: %d\n", p->pid);
+//                }
                 p->state = PROC_STATE_RUNNING;
                 cpu.proc = p;
                 // switch context into p. This will not return until p itself
                 // does not call swtch().
+                // kprintf("swtch: cpu.context=%p:\n", &cpu.context);
+                // dump_ctx(&cpu.context);
+                // kprintf("swtch: p->ctx=%p:\n", &p->ctx);
+                // dump_ctx(&p->ctx);
                 swtch(&cpu.context, &p->ctx);
                 i_after_wakeup = i;
                 new_loop = 0;
@@ -149,11 +170,24 @@ void copy_files(process_t *dst, process_t *src) {
     }
 }
 
+void dump_trap_frame(trap_frame_t *f) {
+    for (int i = 0; i < 31; i++) {
+        kprintf("tf.regs[%d] = %p\n", i, f->regs[i]);
+    }
+    kprintf("tp.pc = %p\n", f->pc);
+}
+
 void forkret() {
+    // kprintf("forkret\n");
     process_t* proc = myproc();
+    // kprintf("&trap_frame:\n");
+    // dump_trap_frame(&trap_frame);
+    // kprintf("&proc->trap:\n");
+    // dump_trap_frame(&proc->trap);
     copy_trap_frame(&trap_frame, &proc->trap);
     release(&proc->lock);
     enable_interrupts();
+    // void* epc = get_epc_csr();
     ret_to_user();
 }
 

@@ -71,6 +71,14 @@ extern void uart_machine_init();
 // uart_writechar writes a single char to UART synchronously.
 extern void uart_writechar(char ch);
 
+// uart_readchar reads a single char from UART synchronously.
+extern char uart_readchar();
+
+// uart_rx_num_avail returns a number of characters available in RX FIFO. On
+// some implementations it may return a 0/1, indicating a presence/absence of
+// any characters.
+int uart_rx_num_avail();
+
 // uart_machine_wait_status waits for UART to report it's no longer busy.
 extern void uart_machine_wait_status();
 
