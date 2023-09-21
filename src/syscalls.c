@@ -58,6 +58,11 @@ void syscall() {
         return;
     }
     enable_interrupts();
+
+    // we might have gotten here from an interrupt that occurred in M-/S-mode,
+    // so ensure we will go back to U-mode, not back to one of the privileged
+    // ones:
+    set_user_mode();
 }
 
 void sys_restart() {

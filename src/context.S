@@ -76,10 +76,6 @@ ret_to_user:
         // again preserve trap_frame for the next interrupt:
         csrrw   t6, REG_SCRATCH, t6
 
-        // TODO: shouldn't we call set_user_mode here? We now only call it from
-        // schedule_user_process, which means that we often return to userland
-        // while the hart is in M-mode.
-
         // return to userland:
         OP_xRET
 

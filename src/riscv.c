@@ -133,8 +133,13 @@ void set_jump_address(void *func) {
 // Machine = 0b11 and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
 void set_user_mode() {
     unsigned int status_csr = get_status_csr();
-    status_csr &= MODE_MASK;   // zero out mode bits 11:12
-    status_csr |= MODE_U;      // set them to user mode
+#ifdef TARGET_M_MODE
+    status_csr &= MPP_MASK;    // zero out mode bits 11:12
+    status_csr |= MPP_MODE_U;  // set them to user mode
+#else
+    status_csr &= SPP_MASK;    // zero out SPP mode bit 8
+    status_csr |= SPP_MODE_U;  // set it to user mode
+#endif
     set_status_csr(status_csr);
 }
 

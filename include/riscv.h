@@ -7,10 +7,12 @@
 #define MAX_HARTS 4
 
 // 1.3 Privilege Levels, Table 1.1: RISC-V privilege levels.
-#define MODE_U      0 << 11
-#define MODE_S      1 << 11
-#define MODE_M      3 << 11
-#define MODE_MASK ~(3 << 11)
+#define MPP_MODE_U      0 << 11
+#define MPP_MODE_S      1 << 11
+#define MPP_MODE_M      3 << 11
+#define MPP_MASK        ~(3 << 11)
+#define SPP_MASK        ~(1 << 8)
+#define SPP_MODE_U      0 << 8
 
 #define TRAP_DIRECT   0x00
 #define TRAP_VECTORED 0x01
