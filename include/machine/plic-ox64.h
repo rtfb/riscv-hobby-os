@@ -12,4 +12,6 @@
 #define PLIC_THRESHOLD (PLIC_BASE + 0x00201000)
 #define PLIC_CLAIM_RW  (PLIC_BASE + 0x00201004)
 
+#define PLIC_MAX_PRIORITY           7
+
 #endif // ifndef _PLIC_OX64_H_

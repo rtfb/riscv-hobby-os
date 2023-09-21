@@ -2,8 +2,12 @@
 #include "plic.h"
 #include "drivers/uart/uart.h"
 
+int32_t last_rx_peek;
+
 // uart_machine_init does a machine-specific initialization of UART.
 void uart_machine_init() {
+    last_rx_peek = 0;
+
     // enable reading:
     *(uint32_t*)(UART_BASE + UART_RXCTRL) = 1;
 
@@ -24,6 +28,23 @@ void uart_writechar(char ch) {
     volatile int32_t* tx = (int32_t*)(UART_BASE + UART_TXDATA);
     while ((int32_t)(*tx) < 0);
     *tx = ch;
+}
+
+int uart_rx_num_avail() {
+    volatile int32_t* rx = (int32_t*)(UART_BASE + UART_RXDATA);
+    last_rx_peek = *rx;
+    return last_rx_peek > 0;
+}
+
+char uart_readchar() {
+    if (last_rx_peek) {
+        char c = last_rx_peek & 0xff;
+        last_rx_peek = 0;
+        return c;
+    }
+    volatile int32_t* rx = (int32_t*)(UART_BASE + UART_RXDATA);
+    int32_t word = *rx;
+    return word & 0xff;
 }
 
 void uart_machine_wait_status() {

@@ -41,15 +41,13 @@ int _decrement_wpos(int wpos) {
 }
 
 int uart_enqueue_chars() {
-    volatile int32_t* rx = (int32_t*)(UART_BASE + UART_RXDATA);
     int wpos = uart0.rx_wpos;
     int num_enqueued = 0;
     while (1) {
-        int32_t word = *rx;
-        if (word < 0) {
+        if (uart_rx_num_avail() == 0) {
             break;
         }
-        char ch = word & 0xff;
+        char ch = uart_readchar();
         if (ch == ASCII_DEL) {
             int new_wpos = _decrement_wpos(wpos);
             if (new_wpos != wpos) {
