@@ -3,6 +3,8 @@
 
 #define CONFIG_LCD_ENABLED  1
 
+#include "machine/plic-common.h"
+
 #define TARGET_M_MODE       1
 #define NO_TRAP_DELEGATION  1
 

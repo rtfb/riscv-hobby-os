@@ -1,6 +1,8 @@
 #ifndef _QEMU_E_H_
 #define _QEMU_E_H_
 
+#include "machine/plic-common.h"
+
 #define TARGET_M_MODE   1
 
 // Based on RISCV_ACLINT_DEFAULT_TIMEBASE_FREQ = 10000000 value from QEMU ACLINT

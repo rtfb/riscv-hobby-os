@@ -1,6 +1,8 @@
 #ifndef _OX64_H_
 #define _OX64_H_
 
+#include "machine/plic-ox64.h"
+
 #undef TARGET_M_MODE
 #define NO_TRAP_DELEGATION  1
 
@@ -10,9 +12,11 @@
 //      clock-frequency = <0x2625a00>;
 #define ONE_SECOND 1000000
 
+#define IRQ_NUM_BASE    16
+
 // reg = <0x30002000 0x1000>;
 // interrupts = <0x14 0x04>;
-#define UART0_IRQ_NUM   0x14
+#define UART0_IRQ_NUM   (IRQ_NUM_BASE + 4)
 
 #define UART_BASE       0x30002000
 

@@ -303,7 +303,7 @@ interrupt_vector:
 .balign 4
         j interrupt_timer               //  4: user timer interrupt
 .balign 4
-        j interrupt_timer               //  5: supervisor timer interrupt
+        j k_interrupt_timer             //  5: supervisor timer interrupt
 .balign 4
         j interrupt_noop                //  6: reserved
 .balign 4
@@ -311,7 +311,7 @@ interrupt_vector:
 .balign 4
         j interrupt_noop                //  8: user external interrupt
 .balign 4
-        j interrupt_noop                //  9: supervisor external interrupt
+        j k_interrupt_plic              //  9: supervisor external interrupt
 .balign 4
         j interrupt_noop                // 10: reserved
 .balign 4

@@ -1,6 +1,8 @@
 #ifndef _QEMU_U_H_
 #define _QEMU_U_H_
 
+#include "machine/plic-common.h"
+
 #define TARGET_M_MODE   1
 
 // Based on CLINT_TIMEBASE_FREQ = 1000000 value from QEMU sifive_u implementation:
