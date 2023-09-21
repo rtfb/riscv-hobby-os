@@ -148,7 +148,7 @@ $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 
 $(OUT)/user_ox64_u: ${USER_OX64_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wl,--defsym,RAM_START=0x50000000 -g \
+		-Wl,--defsym,RAM_START=0x50200000 -g \
 		-include include/machine/ox64.h \
 		${USER_OX64_U_DEPS} -o $@
 
