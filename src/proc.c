@@ -36,12 +36,10 @@ void sleep_scheduler() {
 
     // this is almost identical to enable_interrupts, except that it sets MIE
     // flag immediately, instead of setting the MPIE flag. That's because we
-    // don't call mret in this code path, which reacts to the pending interrupt
-    // enable flag.
-    unsigned int status_csr = get_status_csr();
-    status_csr |= ((1 << 3) | (1 << 7));
-    set_status_csr(status_csr);
-    set_ie_csr(1 << 7);
+    // don't call OP_xRET in this code path, which does MIE := MPIE atomically,
+    // thus only enabling interrupts after OP_xRET actually happens.
+    set_status_interrupt_enable_and_pending();
+    set_interrupt_enable_bits();
 
     park_hart();
 }

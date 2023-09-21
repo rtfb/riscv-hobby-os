@@ -15,10 +15,20 @@
 #define TRAP_DIRECT   0x00
 #define TRAP_VECTORED 0x01
 
+#define MSTATUS_SIE_BIT   1
+#define MSTATUS_MIE_BIT   3
+#define MSTATUS_SPIE_BIT  5
 #define MSTATUS_MPIE_BIT  7
 
+#define MIE_STIE_BIT   5  // mie.STIE (Supervisor Timer Interrupt Enable) bit
 #define MIE_MTIE_BIT   7  // mie.MTIE (Machine Timer Interrupt Enable) bit
+#define MIE_SEIE_BIT   9  // mie.SEIE (Supervisor External Interrupt Enable) bit
 #define MIE_MEIE_BIT  11  // mie.MEIE (Machine External Interrupt Enable) bit
+
+void set_status_interrupt_pending();
+void set_status_interrupt_enable_and_pending();
+void clear_status_interrupt_enable();
+void set_interrupt_enable_bits();
 
 unsigned int get_hartid();
 unsigned int get_status_csr();

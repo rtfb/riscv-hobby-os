@@ -1,6 +1,47 @@
 #include "kernel.h"
 #include "asm.h"
 
+void set_status_interrupt_pending() {
+    // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:
+    unsigned int status_csr = get_status_csr();
+#if TARGET_M_MODE
+    status_csr |= (1 << MSTATUS_MPIE_BIT);
+#else
+    status_csr |= (1 << MSTATUS_SPIE_BIT);
+#endif
+    set_status_csr(status_csr);
+}
+
+void set_status_interrupt_enable_and_pending() {
+    unsigned int status_csr = get_status_csr();
+#if TARGET_M_MODE
+    status_csr |= ((1 << MSTATUS_MIE_BIT) | (1 << MSTATUS_MPIE_BIT));
+#else
+    status_csr |= ((1 << MSTATUS_SIE_BIT) | (1 << MSTATUS_SPIE_BIT));
+#endif
+    set_status_csr(status_csr);
+}
+
+void clear_status_interrupt_enable() {
+    unsigned int status_csr = get_status_csr();
+#if TARGET_M_MODE
+    status_csr &= ~(1 << MSTATUS_MIE_BIT);
+#else
+    status_csr &= ~(1 << MSTATUS_SIE_BIT);
+#endif
+    set_status_csr(status_csr);
+}
+
+void set_interrupt_enable_bits() {
+    // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
+#if TARGET_M_MODE
+    unsigned int mie = (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT);
+#else
+    unsigned int mie = (1 << MIE_STIE_BIT) | (1 << MIE_SEIE_BIT);
+#endif
+    set_ie_csr(mie);
+}
+
 unsigned int get_hartid() {
     return 0; // XXX: change that when SMP gets implemented
 }

@@ -92,19 +92,11 @@ void kernel_plic_handler() {
 }
 
 void disable_interrupts() {
-    unsigned int status_csr = get_status_csr();
-    status_csr &= ~(1 << 3);
-    set_status_csr(status_csr);
+    clear_status_interrupt_enable();
     set_ie_csr(0);
 }
 
 void enable_interrupts() {
-    // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:
-    unsigned int status_csr = get_status_csr();
-    status_csr |= (1 << MSTATUS_MPIE_BIT);
-    set_status_csr(status_csr);
-
-    // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
-    unsigned int mie = (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT);
-    set_ie_csr(mie);
+    set_status_interrupt_pending();
+    set_interrupt_enable_bits();
 }
