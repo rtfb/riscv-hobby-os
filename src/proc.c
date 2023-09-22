@@ -1,4 +1,5 @@
 #include "proc.h"
+#include "errno.h"
 #include "pagealloc.h"
 #include "programs.h"
 #include "kernel.h"
@@ -94,24 +95,25 @@ int should_wake_up(process_t* proc) {
 }
 
 uint32_t proc_fork() {
+    process_t* parent = myproc();
     // allocate stack. Fail early if we're out of memory:
     void* sp = allocate_page();
     if (!sp) {
-        // TODO: set errno
+        *parent->perrno = ENOMEM;
         return -1;
     }
     void *ksp = allocate_page();
     if (!ksp) {
-        // TODO: set errno
+        *parent->perrno = ENOMEM;
         return -1;
     }
 
-    process_t* parent = myproc();
     parent->trap.pc = trap_frame.pc;
     copy_trap_frame(&parent->trap, &trap_frame);
 
     process_t* child = alloc_process(sp, ksp);
     if (!child) {
+        *parent->perrno = ENOMEM;  // we've probably hit MAX_PROCS, treat it as out of memory
         release_page(ksp);
         release_page(sp);
         return -1;
@@ -176,17 +178,16 @@ typedef struct {
 // copy_argv takes argv from the calling process and copies it over to the top
 // of the stack page of the new process. Returns the new value for sp and argv
 // pointing to the new location.
-sp_argv_t copy_argv(void *sp, regsize_t argc, char const* argv[]) {
+sp_argv_t copy_argv(uintptr_t *sp, regsize_t argc, char const* argv[]) {
     if (argc == 0 || argv == 0) {
         return (sp_argv_t){
             .new_sp = (regsize_t)sp,
             .new_argv = 0,
         };
     }
-    regsize_t* spr = (regsize_t*)sp;
-    *spr-- = 0;
-    spr -= argc;
-    char* spc = (char*)spr;
+    *sp-- = 0;
+    sp -= argc;
+    char* spc = (char*)sp;
     spc--;
     int i = 0;
     for (; i < argc; i++) {
@@ -200,38 +201,45 @@ sp_argv_t copy_argv(void *sp, regsize_t argc, char const* argv[]) {
             *spc-- = str[j];
             j--;
         }
-        spr[i] = (regsize_t)(spc + 1);
+        sp[i] = (regsize_t)(spc + 1);
     }
     return (sp_argv_t){
         .new_sp = (regsize_t)(spc) & ~7, // down-align at 8, we don't want sp to be odd
-        .new_argv = (regsize_t)(spr),
+        .new_argv = (regsize_t)(sp),
     };
 }
 
+uintptr_t* _set_perrno(void *sp) {
+    return (uintptr_t*)(sp + PAGE_SIZE) -1;
+}
+
 uint32_t proc_execv(char const* filename, char const* argv[]) {
+    process_t* proc = myproc();
     if (filename == 0) {
-        // TODO: set errno
+        *proc->perrno = EINVAL;
         return -1;
     }
     user_program_t *program = find_user_program(filename);
     if (!program) {
-        // TODO: set errno
+        *proc->perrno = ENOENT;
         return -1;
     }
     // allocate stack. Fail early if we're out of memory:
     void* sp = allocate_page(); // XXX: we already have a stack_page and kstack_page allocated in fork, do we need a new copy? Why?
     if (!sp) {
-        // TODO: set errno
+        *proc->perrno = ENOMEM;
         return -1;
     }
-    process_t* proc = myproc();
     acquire(&proc->lock);
     proc->trap.pc = (regsize_t)program->entry_point;
     proc->name = program->name;
     release_page(proc->stack_page);
     proc->stack_page = sp;
+    proc->perrno = _set_perrno(sp); // now that we replaced stack_page, update perrno as well
     regsize_t argc = len_argv(argv);
-    void *top_of_sp = sp + PAGE_SIZE - sizeof(regsize_t);
+    uintptr_t* top_of_sp = (uintptr_t*)(sp + PAGE_SIZE);
+    top_of_sp--;  // compensate for one past the end
+    top_of_sp--;  // reserve the last word for errno
     sp_argv_t sp_argv = copy_argv(top_of_sp, argc, argv);
     proc->trap.regs[REG_RA] = (regsize_t)proc->trap.pc;
     proc->trap.regs[REG_SP] = sp_argv.new_sp;
@@ -272,7 +280,6 @@ process_t* alloc_process(void *sp, void *ksp) {
         }
         release(&proc->lock);
     }
-    // TODO: set errno
     release(&proc_table.lock);
     return 0;
 }
@@ -280,6 +287,7 @@ process_t* alloc_process(void *sp, void *ksp) {
 // must be called with proc_table.lock and proc->lock held.
 void init_proc(process_t* proc, void *sp, void *ksp) {
     proc->stack_page = sp;
+    proc->perrno = _set_perrno(sp); // reserve the last word for errno
     proc->kstack_page = ksp;
     proc->state = PROC_STATE_READY;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
@@ -437,17 +445,18 @@ void proc_mark_for_wakeup(void *chan) {
 }
 
 uint32_t proc_plist(uint32_t *pids, uint32_t size) {
+    process_t* proc = myproc();
     if (!pids) {
+        *proc->perrno = EINVAL;
+        return -1;
+    }
+    if (size < MAX_PROCS) {
+        *proc->perrno = EINVAL;
         return -1;
     }
     int p = 0;
     acquire(&proc_table.lock);
     for (int i = 0; i < MAX_PROCS; i++) {
-        if (p >= size) {
-            // TODO: set errno to indicate that size was too small
-            release(&proc_table.lock);
-            return -1;
-        }
         if (proc_table.procs[i].state != PROC_STATE_AVAILABLE) {
             pids[p] = proc_table.procs[i].pid;
             p++;
@@ -499,23 +508,27 @@ void fd_free(process_t *proc, int32_t fd) {
 }
 
 int32_t proc_open(char const *filepath, uint32_t flags) {
-    file_t *f = fs_alloc_file();
-    if (f == 0) {
-        // TODO: set errno to indicate out of global files
+    process_t* proc = myproc();
+    if (!filepath) {
+        *proc->perrno = EINVAL;
         return -1;
     }
-    process_t* proc = myproc();
+    file_t *f = fs_alloc_file();
+    if (f == 0) {
+        *proc->perrno = ENFILE;
+        return -1;
+    }
     acquire(&proc->lock);
     int32_t fd = fd_alloc(proc, f);
     if (fd < 0) {
-        // TODO: set errno to indicate out of proc FDs
+        *proc->perrno = EMFILE;
         release(&proc->lock);
         return -1;
     }
     int32_t status = fs_open(f, filepath, flags);
-    if (status != 0) {
+    if (status < 0) {
         proc->files[fd] = 0;
-        // TODO: set errno to status
+        *proc->perrno = -status;
         release(&proc->lock);
         return -1;
     }
@@ -527,17 +540,19 @@ int32_t proc_read(uint32_t fd, void *buf, uint32_t size) {
     process_t* proc = myproc();
     file_t *f = proc->files[fd];
     if (f == 0) {
-        // Reading a non-open file. TODO: set errno
+        *proc->perrno = EBADF;
         return -1;
     }
     if (!buf) {
-        // TODO: errno
+        *proc->perrno = EINVAL;
         return -1;
     }
     int32_t nread = fs_read(f, f->position, buf, size);
-    if (nread > 0) {
-        f->position += nread;
+    if (nread < 0) {
+        *proc->perrno = -nread;
+        return -1;
     }
+    f->position += nread;
     return nread;
 }
 
@@ -545,11 +560,11 @@ int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes) {
     process_t* proc = myproc();
     file_t *f = proc->files[fd];
     if (f == 0) {
-        // Writing a non-open file. TODO: set errno
+        *proc->perrno = EBADF;
         return -1;
     }
     if (!buf) {
-        // TODO: errno
+        *proc->perrno = EINVAL;
         return -1;
     }
     if (nbytes == -1) {
@@ -559,6 +574,10 @@ int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes) {
         nbytes = kstrlen(buf);
     }
     int32_t status = fs_write(f, f->position, buf, nbytes);
+    if (status < 0) {
+        *proc->perrno = -status;
+        return -1;
+    }
     return status;
 }
 
@@ -567,7 +586,7 @@ int32_t proc_close(uint32_t fd) {
     // TODO: flush when we have any buffering
     file_t *f = proc->files[fd];
     if (f == 0) {
-        // Closing a non-open file. TODO: set errno
+        *proc->perrno = EBADF;
         return -1;
     }
     fs_free_file(f);
@@ -578,12 +597,12 @@ int32_t proc_dup(uint32_t fd) {
     process_t* proc = myproc();
     file_t *f = proc->files[fd];
     if (f == 0) {
-        // duplicating a non-open file. TODO: set errno
+        *proc->perrno = EBADF;
         return -1;
     }
     int32_t newfd = fd_alloc(proc, f);
     if (newfd < 0) {
-        // TODO: set errno to indicate out of proc FDs
+        *proc->perrno = EMFILE;
         return newfd;
     }
     f->refcount++;

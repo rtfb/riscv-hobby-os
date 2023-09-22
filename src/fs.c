@@ -1,4 +1,5 @@
 #include "fs.h"
+#include "errno.h"
 #include "pipe.h"
 #include "bakedinfs.h"
 #include "drivers/uart/uart.h"
@@ -44,7 +45,6 @@ file_t* fs_alloc_file() {
         }
     }
     release(&ftable.lock);
-    // TODO: set errno
     return 0;
 }
 
@@ -57,10 +57,9 @@ void fs_free_file(file_t *f) {
 }
 
 int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {
-    f->fs_file = (void*)bifs_open(filepath, flags);
-    if (!f->fs_file) {
-        // TODO: errno = ENOENT
-        return -1;
+    int32_t status = bifs_open(filepath, flags, (bifs_file_t**)&f->fs_file);
+    if (status < 0) {
+        return status;
     }
     f->read = bifs_read;
     f->write = bifs_write;
@@ -69,16 +68,14 @@ int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {
 
 int32_t fs_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
     if (!f->read) {
-        // TODO: set errno
-        return -1;
+        return -EBADFD;
     }
     return f->read(f, pos, buf, size);
 }
 
 int32_t fs_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
     if (!f->write) {
-        // TODO: set errno
-        return -1;
+        return -EBADFD;
     }
     return f->write(f, pos, buf, nbytes);
 }

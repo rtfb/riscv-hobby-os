@@ -6,6 +6,7 @@
 #include "syscalls.h"
 #include "fs.h"
 #include "gpio.h"
+#include "errno.h"
 
 int _userland u_main_hello1() {
     prints("Hello from hellosayer 1\n");
@@ -139,13 +140,15 @@ int _userland u_main_ps(int argc, char const *argv[]) {
     return 0;
 }
 
+char err_fmt[] _user_rodata = "ERROR: open fd=-1, errno=%d\n";
+
 int _userland u_main_cat(int argc, char const *argv[]) {
     if (argc < 2) {
         exit(0);
     }
     uint32_t fd = open(argv[1], 0);
     if (fd == -1) {
-        prints("ERROR: open=-1\n");
+        printf(err_fmt, errno);
         exit(-1);
     }
     char fbuf[64];

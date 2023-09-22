@@ -1,4 +1,5 @@
 #include "bakedinfs.h"
+#include "errno.h"
 #include "string.h"
 
 bifs_directory_t *bifs_root;
@@ -41,11 +42,9 @@ void bifs_init() {
     st->data = "sysinfo\nfmt\nhang\nsysinfo\nps\n";
 }
 
-bifs_file_t* bifs_open(char const *filepath, uint32_t flags) {
+int32_t bifs_open(char const *filepath, uint32_t flags, bifs_file_t **ppf) {
     if (*filepath != '/') {
-        // TODO set errno to not implemented, we don't care to support
-        // non-rooted paths yet
-        return 0;
+        return -ENOSYS;
     }
     int prev_slash_pos = 0;
     int slash_pos = next_slash(filepath, prev_slash_pos + 1);
@@ -53,7 +52,7 @@ bifs_file_t* bifs_open(char const *filepath, uint32_t flags) {
     while (filepath[slash_pos]) {
         dir = bifs_opendir(dir, filepath, prev_slash_pos + 1, slash_pos);
         if (!dir) {
-            return 0;
+            return -ENOENT;
         }
         prev_slash_pos = slash_pos;
         slash_pos = next_slash(filepath, slash_pos + 1);
@@ -62,7 +61,7 @@ bifs_file_t* bifs_open(char const *filepath, uint32_t flags) {
     // filepath[prev_slash_pos+1..slash_pos] contains the file element. Unless
     // its a rooted path which ends in a directory, which I don't want to think
     // about yet
-    return bifs_openfile(dir, filepath, prev_slash_pos + 1, slash_pos);
+    return bifs_openfile(dir, filepath, prev_slash_pos + 1, slash_pos, ppf);
 }
 
 int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
@@ -85,7 +84,7 @@ int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
 }
 
 int32_t bifs_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
-    return -1; // TODO: implement
+    return -ENOSYS; // TODO: implement
 }
 
 int next_slash(char const *path, int pos) {
@@ -113,7 +112,7 @@ bifs_directory_t* bifs_opendir(bifs_directory_t *parent, char const *name, int s
     return 0;
 }
 
-bifs_file_t* bifs_openfile(bifs_directory_t *parent, char const *name, int start, int end) {
+int32_t bifs_openfile(bifs_directory_t *parent, char const *name, int start, int end, bifs_file_t **ppf) {
     if (parent == 0) {
         parent = &bifs_all_directories[0]; // assume root
     }
@@ -123,8 +122,9 @@ bifs_file_t* bifs_openfile(bifs_directory_t *parent, char const *name, int start
             continue;
         }
         if (!strncmp(f->name, name+start, end-start)) {
-            return f;
+            *ppf = f;
+            return 0;
         }
     }
-    return 0;
+    return -ENOENT;
 }

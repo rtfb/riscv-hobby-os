@@ -1,4 +1,5 @@
 #include "pipe.h"
+#include "errno.h"
 #include "pagealloc.h"
 
 #define PIPE_BUF_SIZE    (PAGE_SIZE / 4)
@@ -42,9 +43,10 @@ void free_pipe(pipe_t *pipe) {
 }
 
 int32_t pipe_open(uint32_t pipefd[2]) {
+    process_t* proc = myproc();
     pipe_t *pipe = alloc_pipe(); // acquires pipe->lock
     if (!pipe) {
-        // TODO: set errno
+        *proc->perrno = ENOMEM;
         return -1;
     }
 
@@ -54,7 +56,7 @@ int32_t pipe_open(uint32_t pipefd[2]) {
     file_t *f0 = fs_alloc_file();
     file_t *f1 = fs_alloc_file();
     if (f0 == 0 || f1 == 0) {
-        // TODO: set errno to indicate out of file objects
+        *proc->perrno = ENFILE;
         release(&pipe->lock);
         return -1;
     }
@@ -67,11 +69,10 @@ int32_t pipe_open(uint32_t pipefd[2]) {
     pipe->rf = f0;
     pipe->wf = f1;
 
-    process_t* proc = myproc();
     int32_t fd0 = fd_alloc(proc, f0);
     int32_t fd1 = fd_alloc(proc, f1);
     if (fd0 == -1 || fd1 == -1) {
-        // TODO: set errno to indicate out of proc FDs
+        *proc->perrno = EMFILE;
         release(&pipe->lock);
         return -1;
     }
@@ -176,8 +177,7 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
     // 'pos' parameter is ignored by pipe_write
     pipe_t *pipe = (pipe_t*)f->fs_file;
     if (!pipe) {
-        // TODO: set errno to 'broken pipe'
-        return -1;
+        return -EPIPE;
     }
     acquire(&pipe->lock);
     process_t* proc = myproc();
@@ -190,9 +190,8 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
             available = 0;
         }
         if (available < 0) {
-            // TODO: set errno or even panic
             release(&pipe->lock);
-            return -1;
+            return -ENOBUFS;
         }
         int32_t wr = pipe_do_write(pipe, buf+nwritten, nbytes - nwritten);
         nwritten += wr;
@@ -209,8 +208,7 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
         release(&pipe->lock); // release the lock before sleep, otherwise the reading end will deadlock
         proc_yield(pipe);
         if (!f->fs_file) { // the pipe was closed while we slept
-            // TODO: set errno to 'broken pipe'
-            return -1;
+            return -EPIPE;
         }
         acquire(&pipe->lock); // reacquire the lock after wakeup
     }

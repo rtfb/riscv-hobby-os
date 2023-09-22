@@ -25,7 +25,7 @@ int32_t _userland printfvecbuf(char const* fmt, regsize_t* args, int nargs, char
 //
 // Returns the size of the resulting formatted string.
 //
-// It supports the following verbs: %c, %d, %s, %x.
+// It supports the following verbs: %c, %d, %s, %x, %p.
 int32_t _userland printfvec(char const* fmt, regsize_t* args) {
     char* buf = (char*)pgalloc();
     if (!buf) {

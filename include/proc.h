@@ -66,6 +66,8 @@ typedef struct process_s {
     // stack around, e.g. during fork().
     void *stack_page;
 
+    uintptr_t *perrno;  // points to the last word within stack_page, that's where we store errno
+
     uint32_t *magic;    // a magic number for detection of kstack_page overflows
     void *kstack_page;
 

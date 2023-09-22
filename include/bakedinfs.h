@@ -31,10 +31,10 @@ extern bifs_file_t      bifs_all_files[BIFS_MAX_FILES];
 void bifs_init();
 int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size);
 int32_t bifs_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes);
-bifs_file_t* bifs_open(char const *filepath, uint32_t flags);
+int32_t bifs_open(char const *filepath, uint32_t flags, bifs_file_t **ppf);
 
 bifs_directory_t* bifs_opendir(bifs_directory_t *parent, char const *name, int start, int end);
-bifs_file_t* bifs_openfile(bifs_directory_t *parent, char const *name, int start, int end);
+int32_t bifs_openfile(bifs_directory_t *parent, char const *name, int start, int end, bifs_file_t **ppf);
 
 // next_slash starts looking at path[pos] and keeps going until it finds a slash
 // symbol ('/'), it then returns its index. If no slash is present, pos will

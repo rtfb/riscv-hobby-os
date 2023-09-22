@@ -2,6 +2,7 @@
 
 #include "kernel.h"
 #include "syscalls.h"
+#include "errno.h"
 #include "proc.h"
 #include "pagealloc.h"
 #include "pipe.h"
@@ -37,10 +38,12 @@ void *syscall_vector[] _text = {
 void syscall() {
     disable_interrupts();
     int nr = trap_frame.regs[REG_A7];
+    *cpu.proc->perrno = 0; // clear errno
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
     if (trap_frame.regs[REG_SP] < (regsize_t)cpu.proc->stack_page) {
         kprintf("STACK OVERFLOW in userland before pid:syscall %d:%d\n", cpu.proc->pid, nr);
         trap_frame.regs[REG_A0] = -1;
+        *cpu.proc->perrno = EFAULT;
         return;
     }
     if (nr >= 0 && nr < ARRAY_LENGTH(syscall_vector) && syscall_vector[nr] != 0) {
@@ -49,11 +52,13 @@ void syscall() {
     } else {
         kprintf("BAD pid:syscall %d:%d\n", cpu.proc->pid, nr);
         trap_frame.regs[REG_A0] = -1;
+        *cpu.proc->perrno = ENOSYS;
     }
     if (*cpu.proc->magic != PROC_MAGIC_STACK_SENTINEL) {
         kprintf("STACK OVERFLOW in kernel pid:syscall %d:%d (magic=0x%x)\n",
             cpu.proc->pid, nr, *cpu.proc->magic);
         trap_frame.regs[REG_A0] = -1;
+        *cpu.proc->perrno = EFAULT;
         // TODO: panic
         return;
     }
@@ -94,10 +99,6 @@ int32_t sys_write() {
 int32_t sys_open() {
     char const *filepath = (char const*)trap_frame.regs[REG_A0];
     uint32_t flags = (uint32_t)trap_frame.regs[REG_A1];
-    if (!filepath) {
-        // TODO: errno
-        return -1;
-    }
     return proc_open(filepath, flags);
 }
 
