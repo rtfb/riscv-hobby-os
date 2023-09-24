@@ -19,7 +19,7 @@ int _userland u_main_hello1() {
     s[4] = 0;
     prints(s);
     pgfree(mem);
-    exit();
+    exit(0);
     return 0;
 }
 
@@ -31,7 +31,7 @@ int _userland u_main_hello2(int argc, char const* argv[]) {
     } else {
         prints("Very welcome from hellosayer 2\n");
     }
-    exit();
+    exit(0);
     return 0;
 }
 
@@ -42,7 +42,7 @@ int _userland u_main_fmt() {
     char foo[] = "foo";
     printf(fmt, 387, 0, 'X', 0xaddbeef, foo);
     printf(fmt2, 11, 12, 13, 14, 15, 16, 17, 18, 19);
-    exit();
+    exit(0);
     return 0;
 }
 
@@ -58,7 +58,7 @@ int _userland u_main_sysinfo(int argc, char const* argv[]) {
         printf(unclaimed_mem_fmt, info.unclaimed_start, info.unclaimed_end,
                info.unclaimed_end - info.unclaimed_start);
     }
-    exit();
+    exit(0);
     return 0;
 }
 

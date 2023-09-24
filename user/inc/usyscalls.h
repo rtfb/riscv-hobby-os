@@ -6,7 +6,7 @@
 // Declarations for userland end of the system calls. Implemented in
 // usyscalls.s.
 
-extern void exit();
+extern void exit(int status);
 extern uint32_t fork();
 extern int32_t read(uint32_t fd, char* buf, uint32_t size);
 
