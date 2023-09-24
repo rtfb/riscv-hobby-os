@@ -1,6 +1,8 @@
 #ifndef _SYS_H_
 #define _SYS_H_
 
+#include "machine/machine.h"
+
 // The system-specific macros can be listed with this:
 // $ riscv64-linux-gnu-gcc -march=rv64g -mabi=lp64 -dM -E - < /dev/null | grep riscv
 #if __riscv_xlen == 32

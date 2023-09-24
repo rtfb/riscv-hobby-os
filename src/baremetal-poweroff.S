@@ -5,10 +5,8 @@
 .global poweroff                        # Poweroff hart.
                                         # @param[in] a0 error code 0=success, -1=fail
 
-
-poweroff:
-
 .ifdef QEMU_EXIT
+poweroff:
         .equ QEMU_TEST_BASE,    QEMU_EXIT
         .equ TEST_REG_TX,       0
         .equ TEST_CMD_FAIL,     0x3333

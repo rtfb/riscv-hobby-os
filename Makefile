@@ -3,10 +3,10 @@ ifeq ($(DBG),1)
 	QEMU_LAUNCHER += --debug
 endif
 
-RISCV64_GCC ?= riscv64-linux-gnu-gcc
-ifeq (, $(shell which $(RISCV64_GCC)))
-	RISCV64_GCC = riscv64-unknown-elf-gcc
-endif
+# RISCV64_GCC ?= riscv64-linux-gnu-gcc
+# ifeq (, $(shell which $(RISCV64_GCC)))
+# 	RISCV64_GCC = riscv64-unknown-elf-gcc
+# endif
 RISCV64_OBJDUMP ?= riscv64-linux-gnu-objdump
 ifeq (, $(shell which $(RISCV64_OBJDUMP)))
 	RISCV64_OBJDUMP = riscv64-unknown-elf-objdump
@@ -108,10 +108,17 @@ GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -Wa,-Iinclude \
           -Tsrc/kernel.ld -Iinclude -Iuser/inc
 
+# RISCV64_GCC=zig cc -target riscv64-freestanding-none
+# RISCV64_GCC=zig
+RISCV64_GCC=~/zig/zig \
+			build-exe -target riscv64-freestanding-none \
+			--script src/kernel.ld \
+			-fno-strip
+
 $(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
-	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-g -include include/machine/qemu_u.h \
-		${USER_SIFIVE_U_DEPS} -o $@
+	$(RISCV64_GCC)  -Iinclude -Iuser/inc \
+		${USER_SIFIVE_U_DEPS} -femit-bin=$@ \
+		-DMACHINE=qemu_u
 
 $(OUT)/user_sifive_u32: ${USER_SIFIVE_U32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
