@@ -161,10 +161,19 @@ GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -Wa,-Iinclude \
           -Tsrc/kernel.ld -Iinclude -Iuser/inc
 
-$(OUT)/os_sifive_u: ${OS_SIFIVE_U_DEPS}
+ZIG=zig \
+        build-obj -target riscv64-freestanding-none \
+        -mcpu generic_rv64 -mcmodel=medium \
+        -fno-strip -fno-PIC -fno-PIE
+
+$(OUT)/%.o: src/%.zig
+	@mkdir -p $(OUT)
+	$(ZIG) $< -femit-bin=$@
+
+$(OUT)/os_sifive_u: ${OS_SIFIVE_U_DEPS} $(OUT)/zstr.o
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-g -include include/machine/qemu_u.h \
-		${OS_SIFIVE_U_DEPS} -o $@
+		${OS_SIFIVE_U_DEPS} $(OUT)/zstr.o -o $@
 
 $(OUT)/os_sifive_u32: ${OS_SIFIVE_U32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
