@@ -37,6 +37,7 @@ BINS := \
 	$(OUT)/user_sifive_u32 \
 	$(OUT)/user_hifive1_revb \
 	$(OUT)/user_ox64_u \
+	$(OUT)/user_d1_u \
 	$(OUT)/user_virt
 
 # This target makes all the binaries depend on existence (but not timestamp) of
@@ -72,6 +73,8 @@ TEST_VIRT_DEPS = $(TEST_DEPS)
 USER_VIRT_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 USER_OX64_U_DEPS = $(USER_DEPS) \
 			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
+USER_D1_U_DEPS = $(USER_DEPS) \
+			src/machine/d1/timer.c src/drivers/uart/uart-d1.c
 
 .PHONY: run-baremetal
 run-baremetal: $(OUT)/user_sifive_u
@@ -157,6 +160,18 @@ $(OUT)/user_ox64_u.bin: $(OUT)/user_ox64_u
 	$(RISCV64_OBJCOPY) -O binary $< $@
 
 $(OUT)/user_ox64_u.s: $(OUT)/user_ox64_u
+	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
+
+$(OUT)/user_d1_u: ${USER_D1_U_DEPS}
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
+		-Wl,--defsym,RAM_START=0x40200000 -g \
+		-include include/machine/d1.h \
+		${USER_D1_U_DEPS} -o $@
+
+$(OUT)/user_d1_u.bin: $(OUT)/user_d1_u
+	$(RISCV64_OBJCOPY) -O binary $< $@
+
+$(OUT)/user_d1_u.s: $(OUT)/user_d1_u
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
 $(OUT)/test-output-u64.txt: $(OUT)/user_sifive_u

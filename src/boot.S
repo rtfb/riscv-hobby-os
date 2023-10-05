@@ -21,7 +21,7 @@ _start:
         .word 0
         .balign 8
         // Image load offset(2MB) from start of RAM
-        .dword 0x200000
+        .dword 0x40200000
         // Effective size of kernel image
         .dword _end - _start
         .dword 0
