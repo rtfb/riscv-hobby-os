@@ -120,7 +120,7 @@ int32_t pipe_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
     while (pipe->rpos == pipe->wpos && ((pipe->flags & PIPE_BUF_FULL) == 0)) {
         if (pipe->flags & PIPE_FLAG_WRITE_CLOSED) {
             release(&pipe->lock);
-            return EOF;
+            return 0;
         }
         // it's possible the writing process has filled the buffer and fell
         // asleep. So let it know it now has some room for writing.

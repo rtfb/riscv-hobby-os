@@ -20,8 +20,6 @@
 #define FFLAGS_BIFS_FILE   (1 << 9)
 #define FFLAGS_PIPE        (1 << 10)
 
-#define EOF   (-2)
-
 typedef struct file_s {
     // TODO: add lock here and fix all code to lock properly
 

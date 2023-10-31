@@ -39,7 +39,7 @@ void bifs_init() {
     st->flags = BIFS_READABLE | BIFS_RAW;
     st->parent = home;
     st->name = "smoke-test.sh";
-    st->data = "sysinfo\nfmt\nhang\nsysinfo\nps\n";
+    st->data = "sysinfo\nfmt\nhang\nsysinfo\nps\ncat /readme.txt | wc\n";
 }
 
 int32_t bifs_open(char const *filepath, uint32_t flags, bifs_file_t **ppf) {
@@ -76,9 +76,6 @@ int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {
         cbuf[i] = ch;
         i++;
         pos++;
-    }
-    if (i == 0) {
-        return EOF;
     }
     return i;
 }

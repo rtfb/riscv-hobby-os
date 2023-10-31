@@ -287,7 +287,7 @@ int _userland u_main_wc(int argc, char const *argv[]) {
     uint32_t charcount = 0;
     while (1) {
         int32_t nread = read(fd, fbuf, 64);
-        if (nread == EOF) {
+        if (nread == 0) {
             break;
         }
         if (nread == -1) {
