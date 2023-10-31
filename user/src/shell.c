@@ -78,9 +78,10 @@ int _userland run_shell_script(char const *filepath, cmdbuf_t cmdpool) {
         prints("ERROR: open=-1\n");
         return -1;
     }
-    char fbuf[64];
-    int32_t status = read(fd, fbuf, 64);
+    char *fbuf = (char*)pgalloc();
+    int32_t status = read(fd, fbuf, PAGE_SIZE);
     if (status == -1) {
+        pgfree(fbuf);
         prints("ERROR: read=-1\n");
         return -1;
     }
@@ -109,6 +110,7 @@ int _userland run_shell_script(char const *filepath, cmdbuf_t cmdpool) {
         sh_wait_for_all_children(cmd_chain);
         sh_free_cmd_chain(&cmdpool, cmd_chain);
     }
+    pgfree(fbuf);
     return 0;
 }
 
