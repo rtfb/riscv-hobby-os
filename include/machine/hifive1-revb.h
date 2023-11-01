@@ -8,6 +8,9 @@
 #define TARGET_M_MODE       1
 #define NO_TRAP_DELEGATION  1
 
+// Irrelevant on HiFive.
+#define LINUX_IMAGE_HEADER_TEXT_OFFSET   0
+
 // SiFive FE310-G002 Manual v1p1
 // Chapter 16 - Real-Time Clock (RTC)
 //

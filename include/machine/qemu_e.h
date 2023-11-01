@@ -5,6 +5,9 @@
 
 #define TARGET_M_MODE   1
 
+// Irrelevant on qemu.
+#define LINUX_IMAGE_HEADER_TEXT_OFFSET   0
+
 // Based on RISCV_ACLINT_DEFAULT_TIMEBASE_FREQ = 10000000 value from QEMU ACLINT
 // implementation:
 // https://github.com/qemu/qemu/blob/master/include/hw/intc/riscv_aclint.h

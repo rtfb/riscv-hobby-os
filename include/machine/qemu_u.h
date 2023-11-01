@@ -5,6 +5,9 @@
 
 #define TARGET_M_MODE   1
 
+// Irrelevant on qemu.
+#define LINUX_IMAGE_HEADER_TEXT_OFFSET   0
+
 // Based on CLINT_TIMEBASE_FREQ = 1000000 value from QEMU sifive_u implementation:
 // https://github.com/qemu/qemu/blob/master/hw/riscv/sifive_u.c
 #define ONE_SECOND        (1*1000*1000)

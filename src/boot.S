@@ -20,8 +20,7 @@ _start:
         // reserved
         .word 0
         .balign 8
-        // Image load offset(2MB) from start of RAM
-        .dword 0x40200000
+        .dword LINUX_IMAGE_HEADER_TEXT_OFFSET
         // Effective size of kernel image
         .dword _end - _start
         .dword 0

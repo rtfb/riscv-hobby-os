@@ -6,6 +6,8 @@
 #undef TARGET_M_MODE
 #define NO_TRAP_DELEGATION  1
 
+#define LINUX_IMAGE_HEADER_TEXT_OFFSET   0x200000
+
 // wild guess:
 // xtal-clk {
 //      compatible = "fixed-clock";

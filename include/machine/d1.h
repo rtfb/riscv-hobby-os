@@ -6,6 +6,9 @@
 #undef TARGET_M_MODE
 #define NO_TRAP_DELEGATION  1
 
+// For some reason on D1 this has to be an absolute address, not an offset.
+#define LINUX_IMAGE_HEADER_TEXT_OFFSET   0x40200000
+
 #define ONE_SECOND 24*1000*1000
 
 #define UART0_IRQ_NUM   18
