@@ -1,12 +1,11 @@
-#include "sys.h"
+#include "mmreg.h"
 #include "proc.h"
 #include "plic.h"
 #include "drivers/uart/uart.h"
 #include "drivers/uart/uart-ox64.h"
 
-#define read(reg) *(uint32_t*)(UART_BASE + reg)
-#define write(reg, val) *(uint32_t*)(UART_BASE + reg) = val
-#define wr_bitfield(reg_val, new_val, mask, shift) ((reg_val & ~mask) | (new_val << shift))
+#define read(reg) read32(UART_BASE + reg)
+#define write(reg, val) write32(UART_BASE + reg, val)
 
 // uart_machine_init does a machine-specific initialization of UART.
 void uart_machine_init() {
@@ -21,9 +20,9 @@ void uart_machine_init() {
 
     uint32_t fifo_config_1 = read(BL808_UART_FIFO_CONFIG_1);
     int rx_fifo_threshold = 0;
-    uint32_t new_val = wr_bitfield(fifo_config_1, rx_fifo_threshold,
-                                   BL808_UART_RX_FIFO_THRES_MSK,
-                                   BL808_UART_RX_FIFO_THRES_OFS);
+    uint32_t new_val = set_bitfield(fifo_config_1, rx_fifo_threshold,
+                                    BL808_UART_RX_FIFO_THRES_MSK,
+                                    BL808_UART_RX_FIFO_THRES_OFS);
     write(BL808_UART_FIFO_CONFIG_1, new_val);
 
     // now we're okay to unmask RX interrupts:

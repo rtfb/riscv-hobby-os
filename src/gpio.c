@@ -1,40 +1,43 @@
-#include "sys.h"
+#include "mmreg.h"
 #include "gpio.h"
 
-void gpio_enable_pin_out(int pin) {
-    uint32_t out_en = *(uint32_t*)(GPIO_BASE + GPIO_PIN_OUT_EN);
-    out_en |= (1 << pin);
-    *(uint32_t*)(GPIO_BASE + GPIO_PIN_OUT_EN) = out_en;
+#define read(reg) read32(GPIO_BASE + reg)
+#define write(reg, val) write32(GPIO_BASE + reg, val)
 
-    uint32_t iof_en = *(uint32_t*)(GPIO_BASE + GPIO_PIN_IOF_EN);
+void gpio_enable_pin_out(int pin) {
+    uint32_t out_en = read(GPIO_PIN_OUT_EN);
+    out_en |= (1 << pin);
+    write(GPIO_PIN_OUT_EN, out_en);
+
+    uint32_t iof_en = read(GPIO_PIN_IOF_EN);
     iof_en &= ~(1 << pin);
-    *(uint32_t*)(GPIO_BASE + GPIO_PIN_IOF_EN) = iof_en;
+    write(GPIO_PIN_IOF_EN, iof_en);
 }
 
 void gpio_disable_pin_out(int pin) {
-    uint32_t out_en = *(uint32_t*)(GPIO_BASE + GPIO_PIN_OUT_EN);
+    uint32_t out_en = read(GPIO_PIN_OUT_EN);
     out_en &= ~(1 << pin);
-    *(uint32_t*)(GPIO_BASE + GPIO_PIN_OUT_EN) = out_en;
+    write(GPIO_PIN_OUT_EN, out_en);
 
-    uint32_t iof_en = *(uint32_t*)(GPIO_BASE + GPIO_PIN_IOF_EN);
+    uint32_t iof_en = read(GPIO_PIN_IOF_EN);
     iof_en |= (1 << pin);
-    *(uint32_t*)(GPIO_BASE + GPIO_PIN_IOF_EN) = iof_en;
+    write(GPIO_PIN_IOF_EN, iof_en);
 }
 
 void gpio_set_pin(int pin, int value) {
-    uint32_t val_bits = *(uint32_t*)(GPIO_BASE + GPIO_PIN_OUT_VAL);
+    uint32_t val_bits = read(GPIO_PIN_OUT_VAL);
     if (value) {
         val_bits |= (1 << pin);
     } else {
         val_bits &= ~(1 << pin);
     }
-    *(uint32_t*)(GPIO_BASE + GPIO_PIN_OUT_VAL) = val_bits;
+    write(GPIO_PIN_OUT_VAL, val_bits);
 }
 
 void gpio_toggle_pin(int pin) {
-    uint32_t val_bits = *(uint32_t*)(GPIO_BASE + GPIO_PIN_OUT_VAL);
+    uint32_t val_bits = read(GPIO_PIN_OUT_VAL);
     val_bits ^= (1 << pin);
-    *(uint32_t*)(GPIO_BASE + GPIO_PIN_OUT_VAL) = val_bits;
+    write(GPIO_PIN_OUT_VAL, val_bits);
 }
 
 uint32_t gpio_do_syscall(uint32_t pin_num, uint32_t enable_disable, uint32_t value) {

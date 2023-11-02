@@ -1,4 +1,4 @@
-#include "sys.h"
+#include "mmreg.h"
 #include "proc.h"
 #include "plic.h"
 #include "drivers/uart/uart.h"
@@ -11,9 +11,8 @@
 
 #define LCR_DIVISOR_LATCH_ACCESS  (1 << 7)
 
-#define read(reg) *(uint32_t*)(UART0 + reg)
-#define write(reg, val) *(uint32_t*)(UART0 + reg) = val
-#define wr_bitfield(reg_val, new_val, mask, shift) ((reg_val & ~mask) | (new_val << shift))
+#define read(reg) read32(UART0 + reg)
+#define write(reg, val) write32(UART0 + reg, val)
 
 // uart_machine_init does a machine-specific initialization of UART.
 void uart_machine_init() {
