@@ -11,6 +11,7 @@
     #define uint32_t unsigned long
     #define uintptr_t unsigned long
     #define regsize_t uint32_t
+    #define MAX_NEG_INT -2147483647L
 #elif __riscv_xlen == 64
     #define XLEN 64
     #define int32_t int
@@ -19,6 +20,7 @@
     #define uint32_t unsigned int
     #define uintptr_t unsigned long
     #define regsize_t uint64_t
+    #define MAX_NEG_INT -9223372036854775807LL
 #else
     #error Unknown xlen
 #endif

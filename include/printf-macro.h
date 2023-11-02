@@ -5,7 +5,9 @@
     int argnum = 0;                                                    \
     int srci = 0;                                                      \
     int dsti = 0;                                                      \
-    const int rbufsz = 16;                                             \
+    /* rbufsz should be large enough to hold the largest int64 with */ \
+    /* a minus sign in front of it, and a terminating zero after it */ \
+    const int rbufsz = 21;                                             \
     char rbuf[rbufsz];                                                 \
     while (fmt[srci] != 0) {                                           \
         char c = fmt[srci];                                            \
@@ -26,16 +28,19 @@
                         break;                                         \
                     case 'd':                                          \
                         ;                                              \
-                        int i = args[argnum++];                        \
+                        long int i = args[argnum++];                   \
                         tmp = _PRINT_RADIX(i, 10, rbuf, rbufsz);       \
                         break;                                         \
                     case 'p':                                          \
-                        /* do a 0x, then fallthrough to do %x: */      \
+                        /* do a 0x, then print an unsigned %x: */      \
                         _PRINTF_WRITE_CHAR('0');                       \
                         _PRINTF_WRITE_CHAR('x');                       \
+                        unsigned long int uh = args[argnum++];         \
+                        tmp = _PRINT_RADIXU(uh, 16, rbuf, rbufsz);     \
+                        break;                                         \
                     case 'x':                                          \
                         ;                                              \
-                        int h = args[argnum++];                        \
+                        long int h = args[argnum++];                   \
                         tmp = _PRINT_RADIX(h, 16, rbuf, rbufsz);       \
                         break;                                         \
                     case 's':                                          \
@@ -62,22 +67,23 @@
     }                                                                  \
     return dsti
 
+// BUG: this does not support the largest negative number that fits in
+// __riscv_xlen. That's because of the "num = -num" in the negative branch. This
+// requires some fiddly fix that I'm not interested in addressing now.
 #define PRINT_RADIX_IMPL                                               \
     int dsti = size - 1;                                               \
     buf[dsti] = 0; /* terminate the string */                          \
     dsti--;                                                            \
-    int limit = 0;                                                     \
     int negative = 0;                                                  \
     if (num == 0) {                                                    \
         buf[dsti] = '0';                                               \
         return &buf[dsti];                                             \
     }                                                                  \
     if (num < 0) {                                                     \
-        limit++; /* leave space for the minus sign */                  \
         negative = 1;                                                  \
         num = -num;                                                    \
     }                                                                  \
-    while (num > 0 && dsti >= limit) {                                 \
+    while (num > 0 && dsti >= 0) {                                     \
         int digit = num % radix;                                       \
         if (digit > 9) {                                               \
             buf[dsti] = 'a' + (digit - 10);                            \
@@ -89,6 +95,7 @@
     }                                                                  \
     dsti++;                                                            \
     if (negative) {                                                    \
+        dsti--;                                                        \
         buf[dsti] = '-';                                               \
     }                                                                  \
     return &buf[dsti]

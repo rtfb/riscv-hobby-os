@@ -6,13 +6,19 @@
 // print_radix prints a given number in a given radix. It stores the string in
 // a provided buffer, fills it starting from the end, and returns a pointer
 // into it, pointing to the beginning of the number.
-char const* _userland print_radix(regsize_t num, int radix, char *buf, unsigned int size) {
+char const* _userland print_radix(long int num, int radix, char *buf, unsigned int size) {
+    PRINT_RADIX_IMPL;
+}
+
+// the unsigned version of print_radix
+char const* print_radixu(unsigned long int num, int radix, char *buf, unsigned int size) {
     PRINT_RADIX_IMPL;
 }
 
 int32_t _userland printfvecbuf(char const* fmt, regsize_t* args, int nargs, char *buf, int bufsize) {
     #define _PRINTF_WRITE_CHAR(c) buf[dsti] = c
     #define _PRINT_RADIX print_radix
+    #define _PRINT_RADIXU print_radixu
     PRINTF_IMPL;
     #undef _PRINTF_WRITE_CHAR
     #undef _PRINT_RADIX

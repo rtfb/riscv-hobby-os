@@ -2,7 +2,7 @@ kinit: cpu 0
 Reading FDT...
 FDT ok
 bootargs: smoke-test
-kprintf test several params: foo, 0xf10a, 0
+kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-2147483647
 Init userland smoke test!
 Total RAM: 32
 Free RAM: 23

@@ -36,8 +36,9 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     init_trap_vector();
     void* paged_mem_end = init_pmp();
     char const* str = "foo"; // this is a random string to test out %s in kprintf()
-    void *p = (void*)0xf10a; // this is a random hex to test out %p in kprintf()
-    kprintf("kprintf test several params: %s, %p, %d\n", str, p, cpu_id);
+    void *p = (void*)0xabcdf10a; // this is a random hex to test out %p in kprintf()
+    kprintf("kprintf test: str=%s, ptr=%p, pos int=%d, neg int=%d\n",
+        str, p, 1337, MAX_NEG_INT);
     int running_tests = runflags & RUNFLAGS_TESTS;
     init_paged_memory(paged_mem_end, !running_tests);
     init_process_table(runflags, hartid);
