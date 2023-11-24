@@ -242,10 +242,6 @@ $(FREEDOM_SDK_DIR):
 	mkdir -p $@
 	wget -qO- "$(SIFIVE_TOOLCHAIN_URL)" | tar xzv -C "$@"
 
-.PHONY: qemu
-qemu:
-	./scripts/build-qemu.sh
-
 QEMU_DOCKER_IMG_NAME := qemu-image
 
 # builds the docker image
