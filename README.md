@@ -70,4 +70,4 @@ Handy RISC-V Quick References:
 [hifive-url]: https://www.sifive.com/boards/hifive1-rev-b
 [ox64-url]: https://wiki.pine64.org/wiki/Ox64
 
-[docs-folder]: https://github.com/rtfb/riscv64-in-qemu/tree/master/docs
+[docs-folder]: https://github.com/rtfb/riscv-hobby-os/tree/master/docs
