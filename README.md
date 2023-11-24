@@ -1,54 +1,73 @@
-Run a RISC-V code in QEMU.
+# RISC-V Hobby OS
 
-Bare metal RISC-V assembly in QEMU
-==================================
+This is a small hobbyist kernel for RISC-V. It doesn't try to be compatible with
+anything, but happens to go along the old Unix ways. It does preemptive
+multitasking, implements fork+exec system calls, and a bunch of others needed
+for implementation of a simple shell. It also implements pipes.
 
-Run a bare metal RISC-V code in QEMU without any OS or C. Based on the source
-code from [here][riscv-hello-asm] and [here][riscv-hello-asm2].
+It runs in qemu, as well as several physical RISC-V SBC boards:
+* [SiFive HiFive1 Rev B][hifive-url]
+* [Ox64][ox64-url]
+* [Nezha D1][d1-url]
 
-This code is compiled with the [riscv-gnu-toolchain][riscv-gnu-toolchain] and
-can be run with the QEMU `sifive_u` and `sifive_e` machines. Both 32bit and
-64bit targets are supported.
+Building And Running
+====================
 
-As of this writing, these are the latest versions of the software involved:
-* Qemu: `v5.1.0`
-* RISC-V GNU toolchain: `10.1.0`
+On Ubuntu, `make prereqs` will install the prerequisite software for building.
 
-Make targets
-------------
+`make build-qemu-image` will build a Docker image for running qemu. This
+simplifies running qemu on different versions of Ubuntu and on OSX.
 
-`make run-baremetal` -- build payload file and boot it via QEMU.
+With that done, you should be able to `make all` to build all targets, and then
+`make run-baremetal` to actually run it in qemu.
+
+Implementation Details
+======================
+
+The kernel does not yet support virtual memory and thus, the userland processes
+are not isolated from each other. This is because the smallest common
+denominator of supported hardware is an extremely small HiFive microcontroller,
+with only 16kB of RAM and no MMU. This puts severe limitations. We want to
+maintain an ability to run in such small environments, as we intend to use this
+kernel on a small implementation of a RISC-V core on a modestly sized FPGA.
+
+The kernel and userland programs are built into a single binary. So the userland
+programs are actually just functions, located in a separate memory section. The
+section is isolated from the kernel memory, though, via RISC-V PMP mechanism.
 
 Debugging with gdb
 ------------------
 
-1. `make download-sifive-toolchain` to download SiFive version of toolchain, as
-   the regular apt-gettable toolchain won't work
-2. Run as usual with and extra `DBG=1` argument, e.g. `make run-baremetal DBG=1`
-3. In a separate terminal, run `make gdb`
+#### Qemu
 
-Make targets
-------------
+1. `make download-sifive-toolchain` to download [SiFive version of
+   toolchain][sifive-toolchain], as the regular apt-gettable toolchain won't
+   work.
+2. Run as usual with and extra `DBG=1` argument, e.g. `make run-baremetal
+   DBG=1`.
+3. In a separate terminal, run `make gdb`. Gdb will connect to the above, and
+   you can use it as usual.
 
-* `make prereqs` -- apt-get the prerequisites.
-* `make qemu` -- build Qemu for RISC-V.
+More Docs
+=========
 
-RISC-V Quick References
-=======================
+The [`docs/`][docs-folder] folder contains a few documents on specific narrow
+subjects, like operating a specific SBC board.
 
+Handy RISC-V Quick References:
 * [RISC-V Assembly Cheat Sheet][riscv-asm-sheet]
 * [RISC-V Assembly Programmer's Manual][riscv-asm-man]
 * [SiFive U (SiFive Freedom U540-C000 SoC) Hardware Manual][sifive-u]
 * [SiFive E (SiFive Freedom U310-G002 SoC) Hardware Manual][sifive-e]
-
-[riscv-gnu-toolchain]: https://github.com/riscv/riscv-gnu-toolchain
-[riscv-qemu-docs]: https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-qemu.html
-[custom-kernel-tutorial]: http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
-[riscv-hello-asm]: https://github.com/noteed/riscv-hello-asm
-[riscv-hello-asm2]: https://theintobooks.wordpress.com/2019/12/28/hello-world-on-risc-v-with-qemu
 
 [riscv-asm-sheet]: https://github.com/jameslzhu/riscv-card/blob/master/riscv-card.pdf
 [riscv-asm-man]: https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md
 [sifive-u]: https://static.dev.sifive.com/FU540-C000-v1.0.pdf
 [sifive-e]: https://sifive.cdn.prismic.io/sifive%2F59a1f74e-d918-41c5-b837-3fe01ba7eaa1_fe310-g002-manual-v19p05.pdf
 [sifive-toolchain]: https://www.sifive.com/software
+
+[d1-url]: https://d1.docs.aw-ol.com/en/d1_dev/
+[hifive-url]: https://www.sifive.com/boards/hifive1-rev-b
+[ox64-url]: https://wiki.pine64.org/wiki/Ox64
+
+[docs-folder]: https://github.com/rtfb/riscv64-in-qemu/tree/master/docs
