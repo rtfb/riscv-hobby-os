@@ -31,14 +31,14 @@ endif
 
 OUT := out
 BINS := \
-	$(OUT)/user_sifive_u \
-	$(OUT)/user_sifive_e \
-	$(OUT)/user_sifive_e32 \
-	$(OUT)/user_sifive_u32 \
-	$(OUT)/user_hifive1_revb \
-	$(OUT)/user_ox64_u \
-	$(OUT)/user_d1_u \
-	$(OUT)/user_virt
+	$(OUT)/os_sifive_u \
+	$(OUT)/os_sifive_e \
+	$(OUT)/os_sifive_e32 \
+	$(OUT)/os_sifive_u32 \
+	$(OUT)/os_hifive1_revb \
+	$(OUT)/os_ox64_u \
+	$(OUT)/os_d1_u \
+	$(OUT)/os_virt
 
 # This target makes all the binaries depend on existence (but not timestamp) of
 # $(OUT), which lets us avoid repetitive 'mkdir -p out'
@@ -77,19 +77,19 @@ USER_D1_U_DEPS = $(USER_DEPS) \
 			src/machine/d1/timer.c src/drivers/uart/uart-d1.c
 
 .PHONY: run-baremetal
-run-baremetal: $(OUT)/user_sifive_u
+run-baremetal: $(OUT)/os_sifive_u
 	$(QEMU_LAUNCHER) --binary=$<
 
 .PHONY: run-baremetale64
-run-baremetale64: $(OUT)/user_sifive_e
+run-baremetale64: $(OUT)/os_sifive_e
 	$(QEMU_LAUNCHER) --binary=$<
 
 .PHONY: run-baremetal32
-run-baremetal32: $(OUT)/user_sifive_e32
+run-baremetal32: $(OUT)/os_sifive_e32
 	$(QEMU_LAUNCHER) --binary=$<
 
 .PHONY: run-baremetalu32
-run-baremetalu32: $(OUT)/user_sifive_u32
+run-baremetalu32: $(OUT)/os_sifive_u32
 	$(QEMU_LAUNCHER) --binary=$<
 
 # Note:
@@ -111,24 +111,24 @@ GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -Wa,-Iinclude \
           -Tsrc/kernel.ld -Iinclude -Iuser/inc
 
-$(OUT)/user_sifive_u: ${USER_SIFIVE_U_DEPS}
+$(OUT)/os_sifive_u: ${USER_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-g -include include/machine/qemu_u.h \
 		${USER_SIFIVE_U_DEPS} -o $@
 
-$(OUT)/user_sifive_u32: ${USER_SIFIVE_U32_DEPS}
+$(OUT)/os_sifive_u32: ${USER_SIFIVE_U32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
 		-Wa,--defsym,XLEN=32 \
 		-g -include include/machine/qemu_u.h \
 		${USER_SIFIVE_U32_DEPS} -o $@
 
-$(OUT)/user_sifive_e: ${USER_SIFIVE_E_DEPS}
+$(OUT)/os_sifive_e: ${USER_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 -g \
 		-include include/machine/qemu_e.h \
 		${USER_SIFIVE_E_DEPS} -o $@
 
-$(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
+$(OUT)/os_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 \
 		-Wa,--defsym,XLEN=32 \
@@ -136,13 +136,13 @@ $(OUT)/user_sifive_e32: ${USER_SIFIVE_E32_DEPS}
 		-include include/machine/qemu_e.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
-$(OUT)/user_virt: ${USER_VIRT_DEPS}
+$(OUT)/os_virt: ${USER_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wa,--defsym,QEMU_EXIT=0x100000 -g \
 		-include include/machine/qemu_virt.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
-$(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
+$(OUT)/os_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32imac -mabi=ilp32 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20010000 \
 		-Wa,--defsym,XLEN=32 \
@@ -150,46 +150,46 @@ $(OUT)/user_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
 		-include include/machine/hifive1-revb.h \
 		${USER_SIFIVE_E32_DEPS} -o $@
 
-$(OUT)/user_ox64_u: ${USER_OX64_U_DEPS}
+$(OUT)/os_ox64_u: ${USER_OX64_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,RAM_START=0x50200000 -g \
 		-include include/machine/ox64.h \
 		${USER_OX64_U_DEPS} -o $@
 
-$(OUT)/user_ox64_u.bin: $(OUT)/user_ox64_u
+$(OUT)/os_ox64_u.bin: $(OUT)/os_ox64_u
 	$(RISCV64_OBJCOPY) -O binary $< $@
 
-$(OUT)/user_ox64_u.s: $(OUT)/user_ox64_u
+$(OUT)/os_ox64_u.s: $(OUT)/os_ox64_u
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
-$(OUT)/user_d1_u: ${USER_D1_U_DEPS}
+$(OUT)/os_d1_u: ${USER_D1_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,RAM_START=0x40200000 -g \
 		-include include/machine/d1.h \
 		${USER_D1_U_DEPS} -o $@
 
-$(OUT)/user_d1_u.bin: $(OUT)/user_d1_u
+$(OUT)/os_d1_u.bin: $(OUT)/os_d1_u
 	$(RISCV64_OBJCOPY) -O binary $< $@
 
-$(OUT)/user_d1_u.s: $(OUT)/user_d1_u
+$(OUT)/os_d1_u.s: $(OUT)/os_d1_u
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
-$(OUT)/test-output-u64.txt: $(OUT)/user_sifive_u
+$(OUT)/test-output-u64.txt: $(OUT)/os_sifive_u
 	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-output-u64.txt $@
 	@echo "OK"
 
-$(OUT)/test-output-u32.txt: $(OUT)/user_sifive_u32
+$(OUT)/test-output-u32.txt: $(OUT)/os_sifive_u32
 	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-output-u32.txt $@
 	@echo "OK"
 
-$(OUT)/smoke-test-output-u32.txt: $(OUT)/user_sifive_u32
+$(OUT)/smoke-test-output-u32.txt: $(OUT)/os_sifive_u32
 	@$(QEMU_LAUNCHER) --bootargs smoke-test --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-u32.txt $@
 	@echo "OK"
 
-$(OUT)/smoke-test-output-u64.txt: $(OUT)/user_sifive_u
+$(OUT)/smoke-test-output-u64.txt: $(OUT)/os_sifive_u
 	@$(QEMU_LAUNCHER) --bootargs smoke-test --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-u64.txt $@
 	@echo "OK"
@@ -197,33 +197,33 @@ $(OUT)/smoke-test-output-u64.txt: $(OUT)/user_sifive_u
 $(OUT):
 	mkdir -p $(OUT)
 
-$(OUT)/user_sifive_u.s: $(OUT)/user_sifive_u
+$(OUT)/os_sifive_u.s: $(OUT)/os_sifive_u
 	$(RISCV64_OBJDUMP) -D $< > $@
 
-$(OUT)/user_sifive_u.rodata: $(OUT)/user_sifive_u
+$(OUT)/os_sifive_u.rodata: $(OUT)/os_sifive_u
 	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
 
-$(OUT)/user_sifive_e32.s: $(OUT)/user_sifive_e32
+$(OUT)/os_sifive_e32.s: $(OUT)/os_sifive_e32
 	$(RISCV64_OBJDUMP) -D $< > $@
 
-$(OUT)/user_sifive_e32.rodata: $(OUT)/user_sifive_e32
+$(OUT)/os_sifive_e32.rodata: $(OUT)/os_sifive_e32
 	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
 
-$(OUT)/user_hifive1_revb.hex: $(OUT)/user_hifive1_revb
+$(OUT)/os_hifive1_revb.hex: $(OUT)/os_hifive1_revb
 	$(RISCV64_OBJCOPY) -O ihex $< $@
 
-$(OUT)/user_hifive1_revb.s: $(OUT)/user_hifive1_revb
+$(OUT)/os_hifive1_revb.s: $(OUT)/os_hifive1_revb
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
 # This target assumes a Segger J-Link software is installed on the system. Get it at
 # https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
 .PHONY: flash-hifive1-revb
-flash-hifive1-revb: $(OUT)/user_hifive1_revb.hex $(OUT)/user_hifive1_revb.s
+flash-hifive1-revb: $(OUT)/os_hifive1_revb.hex $(OUT)/os_hifive1_revb.s
 	echo "loadfile $<\nrnh\nexit" \
 		| JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1
 
 .PHONY: debug-board
-debug-board: $(OUT)/user_hifive1_revb
+debug-board: $(OUT)/os_hifive1_revb
 	JLinkGDBServer -device RISC-V -port 1234 &
 	$(GDB) $< -ex "set remotetimeout 240" -ex "target extended-remote localhost:1234"
 

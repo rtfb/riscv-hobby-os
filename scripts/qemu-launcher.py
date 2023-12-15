@@ -222,8 +222,8 @@ def main():
     parser.add_argument('--timeout', help='terminate qemu after timeout (e.g. 15s, 3m)')
     parser.add_argument('--qemu', help='qemu binary')
     parser.add_argument('--machine', help='"-machine" arg to pass to qemu')
-    parser.add_argument('--binary', help='binary to execute in qemu (defaults to user_sifive_u)',
-                        default='out/user_sifive_u')
+    parser.add_argument('--binary', help='binary to execute in qemu (defaults to os_sifive_u)',
+                        default='out/os_sifive_u')
     parser.add_argument('--debug', help='stop to wait for gdb before executing binary',
                         action='store_true')
     parser.add_argument('--bootargs', help='pass this as bootargs to the kernel')
