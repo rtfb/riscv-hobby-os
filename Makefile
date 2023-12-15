@@ -52,15 +52,43 @@ run32: run-baremetal32
 runm: run-baremetal
 runb: run-baremetal
 
-BASE_DEPS = src/boot.S src/kprintf.c src/kprintf.S src/baremetal-poweroff.S src/kernel.c \
-			src/syscalls.c src/pmp.c src/riscv.c src/fdt.c src/string.c \
-			src/proc_test.c src/spinlock.c src/proc.c src/context.S \
-			src/pagealloc.c src/fs.c src/bakedinfs.c src/runflags.c \
-			src/pipe.c src/drivers/drivers.c src/drivers/uart/uart.c \
-			src/drivers/hd44780/hd44780.c src/plic.c src/gpio.c src/sbi.c \
-			user/src/userland.c user/src/usyscalls.S user/src/user-printf.S \
-			user/src/user-printf.c user/src/shell.c user/src/ustr.c \
-			user/src/errno.c
+# boot.S has to go first in the list of dependencies so that the _start
+# function is the very first thing in the .text section. Keeping it in a
+# separate variable to prevent an occasional re-sorting of source files from
+# moving it down the list.
+BOOT = src/boot.S
+BASE_DEPS = $(BOOT) \
+	src/bakedinfs.c \
+	src/baremetal-poweroff.S \
+	src/context.S \
+	src/drivers/drivers.c \
+	src/drivers/hd44780/hd44780.c \
+	src/drivers/uart/uart.c \
+	src/fdt.c \
+	src/fs.c \
+	src/gpio.c \
+	src/kernel.c \
+	src/kprintf.c \
+	src/kprintf.S \
+	src/pagealloc.c \
+	src/pipe.c \
+	src/plic.c \
+	src/pmp.c \
+	src/proc.c \
+	src/proc_test.c \
+	src/riscv.c \
+	src/runflags.c \
+	src/sbi.c \
+	src/spinlock.c \
+	src/string.c \
+	src/syscalls.c \
+	user/src/errno.c \
+	user/src/shell.c \
+	user/src/userland.c \
+	user/src/user-printf.c \
+	user/src/user-printf.S \
+	user/src/ustr.c \
+	user/src/usyscalls.S
 
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 OS_SIFIVE_U_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
