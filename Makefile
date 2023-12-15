@@ -52,7 +52,7 @@ run32: run-baremetal32
 runm: run-baremetal
 runb: run-baremetal
 
-USER_DEPS = src/boot.S src/kprintf.c src/kprintf.S src/baremetal-poweroff.S src/kernel.c \
+BASE_DEPS = src/boot.S src/kprintf.c src/kprintf.S src/baremetal-poweroff.S src/kernel.c \
 			src/syscalls.c src/pmp.c src/riscv.c src/fdt.c src/string.c \
 			src/proc_test.c src/spinlock.c src/proc.c src/context.S \
 			src/pagealloc.c src/fs.c src/bakedinfs.c src/runflags.c \
@@ -61,19 +61,20 @@ USER_DEPS = src/boot.S src/kprintf.c src/kprintf.S src/baremetal-poweroff.S src/
 			user/src/userland.c user/src/usyscalls.S user/src/user-printf.S \
 			user/src/user-printf.c user/src/shell.c user/src/ustr.c \
 			user/src/errno.c
+
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
-USER_SIFIVE_U_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_SIFIVE_U_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
-USER_SIFIVE_E_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_SIFIVE_E_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
-USER_SIFIVE_E32_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_SIFIVE_E32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
-USER_SIFIVE_U32_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_SIFIVE_U32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_VIRT_DEPS = $(TEST_DEPS)
-USER_VIRT_DEPS = $(USER_DEPS) src/timer.c src/drivers/uart/uart-generic.c
-USER_OX64_U_DEPS = $(USER_DEPS) \
+OS_VIRT_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_OX64_U_DEPS = $(BASE_DEPS) \
 			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
-USER_D1_U_DEPS = $(USER_DEPS) \
+OS_D1_U_DEPS = $(BASE_DEPS) \
 			src/machine/d1/timer.c src/drivers/uart/uart-d1.c
 
 .PHONY: run-baremetal
@@ -111,50 +112,50 @@ GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -Wa,-Iinclude \
           -Tsrc/kernel.ld -Iinclude -Iuser/inc
 
-$(OUT)/os_sifive_u: ${USER_SIFIVE_U_DEPS}
+$(OUT)/os_sifive_u: ${OS_SIFIVE_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-g -include include/machine/qemu_u.h \
-		${USER_SIFIVE_U_DEPS} -o $@
+		${OS_SIFIVE_U_DEPS} -o $@
 
-$(OUT)/os_sifive_u32: ${USER_SIFIVE_U32_DEPS}
+$(OUT)/os_sifive_u32: ${OS_SIFIVE_U32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
 		-Wa,--defsym,XLEN=32 \
 		-g -include include/machine/qemu_u.h \
-		${USER_SIFIVE_U32_DEPS} -o $@
+		${OS_SIFIVE_U32_DEPS} -o $@
 
-$(OUT)/os_sifive_e: ${USER_SIFIVE_E_DEPS}
+$(OUT)/os_sifive_e: ${OS_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 -g \
 		-include include/machine/qemu_e.h \
-		${USER_SIFIVE_E_DEPS} -o $@
+		${OS_SIFIVE_E_DEPS} -o $@
 
-$(OUT)/os_sifive_e32: ${USER_SIFIVE_E32_DEPS}
+$(OUT)/os_sifive_e32: ${OS_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 \
 		-Wa,--defsym,XLEN=32 \
 		-g -Wl,--defsym,RAM_SIZE=0x4000 \
 		-include include/machine/qemu_e.h \
-		${USER_SIFIVE_E32_DEPS} -o $@
+		${OS_SIFIVE_E32_DEPS} -o $@
 
-$(OUT)/os_virt: ${USER_VIRT_DEPS}
+$(OUT)/os_virt: ${OS_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wa,--defsym,QEMU_EXIT=0x100000 -g \
 		-include include/machine/qemu_virt.h \
-		${USER_SIFIVE_E32_DEPS} -o $@
+		${OS_SIFIVE_E32_DEPS} -o $@
 
-$(OUT)/os_hifive1_revb: ${USER_SIFIVE_E32_DEPS}
+$(OUT)/os_hifive1_revb: ${OS_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32imac -mabi=ilp32 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20010000 \
 		-Wa,--defsym,XLEN=32 \
 		-Wl,--defsym,RAM_SIZE=0x4000 \
 		-include include/machine/hifive1-revb.h \
-		${USER_SIFIVE_E32_DEPS} -o $@
+		${OS_SIFIVE_E32_DEPS} -o $@
 
-$(OUT)/os_ox64_u: ${USER_OX64_U_DEPS}
+$(OUT)/os_ox64_u: ${OS_OX64_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,RAM_START=0x50200000 -g \
 		-include include/machine/ox64.h \
-		${USER_OX64_U_DEPS} -o $@
+		${OS_OX64_U_DEPS} -o $@
 
 $(OUT)/os_ox64_u.bin: $(OUT)/os_ox64_u
 	$(RISCV64_OBJCOPY) -O binary $< $@
@@ -162,11 +163,11 @@ $(OUT)/os_ox64_u.bin: $(OUT)/os_ox64_u
 $(OUT)/os_ox64_u.s: $(OUT)/os_ox64_u
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
-$(OUT)/os_d1_u: ${USER_D1_U_DEPS}
+$(OUT)/os_d1_u: ${OS_D1_U_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,RAM_START=0x40200000 -g \
 		-include include/machine/d1.h \
-		${USER_D1_U_DEPS} -o $@
+		${OS_D1_U_DEPS} -o $@
 
 $(OUT)/os_d1_u.bin: $(OUT)/os_d1_u
 	$(RISCV64_OBJCOPY) -O binary $< $@
