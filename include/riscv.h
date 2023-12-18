@@ -27,6 +27,23 @@
 #define MIE_SEIE_BIT   9  // mie.SEIE (Supervisor External Interrupt Enable) bit
 #define MIE_MEIE_BIT  11  // mie.MEIE (Machine External Interrupt Enable) bit
 
+#define PMP_ADDR0     "pmpaddr0"
+#define PMP_ADDR1     "pmpaddr1"
+#define PMP_ADDR2     "pmpaddr2"
+#define PMP_ADDR3     "pmpaddr3"
+#define PMP_ADDR4     "pmpaddr4"
+#define PMP_ADDR5     "pmpaddr5"
+#define PMP_ADDR6     "pmpaddr6"
+#define PMP_ADDR7     "pmpaddr7"
+#define PMP_ADDR8     "pmpaddr8"
+
+#define set_pmpaddr(reg, addr)  \
+    asm volatile (              \
+        "csrw " reg ", %0"      \
+        :                       \
+        : "r"(addr)             \
+    )
+
 void set_status_interrupt_pending();
 void set_status_interrupt_enable_and_pending();
 void clear_status_interrupt_enable();
@@ -39,11 +56,7 @@ void* get_epc_csr();
 void set_ie_csr(unsigned int value);
 void set_tvec_csr(void *ptr);
 
-void set_pmpaddr0(void* addr);
-void set_pmpaddr1(void* addr);
-void set_pmpaddr2(void* addr);
-void set_pmpaddr3(void* addr);
-void set_pmpcfg0(unsigned long value);
+void set_pmpcfg0(regsize_t value);
 
 void set_user_mode();
 void set_jump_address(void *func);

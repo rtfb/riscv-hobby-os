@@ -28,16 +28,16 @@ void* init_pmp() {
     regsize_t ram_size = (regsize_t)&RAM_SIZE;
     void* paged_mem_end = (void*)(ram_start + ram_size);
 
-#ifdef TARGET_M_MODE
+#ifdef HAS_PMP
     // define 4 memory address ranges for Physical Memory Protection
     // 0 :: [0 .. user_payload]
     // 1 :: [user_payload .. .rodata]
     // 2 :: [.rodata .. stack_bottom]
     // 3 :: [stack_bottom .. paged_mem_end]
-    set_pmpaddr0(&user_payload);
-    set_pmpaddr1(&rodata);
-    set_pmpaddr2(&stack_bottom);
-    set_pmpaddr3(paged_mem_end);
+    set_pmpaddr(PMP_ADDR0, shift_right_addr(&user_payload, 2));
+    set_pmpaddr(PMP_ADDR1, shift_right_addr(&rodata, 2));
+    set_pmpaddr(PMP_ADDR2, shift_right_addr(&stack_bottom, 2));
+    set_pmpaddr(PMP_ADDR3, shift_right_addr(paged_mem_end, 2));
 
     // set 4 PMP entries to TOR (Top Of the address Range) addressing mode so that the associated
     // address register forms the top of the address range per entry,
@@ -49,7 +49,7 @@ void* init_pmp() {
     // 0 :: [0 .. user_payload]                      000  M-mode kernel code, no access in U-mode
     // 1 :: [user_payload .. .rodata]                X0R  user code, executable, non-modifiable in U-mode
     // 2 :: [.rodata .. stack_bottom]                000  no access in U-mode
-    // 3 :: [stack_bottom .. paged_mem_end]          0WR  user stack, modifiable, but no executable in U-mode
+    // 3 :: [stack_bottom .. paged_mem_end]          0WR  user heap, modifiable, but no executable in U-mode
     // access (R)ead, (W)rite and e(X)ecute are 1 bit flags and stored in 0:2 bits of every PMP entry
     unsigned long access_flags =   ((PMP_X | PMP_R) * PMP_1)
                                  | ((PMP_W | PMP_R) * PMP_3);
@@ -57,4 +57,9 @@ void* init_pmp() {
 #endif
 
     return paged_mem_end;
+}
+
+void* shift_right_addr(void* addr, int bits) {
+    unsigned long iaddr = (unsigned long)addr;
+    return (void*)(iaddr >> bits);
 }

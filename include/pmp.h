@@ -1,6 +1,8 @@
 #ifndef _PMP_H
 #define _PMP_H
 
+#define HAS_PMP  TARGET_M_MODE
+
 #define PMP_LOCK  (1 << 7)
 #define PMP_NAPOT (3 << 3)          // Address Mode: Naturally aligned power-of-two region, >=8 bytes
 #define PMP_NA4   (2 << 3)          // Address Mode: Naturally aligned four-byte region
@@ -24,5 +26,6 @@ extern void* stack_top;
 
 // Returns the end of RAM address, which is then passed to init_paged_memory.
 void* init_pmp();
+void* shift_right_addr(void* addr, int bits);
 
 #endif // ifndef _PMP_H
