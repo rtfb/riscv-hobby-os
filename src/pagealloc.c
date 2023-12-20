@@ -22,6 +22,8 @@ void init_paged_memory(void* paged_mem_end, int do_page_report) {
         mem += PAGE_SIZE;
         i++;
     }
+    init_pmp_config(&paged_memory.pmp_config, (void*)paged_mem_start);
+    apply_pmp_config(&paged_memory.pmp_config);
     paged_memory.num_pages = i;
     if (do_page_report) {
         kprintf("paged memory: start=%p, end=%p, npages=%d\n",

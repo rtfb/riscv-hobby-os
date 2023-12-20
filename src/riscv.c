@@ -46,14 +46,6 @@ unsigned int get_hartid() {
     return 0; // XXX: change that when SMP gets implemented
 }
 
-void set_pmpcfg0(regsize_t value) {
-    asm volatile (
-        "csrw   pmpcfg0, %0;"   // set pmpcfg0 to the requested value
-        :                       // no output
-        : "r"(value)            // input in value
-    );
-}
-
 unsigned int get_status_csr() {
     register unsigned int a0 asm ("a0");
     asm volatile (

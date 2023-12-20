@@ -28,33 +28,7 @@ void* init_pmp() {
     regsize_t ram_size = (regsize_t)&RAM_SIZE;
     void* paged_mem_end = (void*)(ram_start + ram_size);
 
-#ifdef HAS_PMP
-    // define 4 memory address ranges for Physical Memory Protection
-    // 0 :: [0 .. user_payload]
-    // 1 :: [user_payload .. .rodata]
-    // 2 :: [.rodata .. stack_bottom]
-    // 3 :: [stack_bottom .. paged_mem_end]
-    set_pmpaddr(PMP_ADDR0, shift_right_addr(&user_payload, 2));
-    set_pmpaddr(PMP_ADDR1, shift_right_addr(&rodata, 2));
-    set_pmpaddr(PMP_ADDR2, shift_right_addr(&stack_bottom, 2));
-    set_pmpaddr(PMP_ADDR3, shift_right_addr(paged_mem_end, 2));
-
-    // set 4 PMP entries to TOR (Top Of the address Range) addressing mode so that the associated
-    // address register forms the top of the address range per entry,
-    // the type of PMP entry is encoded in 2 bits: OFF = 0, TOR = 1, NA4 = 2, NAPOT = 3
-    // and stored in 3:4 bits of every PMP entry
-    unsigned long mode = PMP_TOR * (PMP_0 | PMP_1 | PMP_2 | PMP_3);
-
-    // set access flags for 4 PMP entries:
-    // 0 :: [0 .. user_payload]                      000  M-mode kernel code, no access in U-mode
-    // 1 :: [user_payload .. .rodata]                X0R  user code, executable, non-modifiable in U-mode
-    // 2 :: [.rodata .. stack_bottom]                000  no access in U-mode
-    // 3 :: [stack_bottom .. paged_mem_end]          0WR  user heap, modifiable, but no executable in U-mode
-    // access (R)ead, (W)rite and e(X)ecute are 1 bit flags and stored in 0:2 bits of every PMP entry
-    unsigned long access_flags =   ((PMP_X | PMP_R) * PMP_1)
-                                 | ((PMP_W | PMP_R) * PMP_3);
-    set_pmpcfg0(mode | access_flags);
-#endif
+    // Note: the rest of init is done in init_pmp_config() which is called later
 
     return paged_mem_end;
 }
@@ -62,4 +36,84 @@ void* init_pmp() {
 void* shift_right_addr(void* addr, int bits) {
     unsigned long iaddr = (unsigned long)addr;
     return (void*)(iaddr >> bits);
+}
+
+void init_pmp_config(pmp_config_t *config, void* paged_mem_start) {
+#if HAS_PMP
+    // init all pmpaddrXX to 0. Can't loop over them because the CSR argument
+    // must be a compile-time const
+    set_pmpaddr(PMP_ADDR0_CSR, 0);
+    set_pmpaddr(PMP_ADDR1_CSR, 0);
+    set_pmpaddr(PMP_ADDR2_CSR, 0);
+    set_pmpaddr(PMP_ADDR3_CSR, 0);
+    set_pmpaddr(PMP_ADDR4_CSR, 0);
+    set_pmpaddr(PMP_ADDR5_CSR, 0);
+    set_pmpaddr(PMP_ADDR6_CSR, 0);
+    set_pmpaddr(PMP_ADDR7_CSR, 0);
+    set_pmpaddr(PMP_ADDR8_CSR, 0);
+    set_pmpaddr(PMP_ADDR9_CSR, 0);
+    set_pmpaddr(PMP_ADDR10_CSR, 0);
+    set_pmpaddr(PMP_ADDR11_CSR, 0);
+    set_pmpaddr(PMP_ADDR12_CSR, 0);
+    set_pmpaddr(PMP_ADDR13_CSR, 0);
+    set_pmpaddr(PMP_ADDR14_CSR, 0);
+    set_pmpaddr(PMP_ADDR15_CSR, 0);
+
+    // zero out all configuration entries
+    for (int i = 0; i < NUM_PMP_CSRS; i++) {
+        config->pmpxx[i] = 0;
+    }
+
+    // define 4 memory address ranges for Physical Memory Protection
+    // 0 :: [0 .. user_payload]
+    // 1 :: [user_payload .. .rodata]
+    // 2 :: [.rodata .. stack_bottom]
+    // 3 :: [stack_bottom .. paged_mem_end]
+    config->num_available = NUM_PMP_CSRS - 5;
+    set_pmpaddr(PMP_ADDR0_CSR + NUM_PMP_CSRS - 5, 0);
+    set_pmpaddr(PMP_ADDR0_CSR + NUM_PMP_CSRS - 4, shift_right_addr(&user_payload, 2));
+    set_pmpaddr(PMP_ADDR0_CSR + NUM_PMP_CSRS - 3, shift_right_addr(&rodata, 2));
+    set_pmpaddr(PMP_ADDR0_CSR + NUM_PMP_CSRS - 2, shift_right_addr(&stack_bottom, 2));
+
+    // finally, set all the heap pages to be read-writable by default. Make it
+    // the last config entry in order to allow overrides by entries preceding it
+    // (the PMP configs are applied in-order, the first that applies is the one
+    // in effect).
+    void *paged_mem_end = paged_mem_start + PAGE_SIZE * MAX_PAGES;
+    void *end = shift_right_addr(paged_mem_end, 2);
+    set_pmpaddr(PMP_ADDR0_CSR + NUM_PMP_CSRS - 1, end);
+
+    // set the uppermost 4 PMP entries to TOR (Top Of the address Range)
+    // addressing mode so that the associated address register forms the top of
+    // the address range per entry, the type of PMP entry is encoded in 2 bits:
+    // OFF = 0, TOR = 1, NA4 = 2, NAPOT = 3 and stored in 3:4 bits of every PMP
+    // entry
+
+    // set access flags for the PMP entries:
+    // 0 :: [0 .. user_payload]                      000  M-mode kernel code, no access in U-mode
+    // 1 :: [user_payload .. .rodata]                X0R  user code, executable, non-modifiable in U-mode
+    // 2 :: [.rodata .. stack_bottom]                000  no access in U-mode
+    // 3 :: [stack_bottom .. paged_mem_end]          0WR  user heap, modifiable, but no executable in U-mode
+    // access (R)ead, (W)rite and e(X)ecute are 1 bit flags and stored in 0:2 bits of every PMP entry
+    config->pmpxx[NUM_PMP_CSRS - 4] = PMP_TOR | 0;
+    config->pmpxx[NUM_PMP_CSRS - 3] = PMP_TOR | PMP_X | PMP_R;
+    config->pmpxx[NUM_PMP_CSRS - 2] = PMP_TOR | 0;
+    config->pmpxx[NUM_PMP_CSRS - 1] = PMP_TOR | PMP_R | PMP_W;
+#endif
+}
+
+void apply_pmp_config(pmp_config_t *config) {
+#if HAS_PMP
+#if __riscv_xlen == 32
+    set_pmpcfg(PMP_CFG1_CSR, *(regsize_t*)(config->pmpxx + 4));
+    set_pmpcfg(PMP_CFG3_CSR, *(regsize_t*)(config->pmpxx + 12));
+#endif
+    set_pmpcfg(PMP_CFG0_CSR, *(regsize_t*)config->pmpxx);
+    set_pmpcfg(PMP_CFG2_CSR, *(regsize_t*)(config->pmpxx + XLEN/8));
+#endif
+}
+
+void apply_ith_config(pmp_config_t *config, int i) {
+    // TODO: do the math and set only one cfg register
+    apply_pmp_config(config);
 }

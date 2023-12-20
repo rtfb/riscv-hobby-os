@@ -27,21 +27,46 @@
 #define MIE_SEIE_BIT   9  // mie.SEIE (Supervisor External Interrupt Enable) bit
 #define MIE_MEIE_BIT  11  // mie.MEIE (Machine External Interrupt Enable) bit
 
-#define PMP_ADDR0     "pmpaddr0"
-#define PMP_ADDR1     "pmpaddr1"
-#define PMP_ADDR2     "pmpaddr2"
-#define PMP_ADDR3     "pmpaddr3"
-#define PMP_ADDR4     "pmpaddr4"
-#define PMP_ADDR5     "pmpaddr5"
-#define PMP_ADDR6     "pmpaddr6"
-#define PMP_ADDR7     "pmpaddr7"
-#define PMP_ADDR8     "pmpaddr8"
+// pmpaddrXX CSRs are numbered 0x3b0, 0x3b1, 0x3b2, etc. In some cases it's more
+// convenient to calculate the CSR number than to use its mnemonic, this
+// constant is here to help. For example, use (PMP_ADDR0_CSR + 7) to get an
+// equivalent of pmpaddr7.
+#define PMP_ADDR0_CSR     0x3b0
+#define PMP_ADDR1_CSR     (PMP_ADDR0_CSR + 1)
+#define PMP_ADDR2_CSR     (PMP_ADDR0_CSR + 2)
+#define PMP_ADDR3_CSR     (PMP_ADDR0_CSR + 3)
+#define PMP_ADDR4_CSR     (PMP_ADDR0_CSR + 4)
+#define PMP_ADDR5_CSR     (PMP_ADDR0_CSR + 5)
+#define PMP_ADDR6_CSR     (PMP_ADDR0_CSR + 6)
+#define PMP_ADDR7_CSR     (PMP_ADDR0_CSR + 7)
+#define PMP_ADDR8_CSR     (PMP_ADDR0_CSR + 8)
+#define PMP_ADDR9_CSR     (PMP_ADDR0_CSR + 9)
+#define PMP_ADDR10_CSR    (PMP_ADDR0_CSR + 10)
+#define PMP_ADDR11_CSR    (PMP_ADDR0_CSR + 11)
+#define PMP_ADDR12_CSR    (PMP_ADDR0_CSR + 12)
+#define PMP_ADDR13_CSR    (PMP_ADDR0_CSR + 13)
+#define PMP_ADDR14_CSR    (PMP_ADDR0_CSR + 14)
+#define PMP_ADDR15_CSR    (PMP_ADDR0_CSR + 15)
 
-#define set_pmpaddr(reg, addr)  \
-    asm volatile (              \
-        "csrw " reg ", %0"      \
-        :                       \
-        : "r"(addr)             \
+#define set_pmpaddr(csr_num, addr)  \
+    __asm__ volatile (              \
+        "csrw %0, %1"               \
+        :                           \
+        : "i"(csr_num), "r"(addr)   \
+    )
+
+#define PMP_CFG0_CSR     0x3a0
+#define PMP_CFG2_CSR     (PMP_CFG0_CSR + 2)
+#if __riscv_xlen == 32
+#define PMP_CFG1_CSR     (PMP_CFG0_CSR + 1)
+#define PMP_CFG3_CSR     (PMP_CFG0_CSR + 3)
+#endif
+
+#define set_pmpcfg(csr_num, valur)  \
+    __asm__ volatile (              \
+        "csrw %0, %1"               \
+        :                           \
+        : "i"(csr_num), "r"(valur)  \
     )
 
 void set_status_interrupt_pending();
@@ -55,8 +80,6 @@ void set_status_csr(unsigned int status);
 void* get_epc_csr();
 void set_ie_csr(unsigned int value);
 void set_tvec_csr(void *ptr);
-
-void set_pmpcfg0(regsize_t value);
 
 void set_user_mode();
 void set_jump_address(void *func);

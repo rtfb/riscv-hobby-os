@@ -3,6 +3,12 @@
 
 #define HAS_PMP  TARGET_M_MODE
 
+#define PAGE_SIZE           512 // bytes
+
+// Let's hardcode it for now. Make it small enough to fit in HiFive1 (32 pages
+// * 512 bytes = 16k RAM).
+#define MAX_PAGES           32
+
 #define PMP_LOCK  (1 << 7)
 #define PMP_NAPOT (3 << 3)          // Address Mode: Naturally aligned power-of-two region, >=8 bytes
 #define PMP_NA4   (2 << 3)          // Address Mode: Naturally aligned four-byte region
@@ -16,6 +22,13 @@
 #define PMP_2     (1 << 16)         // [16..24] 3rd PMP entry in pmpcfgX register
 #define PMP_3     (1 << 24)         // [24..32] 4th PMP entry in pmpcfgX register
 
+typedef struct pmp_config_s {
+#if HAS_PMP
+    uint8_t pmpxx[NUM_PMP_CSRS];    // stores pmpXXcfg bytes
+#endif
+    int num_available;              // number of configs available for dynamic use
+} pmp_config_t;
+
 // defined in boot.s:
 extern void* user_payload;
 extern void* rodata;
@@ -27,5 +40,8 @@ extern void* stack_top;
 // Returns the end of RAM address, which is then passed to init_paged_memory.
 void* init_pmp();
 void* shift_right_addr(void* addr, int bits);
+void init_pmp_config(pmp_config_t *config, void* paged_mem_start);
+void apply_pmp_config(pmp_config_t *config);
+void apply_ith_config(pmp_config_t *config, int i);
 
 #endif // ifndef _PMP_H

@@ -34,4 +34,6 @@
 
 #define NUM_HARTS   1
 
+#define NUM_PMP_CSRS   8
+
 #endif // ifndef _HIFIVE1_REVB_

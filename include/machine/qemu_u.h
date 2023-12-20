@@ -26,4 +26,6 @@
 
 #define NUM_HARTS   2
 
+#define NUM_PMP_CSRS   16
+
 #endif // ifndef _QEMU_U_H_

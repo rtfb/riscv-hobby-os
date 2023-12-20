@@ -2,12 +2,8 @@
 #define _PAGEALLOC_H_
 
 #include "spinlock.h"
-
-#define PAGE_SIZE           512 // bytes
-
-// Let's hardcode it for now. Make it small enough to fit in HiFive1 (32 pages
-// * 512 bytes = 16k RAM).
-#define MAX_PAGES           32
+#include "pmp.h"
+#include "riscv.h"
 
 #define PAGE_FREE           0
 #define PAGE_ALLOCATED      1
@@ -25,6 +21,8 @@ typedef struct paged_mem_s {
     spinlock lock;
     page_t pages[MAX_PAGES];
     uint32_t num_pages;
+
+    pmp_config_t pmp_config;
 
     // the region of unclaimed memory between stack_top and the first page
     regsize_t unclaimed_start;
