@@ -207,8 +207,13 @@ uint32_t _userland traverse(cmd_t *node, int depth) {
             close(right_pipe_w);  // close the extra copy to keep refcount right
         }
         uint32_t code = execv(node->args[0], node->args);
+        // void *stack_page = __errno_location() + sizeof(uintptr_t*) - PAGE_SIZE;
+        // int pmp_index = isolate_pg(stack_page - PAGE_SIZE);
+        // int *pp = (int*)(stack_page - PAGE_SIZE);
+        // pp[127] = 12;
         // normally exec doesn't return, but if it did, it's an error:
         printf(sh_exec_err_fmt, node->args[0], code);
+        // unisolate_page(pmp_index);
         exit(code);
     }
 
@@ -223,6 +228,14 @@ uint32_t _userland traverse(cmd_t *node, int depth) {
 }
 
 int _userland u_main_shell(int argc, char* argv[]) {
+//    int *test = (int*)pgalloc();
+//    int pmp_index = isolate_pg(test);
+//    int i = 127;
+//    int val = test[i];
+//    test[i] = 1;
+//    unisolate_page(pmp_index);
+//    pgfree(test);
+
     cmd_t *cmd_slots = (cmd_t*)pgalloc();
     int num_slots = PAGE_SIZE / sizeof(cmd_t);
     cmdbuf_t cmdpool = sh_init_cmd_slots(cmd_slots, num_slots);

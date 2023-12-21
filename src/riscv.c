@@ -46,6 +46,14 @@ unsigned int get_hartid() {
     return 0; // XXX: change that when SMP gets implemented
 }
 
+void fence_i() {
+    asm volatile (
+        "fence.i"
+        :            // no output
+        :
+    );
+}
+
 unsigned int get_status_csr() {
     register unsigned int a0 asm ("a0");
     asm volatile (

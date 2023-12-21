@@ -37,9 +37,11 @@ int32_t _userland printfvec(char const* fmt, regsize_t* args) {
     if (!buf) {
         return -1;
     }
+    // int pmp_index = isolate_pg(buf + 512);
     int32_t buf_written = printfvecbuf(fmt, args, 7, buf, PAGE_SIZE-1);
     buf[buf_written] = 0;
     int32_t nwritten = write(1, buf, buf_written);
+    // unisolate_pg(pmp_index);
     pgfree(buf);
     return nwritten;
 }

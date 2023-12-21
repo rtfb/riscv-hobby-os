@@ -33,6 +33,8 @@ void *syscall_vector[] _text = {
     [SYS_NR_pgalloc]   sys_pgalloc,
     [SYS_NR_pgfree]    sys_pgfree,
     [SYS_NR_gpio]      sys_gpio,
+    [SYS_NR_isolate_pg]     sys_isolate_pg,
+    [SYS_NR_unisolate_pg]   sys_unisolate_pg,
 };
 
 void syscall() {
@@ -179,4 +181,14 @@ uint32_t sys_gpio() {
     uint32_t enable = (uint32_t)trap_frame.regs[REG_A1];
     uint32_t value = (uint32_t)trap_frame.regs[REG_A2];
     return gpio_do_syscall(pin_num, enable, value);
+}
+
+uint32_t sys_isolate_pg() {
+    void *page = (void*)trap_frame.regs[REG_A0];
+    return isolate_page(page);
+}
+
+uint32_t sys_unisolate_pg() {
+    int pmp_index = (int)trap_frame.regs[REG_A0];
+    return unisolate_page(pmp_index);
 }

@@ -26,3 +26,5 @@
 #define SYS_NR_pgalloc        34
 #define SYS_NR_pgfree         35
 #define SYS_NR_gpio           36
+#define SYS_NR_isolate_pg     37
+#define SYS_NR_unisolate_pg   38

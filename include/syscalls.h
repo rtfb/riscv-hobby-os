@@ -64,6 +64,8 @@ uint32_t sys_pinfo();
 regsize_t sys_pgalloc();
 regsize_t sys_pgfree();
 uint32_t sys_gpio();
+uint32_t sys_isolate_pg();
+uint32_t sys_unisolate_pg();
 
 // These are implemented in assembler as of now:
 extern void poweroff();

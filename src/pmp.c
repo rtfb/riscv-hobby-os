@@ -38,6 +38,64 @@ void* shift_right_addr(void* addr, int bits) {
     return (void*)(iaddr >> bits);
 }
 
+void set_page_pmp_perms(pmp_config_t *config, void *page, int index, int perms) {
+#ifdef HAS_PMP
+    set_pmpaddr_idx(index, adjust_pmp_napot_addr(page));
+    config->pmpxx[index] = PMP_NAPOT | perms;
+    apply_pmp_config(config);
+#endif
+}
+
+void set_page_pmp_perms2(pmp_config_t *config, void *page, int index, int perms) {
+#ifdef HAS_PMP
+    set_pmpaddr_idx(index, (void*)(((regsize_t)page >> 2) & ~1));
+    config->pmpxx[index] = PMP_NAPOT | perms;
+    apply_pmp_config(config);
+#endif
+}
+
+void reset_page_pmp_perms(pmp_config_t *config, int index) {
+#ifdef HAS_PMP
+    set_pmpaddr_idx(index, 0);
+    config->pmpxx[index] = 0;
+    apply_pmp_config(config);
+#endif
+}
+
+int find_free_pmp_slot(pmp_config_t *config) {
+#ifdef HAS_PMP
+    for (int i = 0; i < config->num_available; i++) {
+        if (config->pmpxx[i] == 0) {
+            return i;
+        }
+    }
+#endif
+    return -1;
+}
+
+void set_pmpaddr_idx(int index, void *addr) {
+#ifdef HAS_PMP
+    switch (index) {
+        case  0: set_pmpaddr(PMP_ADDR0_CSR, addr); break;
+        case  1: set_pmpaddr(PMP_ADDR1_CSR, addr); break;
+        case  2: set_pmpaddr(PMP_ADDR2_CSR, addr); break;
+        case  3: set_pmpaddr(PMP_ADDR3_CSR, addr); break;
+        case  4: set_pmpaddr(PMP_ADDR4_CSR, addr); break;
+        case  5: set_pmpaddr(PMP_ADDR5_CSR, addr); break;
+        case  6: set_pmpaddr(PMP_ADDR6_CSR, addr); break;
+        case  7: set_pmpaddr(PMP_ADDR7_CSR, addr); break;
+        case  8: set_pmpaddr(PMP_ADDR8_CSR, addr); break;
+        case  9: set_pmpaddr(PMP_ADDR9_CSR, addr); break;
+        case 10: set_pmpaddr(PMP_ADDR10_CSR, addr); break;
+        case 11: set_pmpaddr(PMP_ADDR11_CSR, addr); break;
+        case 12: set_pmpaddr(PMP_ADDR12_CSR, addr); break;
+        case 13: set_pmpaddr(PMP_ADDR13_CSR, addr); break;
+        case 14: set_pmpaddr(PMP_ADDR14_CSR, addr); break;
+        case 15: set_pmpaddr(PMP_ADDR15_CSR, addr); break;
+    }
+#endif
+}
+
 void init_pmp_config(pmp_config_t *config, void* paged_mem_start) {
 #if HAS_PMP
     // init all pmpaddrXX to 0. Can't loop over them because the CSR argument
@@ -100,6 +158,19 @@ void init_pmp_config(pmp_config_t *config, void* paged_mem_start) {
     config->pmpxx[NUM_PMP_CSRS - 2] = PMP_TOR | 0;
     config->pmpxx[NUM_PMP_CSRS - 1] = PMP_TOR | PMP_R | PMP_W;
 #endif
+}
+
+// adjust_pmp_napot_addr takes a page address and converts it into a
+// naturally-aligned power-of-two (NAPOT) address with a range size encoding.
+// The address itself is right-shifted by two, just like elsewhere in PMP code,
+// then the lowest bits encode the range size: a zero, followed by a number of
+// ones representing the size. Size equals to 2**(number of ones + 3). For
+// example, 0111111 for size=512.
+void* adjust_pmp_napot_addr(void *addr) {
+    regsize_t a = (regsize_t)shift_right_addr(addr, 2);
+    a |= (PAGE_SIZE - 1) >> 3;  // set N-3 lowest bits to 1
+    a &= ~(PAGE_SIZE >> 3);     // clear a bit above them
+    return (void*)a;
 }
 
 void apply_pmp_config(pmp_config_t *config) {

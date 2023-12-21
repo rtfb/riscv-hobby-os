@@ -122,6 +122,7 @@ uint32_t proc_fork() {
     child->parent = parent;
     child->trap.pc = parent->trap.pc;
     copy_page(child->stack_page, parent->stack_page);
+    isolate_page(child->stack_page);
     copy_page(child->kstack_page, parent->kstack_page);
     copy_trap_frame(&child->trap, &parent->trap);
     copy_files(child, parent);

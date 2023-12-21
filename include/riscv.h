@@ -88,4 +88,6 @@ void set_scratch_csr(void* ptr);
 // implemented in boot.S
 void park_hart();
 
+void fence_i();
+
 #endif // ifndef _RISCV_H_

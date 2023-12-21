@@ -30,5 +30,7 @@ extern uint32_t pinfo(uint32_t pid, pinfo_t *pinfo);
 extern regsize_t pgalloc();
 extern regsize_t pgfree(void *page);
 extern uint32_t gpio(uint32_t pin_num, uint32_t enable, uint32_t value);
+extern uint32_t isolate_pg(void *page);
+extern uint32_t unisolate_pg(int pmp_index);
 
 #endif // ifndef _USYSCALLS_H_

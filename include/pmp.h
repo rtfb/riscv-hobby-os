@@ -1,7 +1,11 @@
 #ifndef _PMP_H
 #define _PMP_H
 
-#define HAS_PMP  TARGET_M_MODE
+#ifdef TARGET_M_MODE
+#define HAS_PMP  1
+#else
+#undef HAS_PMP
+#endif
 
 #define PAGE_SIZE           512 // bytes
 
@@ -40,8 +44,15 @@ extern void* stack_top;
 // Returns the end of RAM address, which is then passed to init_paged_memory.
 void* init_pmp();
 void* shift_right_addr(void* addr, int bits);
+void set_page_pmp_perms(pmp_config_t *config, void *page, int index, int perms);
+void set_page_pmp_perms2(pmp_config_t *config, void *page, int index, int perms);
+void reset_page_pmp_perms(pmp_config_t *config, int index);
+void set_pmpaddr_idx(int index, void *addr);
+int find_free_pmp_slot(pmp_config_t *config);
+
 void init_pmp_config(pmp_config_t *config, void* paged_mem_start);
 void apply_pmp_config(pmp_config_t *config);
 void apply_ith_config(pmp_config_t *config, int i);
+void* adjust_pmp_napot_addr(void *addr);
 
 #endif // ifndef _PMP_H

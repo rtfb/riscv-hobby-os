@@ -96,3 +96,13 @@ pgfree:
 gpio:
         macro_syscall SYS_NR_gpio
         ret
+
+.globl isolate_pg
+isolate_pg:
+        macro_syscall SYS_NR_isolate_pg
+        ret
+
+.globl unisolate_pg
+unisolate_pg:
+        macro_syscall SYS_NR_unisolate_pg
+        ret

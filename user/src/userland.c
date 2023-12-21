@@ -39,6 +39,7 @@ char fmt[] _user_rodata = "formatted string: num=%d, zero=%d, char=%c, hex=0x%x,
 char fmt2[] _user_rodata = "only groks 7 args: %d %d %d %d %d %d %d %d %d\n";
 
 int _userland u_main_fmt() {
+    char buf[256+32];
     char foo[] = "foo";
     printf(fmt, 387, 0, 'X', 0xaddbeef, foo);
     printf(fmt2, 11, 12, 13, 14, 15, 16, 17, 18, 19);

@@ -37,5 +37,7 @@ void* allocate_page();
 void release_page(void *ptr);
 uint32_t count_free_pages();
 void copy_page(void* dst, void* src);
+uint32_t isolate_page(void *page);
+uint32_t unisolate_page(int pmp_index);
 
 #endif // ifndef _PAGEALLOC_H_

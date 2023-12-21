@@ -82,3 +82,20 @@ void copy_page(void* dst, void* src) {
         *pdst++ = *psrc++;
     }
 }
+
+uint32_t isolate_page(void *page) {
+    int pmp_index = find_free_pmp_slot(&paged_memory.pmp_config);
+    if (pmp_index == -1) {
+        return -1;
+    }
+    // set_page_pmp_perms(&paged_memory.pmp_config, page, pmp_index, 0);
+    set_page_pmp_perms2(&paged_memory.pmp_config, page, pmp_index, 0);
+    // fence_i();
+    return pmp_index;
+}
+
+uint32_t unisolate_page(int pmp_index) {
+    reset_page_pmp_perms(&paged_memory.pmp_config, pmp_index);
+    fence_i();
+    return 0;
+}
