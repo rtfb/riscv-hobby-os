@@ -144,7 +144,9 @@ def make_qemu_command(args):
     if binary.endswith('32'):
         is_32bit = True
 
-    if binary.strip('32').endswith('_u'):
+    if binary.endswith('os_virt'):
+        machine = 'virt'
+    elif binary.strip('32').endswith('_u'):
         machine = 'sifive_u'
     else:
         machine = 'sifive_e'

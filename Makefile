@@ -99,7 +99,7 @@ OS_SIFIVE_E32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
 OS_SIFIVE_U32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_VIRT_DEPS = $(TEST_DEPS)
-OS_VIRT_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_VIRT_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-ns16550a.c
 OS_OX64_U_DEPS = $(BASE_DEPS) \
 			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
 OS_D1_U_DEPS = $(BASE_DEPS) \
@@ -119,6 +119,10 @@ run-baremetal32: $(OUT)/os_sifive_e32
 
 .PHONY: run-baremetalu32
 run-baremetalu32: $(OUT)/os_sifive_u32
+	$(QEMU_LAUNCHER) --binary=$<
+
+.PHONY: run-virt
+run-virt: $(OUT)/os_virt
 	$(QEMU_LAUNCHER) --binary=$<
 
 # Note:
@@ -169,7 +173,7 @@ $(OUT)/os_virt: ${OS_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wa,--defsym,QEMU_EXIT=0x100000 -g \
 		-include include/machine/qemu_virt.h \
-		${OS_SIFIVE_E32_DEPS} -o $@
+		${OS_VIRT_DEPS} -o $@
 
 $(OUT)/os_hifive1_revb: ${OS_SIFIVE_E32_DEPS}
 	$(RISCV64_GCC) -march=rv32imac -mabi=ilp32 $(GCC_FLAGS) \
@@ -243,6 +247,9 @@ $(OUT)/os_hifive1_revb.hex: $(OUT)/os_hifive1_revb
 
 $(OUT)/os_hifive1_revb.s: $(OUT)/os_hifive1_revb
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
+
+$(OUT)/os_virt.s: $(OUT)/os_virt
+	$(RISCV64_OBJDUMP) -D $< > $@
 
 # This target assumes a Segger J-Link software is installed on the system. Get it at
 # https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack

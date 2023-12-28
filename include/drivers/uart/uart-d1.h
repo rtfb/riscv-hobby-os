@@ -1,5 +1,5 @@
-#ifndef _UART_16550_H_
-#define _UART_16550_H_
+#ifndef _UART_D1_H_
+#define _UART_D1_H_
 
 // Register names and values based on D1_User_Manual_V0.1(Draft Version).pdf,
 // found here[1], because the official documentation page serves me a Bad
@@ -32,4 +32,4 @@
 #define UART_DBG_DLH    0x00b4  // Debug DLH Register
 #define UART_A_FCC      0x00f0  // FIFO Clock Control Register
 
-#endif // ifndef _UART_16550_H_
+#endif // ifndef _UART_D1_H_
