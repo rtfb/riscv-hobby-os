@@ -9,6 +9,7 @@
 #include "string.h"
 
 #define NODE_CHOSEN "chosen"
+#define PROP_BOOTARGS "bootargs"
 
 uint32_t bswap(uint32_t x) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -21,7 +22,7 @@ uint32_t bswap(uint32_t x) {
 }
 
 // reallign a pointer to the nearest greater multiple of 4
-uint32_t* upalign4(uint32_t *x) {
+uint32_t* upalign4(void *x) {
     uintptr_t addr = (uintptr_t)x;
     addr = (addr + 3) & (-4);
     return (uint32_t*)addr;
@@ -34,46 +35,50 @@ char const* fdt_get_bootargs() {
 }
 
 void fdt_parse(uint32_t *tree, char const *strings) {
-    if (bswap(*tree) != FDT_BEGIN_NODE) {
+    uint32_t token = bswap(*tree);
+    if (token != FDT_BEGIN_NODE) {
         return;
     }
-    // discard root node
-    ++tree;
-    ++tree;
-    while (bswap(*tree) != FDT_BEGIN_NODE) {
-        // discard all props within the root node
-        uint32_t token = bswap(*tree++);
-        switch (token) {
-            case FDT_PROP: {
-                uint32_t len = bswap(*tree++);
-                uint32_t name_offset = bswap(*tree++);
-                tree = (uint32_t*)(((uintptr_t)tree) + len);
-                tree = upalign4(tree);
-                break;
+    int found_chosen = 0;
+    while (token != FDT_END) {
+        while (token != FDT_BEGIN_NODE) {
+            switch (token) {
+                case FDT_PROP:
+                    tree++;
+                    uint32_t len = bswap(*tree++);
+                    uint32_t name_offset = bswap(*tree++);
+                    if (found_chosen) {
+                        if (strncmp(strings+name_offset, PROP_BOOTARGS, ARRAY_LENGTH(PROP_BOOTARGS)) == 0) {
+                            char const *arg = (char const*)tree;
+                            strncpy(bootargs, arg, ARRAY_LENGTH(bootargs));
+                            return;
+                        }
+                    }
+                    tree = (uint32_t*)(((uintptr_t)tree) + len);
+                    tree = upalign4(tree);
+                    break;
+                case FDT_NOP:
+                case FDT_END_NODE:
+                    tree++; // found_chosen = 0;
+                    break;
+                case FDT_END:
+                    return;
             }
-            case FDT_NOP:
-            case FDT_END_NODE: {
-                tree++;
-                break;
-            }
+            token = bswap(*tree);
+        }
+
+        tree++;
+        char *name = (char*)tree;
+        char *end_of_name = name;
+        while (*end_of_name++) {}
+        tree = upalign4(end_of_name);
+        token = bswap(*tree);
+        // see if it's the "/chosen" node:
+        if (strncmp(name, NODE_CHOSEN, ARRAY_LENGTH(NODE_CHOSEN)) == 0) {
+            found_chosen = 1;
+            continue;
         }
     }
-    // now we're at the first sub-node of the root
-    tree++;
-    char const *name = (char const*)tree;
-    // make sure it's the "/chosen" node:
-    if (strncmp(name, NODE_CHOSEN, ARRAY_LENGTH(NODE_CHOSEN))) {
-        return;
-    }
-    while (*name != '\0') name++;
-    tree = (uint32_t*)name;
-    tree = upalign4(tree);
-    // now bravely assume the first prop of "/chosen" is the bootargs
-    uint32_t prop = bswap(*tree++);
-    uint32_t len = bswap(*tree++);
-    uint32_t name_offset = bswap(*tree++);
-    char const *arg = (char const*)tree;
-    strncpy(bootargs, arg, ARRAY_LENGTH(bootargs));
 }
 
 void fdt_init(uintptr_t header_addr) {

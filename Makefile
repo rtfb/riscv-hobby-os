@@ -217,6 +217,11 @@ $(OUT)/test-output-u32.txt: $(OUT)/os_sifive_u32
 	@diff -u testdata/want-output-u32.txt $@
 	@echo "OK"
 
+$(OUT)/test-output-virt.txt: $(OUT)/os_virt
+	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
+	@diff -u testdata/want-output-virt.txt $@
+	@echo "OK"
+
 $(OUT)/smoke-test-output-u32.txt: $(OUT)/os_sifive_u32
 	@$(QEMU_LAUNCHER) --bootargs smoke-test --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-u32.txt $@
@@ -225,6 +230,11 @@ $(OUT)/smoke-test-output-u32.txt: $(OUT)/os_sifive_u32
 $(OUT)/smoke-test-output-u64.txt: $(OUT)/os_sifive_u
 	@$(QEMU_LAUNCHER) --bootargs smoke-test --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-u64.txt $@
+	@echo "OK"
+
+$(OUT)/smoke-test-output-virt.txt: $(OUT)/os_virt
+	@$(QEMU_LAUNCHER) --bootargs smoke-test --timeout=5s --binary=$< > $@
+	@diff -u testdata/want-smoke-test-output-virt.txt $@
 	@echo "OK"
 
 $(OUT):
