@@ -5,6 +5,9 @@
 
 // Macros for accessing and manipulating memory-mapped registers.
 
+#define read64(reg) *(uint64_t*)(reg)
+#define write64(reg, val) *(uint64_t*)(reg) = val
+
 #define read32(reg) *(uint32_t*)(reg)
 #define write32(reg, val) *(uint32_t*)(reg) = val
 

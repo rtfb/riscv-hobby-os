@@ -4,6 +4,10 @@
 #define STIMECMP_LO   0xd000
 #define STIMECMP_HI   0xd004
 
+void init_timer() {
+    // nothing to be done on this machine
+}
+
 uint64_t time_get_now() {
     register uint64_t a0 asm ("a0");
     asm volatile (

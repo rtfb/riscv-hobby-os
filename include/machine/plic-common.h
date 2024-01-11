@@ -1,7 +1,8 @@
 #ifndef _PLIC_COMMON_H_
 #define _PLIC_COMMON_H_
 
-// definitions of PLIC constants for several machines: HiFive1-revB, and all Qemus.
+// definitions of PLIC constants for several machines: HiFive1-revB, Qemu
+// sifive_u and Qemu sifive_e.
 
 #define PLIC_NUM_INTR_SOURCES       53
 

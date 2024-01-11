@@ -1,4 +1,6 @@
-#include "kernel.h"
+#include "pmp.h"
+#include "riscv.h"
+#include "sys.h"
 
 // 3.6.1 Physical Memory Protection CSRs
 // > PMP entries are described by an 8-bit configuration register AND one XLEN-bit address register.
@@ -28,7 +30,15 @@ void* init_pmp() {
     regsize_t ram_size = (regsize_t)&RAM_SIZE;
     void* paged_mem_end = (void*)(ram_start + ram_size);
 
-#ifdef TARGET_M_MODE
+#if BOOT_MODE_M
+#if HAS_S_MODE
+    // we don't want any granularity in S-Mode because we will have virtual
+    // memory. So just make the entire RAM readable, writable and executable
+    set_pmpaddr0(paged_mem_end);
+    unsigned long mode = PMP_TOR * PMP_0;
+    unsigned long access_flags = (PMP_X | PMP_W | PMP_R) * PMP_0;
+    set_pmpcfg0(mode | access_flags);
+#else
     // define 4 memory address ranges for Physical Memory Protection
     // 0 :: [0 .. user_payload]
     // 1 :: [user_payload .. .rodata]
@@ -54,6 +64,7 @@ void* init_pmp() {
     unsigned long access_flags =   ((PMP_X | PMP_R) * PMP_1)
                                  | ((PMP_W | PMP_R) * PMP_3);
     set_pmpcfg0(mode | access_flags);
+#endif
 #endif
 
     return paged_mem_end;

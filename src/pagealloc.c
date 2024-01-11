@@ -1,5 +1,6 @@
-#include "pagealloc.h"
 #include "kernel.h"
+#include "pagealloc.h"
+#include "pmp.h"
 
 paged_mem_t paged_memory;
 

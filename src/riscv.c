@@ -1,10 +1,10 @@
-#include "kernel.h"
+#include "riscv.h"
 #include "asm.h"
 
 void set_status_interrupt_pending() {
     // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:
     unsigned int status_csr = get_status_csr();
-#if TARGET_M_MODE
+#if !HAS_S_MODE
     status_csr |= (1 << MSTATUS_MPIE_BIT);
 #else
     status_csr |= (1 << MSTATUS_SPIE_BIT);
@@ -14,7 +14,7 @@ void set_status_interrupt_pending() {
 
 void set_status_interrupt_enable_and_pending() {
     unsigned int status_csr = get_status_csr();
-#if TARGET_M_MODE
+#if !HAS_S_MODE
     status_csr |= ((1 << MSTATUS_MIE_BIT) | (1 << MSTATUS_MPIE_BIT));
 #else
     status_csr |= ((1 << MSTATUS_SIE_BIT) | (1 << MSTATUS_SPIE_BIT));
@@ -24,7 +24,7 @@ void set_status_interrupt_enable_and_pending() {
 
 void clear_status_interrupt_enable() {
     unsigned int status_csr = get_status_csr();
-#if TARGET_M_MODE
+#if !HAS_S_MODE
     status_csr &= ~(1 << MSTATUS_MIE_BIT);
 #else
     status_csr &= ~(1 << MSTATUS_SIE_BIT);
@@ -34,10 +34,10 @@ void clear_status_interrupt_enable() {
 
 void set_interrupt_enable_bits() {
     // set the mie.MTIE (Machine Timer Interrupt Enable) bit to 1:
-#if TARGET_M_MODE
+#if !HAS_S_MODE
     unsigned int mie = (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT);
 #else
-    unsigned int mie = (1 << MIE_STIE_BIT) | (1 << MIE_SEIE_BIT);
+    unsigned int mie = (1 << MIE_STIE_BIT) | (1 << MIE_SEIE_BIT) | (1 << MIE_SSIE_BIT);
 #endif
     set_ie_csr(mie);
 }
@@ -104,9 +104,26 @@ unsigned int get_status_csr() {
     return a0;
 }
 
+unsigned int get_mstatus_csr() {
+    register unsigned int a0 asm ("a0");
+    asm volatile (
+        "csrr a0, mstatus"
+        : "=r"(a0)   // output in a0
+    );
+    return a0;
+}
+
 void set_status_csr(unsigned int value) {
     asm volatile (
         "csrw " REG_STATUS ", %0"
+        :            // no output
+        : "r"(value) // input in value
+    );
+}
+
+void set_mstatus_csr(unsigned int value) {
+    asm volatile (
+        "csrw mstatus, %0"
         :            // no output
         : "r"(value) // input in value
     );
@@ -133,7 +150,7 @@ void set_jump_address(void *func) {
 // Machine = 0b11 and stored in 11:12 bits of mstatus CSR (called mstatus.mpp)
 void set_user_mode() {
     unsigned int status_csr = get_status_csr();
-#ifdef TARGET_M_MODE
+#if !HAS_S_MODE
     status_csr &= MPP_MASK;    // zero out mode bits 11:12
     status_csr |= MPP_MODE_U;  // set them to user mode
 #else
@@ -143,9 +160,104 @@ void set_user_mode() {
     set_status_csr(status_csr);
 }
 
-void set_scratch_csr(void* ptr) {
+// set_supervisor_mode switches current hart to S-Mode. It also prepares
+// several relevant CSRs for operation in S-Mode:
+//   * sets mideleg/medeleg for trap delegation
+//   * sets pending mode to S
+//   * enables S-Mode interrupts and pending M-Mode interrupts
+//   * enables timer, external and software interrupts in mie register for both
+//     S and M modes
+//
+// TODO: make sure we've addressed things described in section
+// 3.1.18: Machine Environment Configuration Registers (menvcfg and menvcfgh)
+void set_supervisor_mode() {
+    set_mideleg_csr((1 << MIE_STIE_BIT) | (1 << MIE_SEIE_BIT) | (1 << MIE_SSIE_BIT));
+    set_medeleg_csr(~0);
+
+    unsigned int mstatus = get_mstatus_csr();
+    mstatus &= MPP_MASK;    // zero out mode bits 11:12
+    mstatus |= MPP_MODE_S;  // set them to Supervisor mode
+    mstatus |= (1 << MSTATUS_SIE_BIT) | (1 << MSTATUS_MPIE_BIT);
+    set_mstatus_csr(mstatus);
+
+    regsize_t mie = (1 << MIE_STIE_BIT) | (1 << MIE_SEIE_BIT) | (1 << MIE_SSIE_BIT)
+        | (1 << MIE_MTIE_BIT) | (1 << MIE_MEIE_BIT) | (1 << MIE_MSIE_BIT);
+    set_mie_csr(mie);
+
+    // Call mret to switch to S-Mode. But there's a catch: mret not only
+    // switches the mode, it also "returns" to wherever mepc points to. So set
+    // mepc to point to the next instruction after mret, which effectively will
+    // jump to this function's epilogue and the code flow will continue
+    // undisturbed, but now in S-Mode.
     asm volatile (
-        "csrw " REG_SCRATCH ", %0"
+        "                     \n\
+        auipc  t0, 0          \n\
+        addi   t0, t0, 16     \n\
+        csrw   mepc, t0       \n\
+        mret"
+        ::
+    );
+}
+
+void set_sscratch_csr(void* ptr) {
+    asm volatile (
+        "csrw sscratch, %0"
+        :            // no output
+        : "r"(ptr)   // input in value
+    );
+}
+
+void set_mscratch_csr(void* ptr) {
+    asm volatile (
+        "csrw mscratch, %0"
+        :            // no output
+        : "r"(ptr)   // input in value
+    );
+}
+
+void set_mtvec_csr(void* ptr) {
+    asm volatile (
+        "csrw mtvec, %0"
+        :            // no output
+        : "r"(ptr)   // input in value
+    );
+}
+
+void set_mideleg_csr(regsize_t value) {
+    asm volatile (
+        "csrw mideleg, %0"
+        :            // no output
+        : "r"(value) // input in value
+    );
+}
+
+void set_medeleg_csr(regsize_t value) {
+    asm volatile (
+        "csrw medeleg, %0"
+        :            // no output
+        : "r"(value) // input in value
+    );
+}
+
+void set_mie_csr(regsize_t value) {
+    asm volatile (
+        "csrw mie, %0"
+        :            // no output
+        : "r"(value) // input in value
+    );
+}
+
+void set_stvec_csr(void *ptr) {
+    asm volatile (
+        "csrw  stvec, %0;"   // set stvec to the requested value
+        :                    // no output
+        : "r"(ptr)           // input in ptr
+    );
+}
+
+void set_mepc_csr(void* ptr) {
+    asm volatile (
+        "csrw mepc, %0"
         :            // no output
         : "r"(ptr)   // input in value
     );
@@ -159,10 +271,10 @@ void set_ie_csr(unsigned int value) {
     );
 }
 
-void set_tvec_csr(void *ptr) {
+void csr_sip_clear_flags(regsize_t flags) {
     asm volatile (
-        "csrw  " REG_TVEC ", %0;"   // set mtvec to the requested value
-        :                           // no output
-        : "r"(ptr)                  // input in ptr
+        "csrc sip, %0;"  // clear requested bits of sip
+        :                // no output
+        : "r"(flags)     // input in flags
     );
 }

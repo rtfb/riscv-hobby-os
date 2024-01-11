@@ -41,12 +41,12 @@ _start_kernel:
 
                                         // from: sifive-interrupt-cookbook-v1p2.pdf
                                         // 2.1.3 Early Boot: Setup mtvec Register
-        csrwi   REG_IE, 0               // > It is recommended to disable interrupts globally using mstatus.mie prior to changing mtvec.
+        csrwi   BOOT_REG_IE, 0          // > It is recommended to disable interrupts globally using mstatus.mie prior to changing mtvec.
                                         // > For sanity's sake we set up an early trap vector that just does nothing.
         la      t0, early_trap_vector
-        csrw    REG_TVEC, t0
+        csrw    BOOT_REG_TVEC, t0
 
-#ifndef NO_TRAP_DELEGATION
+#if BOOT_MODE_M && HAS_S_MODE
         csrwi   mideleg, 0              // disable trap delegation, all interrupts and exceptions will be handled in machine mode
         csrwi   medeleg, 0              // 3.1.8 Machine Trap Delegation Registers (medeleg and mideleg)
                                         // > In systems with S-mode, the medeleg and mideleg registers must exist, and
@@ -55,7 +55,7 @@ _start_kernel:
                                         // > without S-mode, the medeleg and mideleg registers should not exist.
 #endif
 
-#ifdef TARGET_M_MODE
+#if BOOT_MODE_M
         csrr    a0, mhartid             // set a0 to mhartid to be compatible with boot in S-mode
 #endif
                                         // setup stack pointer:
@@ -177,6 +177,38 @@ early_trap_vector:
         csrr    t2, REG_TVAL
         j       1b                      // loop indefinitely
 
+.globl mtimertrap
+.balign 64
+mtimertrap:
+        // t0 = &timer_trap
+        csrrw   t0, mscratch, t0
+
+        // backup t1-3
+        OP_STOR t1, 0*REGSZ(t0)
+        OP_STOR t2, 1*REGSZ(t0)
+        OP_STOR t3, 2*REGSZ(t0)
+
+        // obtain MTIMECMP_BASE and timer interval and schedule the next tick
+        OP_LOAD t1, 3*REGSZ(t0)
+        OP_LOAD t2, 4*REGSZ(t0)
+        OP_LOAD t3, 0(t1)
+        add     t3, t3, t2
+        OP_STOR t3, 0(t1)
+
+        // restore t1-3
+        OP_LOAD t1, 0*REGSZ(t0)
+        OP_LOAD t2, 1*REGSZ(t0)
+        OP_LOAD t3, 2*REGSZ(t0)
+
+        // set mip.SSIP bit to cause mret to trap into trap_vector in S-Mode
+        csrwi   mip, 0x2
+
+        // restore t0 from mscratch
+        csrrw   t0, mscratch, t0
+
+        // mret into S-Mode
+        mret
+
                                         // 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)
                                         // > When MODE=Vectored, all synchronous exceptions into machine mode cause
                                         // > the pc to be set to the address in the BASE field, whereas interrupts cause
@@ -208,6 +240,7 @@ early_trap_vector:
                                         // > an independent thread. Therefore, there is only one reasonable solution for the return address:
                                         // > the first instruction that has not completed yet. Thus, when returning from the interrupt handler,
                                         // > the execution continues exactly where it was interrupted.
+
 .globl trap_vector
 .balign 64
 trap_vector:                            // 3.1.20 Machine Cause Register (mcause), Table 3.6: Machine cause register (mcause) values after trap.
@@ -294,7 +327,7 @@ interrupt_vector:
 .balign 4
         j exception_dispatch            //  0: user software interrupt OR _exception_ (See note in 3.1.12: Machine Trap-Vector Base-Address Register)
 .balign 4
-        j interrupt_noop                //  1: supervisor software interrupt
+        j k_interrupt_timer             //  1: supervisor software interrupt
 .balign 4
         j interrupt_noop                //  2: reserved
 .balign 4

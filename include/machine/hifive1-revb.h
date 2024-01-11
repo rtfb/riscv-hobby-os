@@ -5,8 +5,8 @@
 
 #include "machine/plic-common.h"
 
-#define TARGET_M_MODE       1
-#define NO_TRAP_DELEGATION  1
+#define BOOT_MODE_M     1
+#define HAS_S_MODE      0
 
 // Irrelevant on HiFive.
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0

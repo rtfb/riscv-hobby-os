@@ -21,7 +21,18 @@
 #error "unsupported XLEN"
 #endif
 
-#if TARGET_M_MODE
+// These registers are accessed in the very first instructions of _start_kernel
+// and we want to use the most privileged ones we have access to. Hence, they
+// have separate definitions.
+#if BOOT_MODE_M
+    #define BOOT_REG_IE       STR(mie)
+    #define BOOT_REG_TVEC     STR(mtvec)
+#else
+    #define BOOT_REG_IE       STR(sie)
+    #define BOOT_REG_TVEC     STR(stvec)
+#endif
+
+#if !HAS_S_MODE
     #define REG_IE       STR(mie)
     #define REG_TVEC     STR(mtvec)
     #define REG_CAUSE    STR(mcause)

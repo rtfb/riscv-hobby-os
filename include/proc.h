@@ -144,10 +144,6 @@ void ret_to_user();  // defined in context.s
 // MUST be called with proc_table.lock held.
 process_t* find_ready_proc();
 
-// init_global_trap_frame makes sure that mscratch contains a pointer to
-// trap_frame before the first userland process gets scheduled.
-void init_global_trap_frame();
-
 // proc_fork implements the fork syscall. It will create a new entry in the
 // process table, prepare it for being scheduled and return to the parent
 // process the pid of the child.

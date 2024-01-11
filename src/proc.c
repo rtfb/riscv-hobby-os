@@ -1,3 +1,4 @@
+#include "pmp.h"
 #include "proc.h"
 #include "errno.h"
 #include "pagealloc.h"
@@ -25,15 +26,16 @@ void init_process_table(uint32_t runflags, unsigned int hart_id) {
     cpu.context.regs[REG_SP] = (regsize_t)(&stack_top - hart_id*PAGE_SIZE);
 }
 
-void init_global_trap_frame() {
-    set_scratch_csr(&trap_frame);
-}
-
 // sleep_scheduler is called when there's nothing to schedule; this either
 // means that something went terribly wrong, or all processes are sleeping. In
 // which case we should simply schedule the next timer tick and do nothing.
 void sleep_scheduler() {
+#if MIXED_MODE_TIMER
+    csr_sip_clear_flags(SIP_SSIP);
+#else
+    // with MIXED_MODE_TIMER it's advanced in k_interrupt_timer_m, otherwise we do that here:
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
+#endif
 
     // this is almost identical to enable_interrupts, except that it sets MIE
     // flag immediately, instead of setting the MPIE flag. That's because we

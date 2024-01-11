@@ -3,8 +3,8 @@
 
 #include "machine/plic-ox64.h"
 
-#undef TARGET_M_MODE
-#define NO_TRAP_DELEGATION  1
+#define BOOT_MODE_M     0
+#define HAS_S_MODE      1
 
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0x200000
 

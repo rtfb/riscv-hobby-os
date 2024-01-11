@@ -9,6 +9,9 @@
 #include "runflags.h"
 #include "drivers/drivers.h"
 #include "plic.h"
+#include "riscv.h"
+#include "pmp.h"
+#include "timer.h"
 
 #ifdef CONFIG_LCD_ENABLED
 #include "drivers/hd44780/hd44780.h"
@@ -32,20 +35,26 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());
-    uint32_t runflags = parse_runflags();
     init_trap_vector();
     void* paged_mem_end = init_pmp();
+    init_timer(); // must go after init_trap_vector because it might rewrite mtvec/mscratch
+#if BOOT_MODE_M && HAS_S_MODE
+    // Switch to S-Mode if possible. On machines where this will get executed,
+    // it will return like a regular function and will continue execution of
+    // kinit() with the privilege mode switched to S. On other machines, this
+    // will not be called and kinit() will just keep executing.
+    set_supervisor_mode();
+#endif
     char const* str = "foo"; // this is a random string to test out %s in kprintf()
     void *p = (void*)0xabcdf10a; // this is a random hex to test out %p in kprintf()
     kprintf("kprintf test: str=%s, ptr=%p, pos int=%d, neg int=%d\n",
         str, p, 1337, MAX_NEG_INT);
+    uint32_t runflags = parse_runflags();
     int running_tests = runflags & RUNFLAGS_TESTS;
     init_paged_memory(paged_mem_end, !running_tests);
     init_process_table(runflags, hartid);
-    init_global_trap_frame();
     init_pipes();
     fs_init();
-    set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
     release(&init_lock);
     scheduler(); // done init'ing, now run the scheduler, forever
 }
@@ -71,8 +80,13 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
 // Trap vector mode is encoded in 2 bits: Direct = 0b00, Vectored = 0b01
 // and is stored in 0:1 bits of mtvec CSR (mtvec.mode)
 void init_trap_vector() {
-    extern void* trap_vector;  // defined in boot.s
-    set_tvec_csr(&trap_vector);
+#if HAS_S_MODE
+    set_sscratch_csr(&trap_frame);
+    set_stvec_csr(&trap_vector);
+#else
+    set_mscratch_csr(&trap_frame);
+    set_mtvec_csr(&trap_vector);
+#endif
 }
 
 // kernel_timer_tick will be called from timer to give kernel time to do its
@@ -80,7 +94,10 @@ void init_trap_vector() {
 // run.
 void kernel_timer_tick() {
     disable_interrupts();
+#if !MIXED_MODE_TIMER
+    // with MIXED_MODE_TIMER it's advanced in k_interrupt_timer_m, otherwise we do that here:
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
+#endif
     sched();
     enable_interrupts();
 }
@@ -100,4 +117,7 @@ void disable_interrupts() {
 void enable_interrupts() {
     set_status_interrupt_pending();
     set_interrupt_enable_bits();
+#if MIXED_MODE_TIMER
+    csr_sip_clear_flags(SIP_SSIP);
+#endif
 }

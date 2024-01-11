@@ -1,11 +1,7 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
-#include "riscv.h"
-#include "pmp.h"
-#include "proc.h"
-
-#define KERNEL_SCHEDULER_TICK_TIME (ONE_SECOND)
+#include "sys.h"
 
 void kinit(regsize_t hartid, uintptr_t fdt_header_addr);
 void init_trap_vector();
@@ -13,7 +9,9 @@ void kernel_timer_tick();
 void set_timer();
 void disable_interrupts();
 void enable_interrupts();
-void set_timer_after(uint64_t delta);
+
+// defined in boot.s
+extern void* trap_vector;
 
 // implemented in boot.s
 // NOTE: gcc has a neat attribute, like this:

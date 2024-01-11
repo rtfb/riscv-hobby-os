@@ -3,7 +3,8 @@
 
 #include "machine/plic-common.h"
 
-#define TARGET_M_MODE   1
+#define BOOT_MODE_M     1
+#define HAS_S_MODE      0
 
 // Irrelevant on qemu.
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0
