@@ -400,3 +400,25 @@ int _userland u_main_gpio(int argc, char const *argv[]) {
     exit(0);
     return 0;
 }
+
+char iter_parse_err_fmt[] _user_rodata = "ERROR: parse N '%s': %d\n";
+char iter_i_fmt[] _user_rodata = "%d\n";
+
+int _userland u_main_iter(int argc, char const *argv[]) {
+    if (argc < 2) {
+        prints("usage:\n"
+"iter N        write numbers [0..N) to stdout\n");
+        exit(-1);
+    }
+    int parse_err = 0;
+    int n = uatoi(argv[1], &parse_err);
+    if (parse_err != 0) {
+        printf(iter_parse_err_fmt, argv[1], parse_err);
+        exit(-2);
+    }
+    for (int i = 0; i < n; i++) {
+        printf(iter_i_fmt, i);
+    }
+    exit(0);
+    return 0;
+}
