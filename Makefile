@@ -45,12 +45,6 @@ BINS := \
 $(BINS): | $(OUT)
 
 all: $(BINS)
-baremetal: all
-
-# Shortcuts
-run32: run-baremetal32
-runm: run-baremetal
-runb: run-baremetal
 
 # boot.S has to go first in the list of dependencies so that the _start
 # function is the very first thing in the .text section. Keeping it in a
@@ -105,20 +99,20 @@ OS_OX64_DEPS = $(BASE_DEPS) \
 OS_D1_DEPS = $(BASE_DEPS) \
 			src/machine/d1/timer.c src/drivers/uart/uart-d1.c
 
-.PHONY: run-baremetal
-run-baremetal: $(OUT)/os_sifive_u
+.PHONY: run-u
+run-u: $(OUT)/os_sifive_u
 	$(QEMU_LAUNCHER) --binary=$<
 
-.PHONY: run-baremetale64
-run-baremetale64: $(OUT)/os_sifive_e
+.PHONY: run-e
+run-e: $(OUT)/os_sifive_e
 	$(QEMU_LAUNCHER) --binary=$<
 
-.PHONY: run-baremetal32
-run-baremetal32: $(OUT)/os_sifive_e32
+.PHONY: run-e32
+run-e32: $(OUT)/os_sifive_e32
 	$(QEMU_LAUNCHER) --binary=$<
 
-.PHONY: run-baremetalu32
-run-baremetalu32: $(OUT)/os_sifive_u32
+.PHONY: run-u32
+run-u32: $(OUT)/os_sifive_u32
 	$(QEMU_LAUNCHER) --binary=$<
 
 .PHONY: run-virt

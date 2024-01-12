@@ -19,7 +19,7 @@ On Ubuntu, `make prereqs` will install the prerequisite software for building.
 simplifies running qemu on different versions of Ubuntu and on OSX.
 
 With that done, you should be able to `make all` to build all targets, and then
-`make run-baremetal` to actually run it in qemu.
+`make run-virt` to actually run it in qemu.
 
 Implementation Details
 ======================
@@ -43,8 +43,7 @@ Debugging with gdb
 1. `make download-sifive-toolchain` to download [SiFive version of
    toolchain][sifive-toolchain], as the regular apt-gettable toolchain won't
    work.
-2. Run as usual with and extra `DBG=1` argument, e.g. `make run-baremetal
-   DBG=1`.
+2. Run as usual with and extra `DBG=1` argument, e.g. `make run-virt DBG=1`.
 3. In a separate terminal, run `make gdb`. Gdb will connect to the above, and
    you can use it as usual.
 
