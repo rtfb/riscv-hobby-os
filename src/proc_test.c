@@ -6,10 +6,6 @@
 #include "runflags.h"
 
 // defined in userland.c:
-extern int u_main_init();
-extern int u_main();
-extern int u_main2();
-extern int u_main3();
 extern int u_main_shell();
 extern int u_main_hello1();
 extern int u_main_hello2();
