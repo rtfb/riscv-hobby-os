@@ -10,10 +10,10 @@ void set_timer();
 void disable_interrupts();
 void enable_interrupts();
 
-// defined in boot.s
+// defined in boot.S
 extern void* trap_vector;
 
-// implemented in boot.s
+// implemented in kprintf.S
 // NOTE: gcc has a neat attribute, like this:
 //     void kprintf(char const *msg, ...) __attribute__ ((format (printf, 1, 2)));
 // with it, we'd get compile-time checks for format string compatibility with
@@ -24,6 +24,7 @@ extern void* trap_vector;
 // (docs: https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Function-Attributes.html)
 extern void kprintf(char const *msg, ...);
 
+// implement in kprintf.c
 extern int32_t kprintfvec(char const* fmt, regsize_t* args);
 
 #endif // ifndef _KERNEL_H_

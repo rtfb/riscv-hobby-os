@@ -27,7 +27,7 @@ typedef struct timer_trap_scratch_s {
 // defined in timer.c
 extern timer_trap_scratch_t timer_trap;
 
-// defined in boot.s
+// defined in boot.S
 extern void* mtimertrap;
 
 void init_timer();
