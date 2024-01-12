@@ -11,6 +11,10 @@ It runs in qemu, as well as several physical RISC-V SBC boards:
 * [Nezha D1][d1-url]
 * [Pine64 Star64][star64-url]
 
+(Note: the 64-bit qemu sifive_e target is known to be broken; it works, as such,
+but uses up too much of the 16kB of available RAM, with not enough remaining to
+run even a single process)
+
 Building And Running
 ====================
 

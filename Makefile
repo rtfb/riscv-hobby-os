@@ -175,6 +175,7 @@ $(OUT)/os_sifive_u32: ${OS_SIFIVE_U32_DEPS}
 $(OUT)/os_sifive_e: ${OS_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 -g \
+		-Wl,--defsym,RAM_SIZE=0x4000 \
 		-include include/machine/qemu_e.h \
 		${OS_SIFIVE_E_DEPS} -o $@
 
