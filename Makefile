@@ -36,8 +36,8 @@ BINS := \
 	$(OUT)/os_sifive_e32 \
 	$(OUT)/os_sifive_u32 \
 	$(OUT)/os_hifive1_revb \
-	$(OUT)/os_ox64_u \
-	$(OUT)/os_d1_u \
+	$(OUT)/os_ox64 \
+	$(OUT)/os_d1 \
 	$(OUT)/os_virt
 
 # This target makes all the binaries depend on existence (but not timestamp) of
@@ -100,9 +100,9 @@ TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
 OS_SIFIVE_U32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_VIRT_DEPS = $(TEST_DEPS)
 OS_VIRT_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-ns16550a.c
-OS_OX64_U_DEPS = $(BASE_DEPS) \
+OS_OX64_DEPS = $(BASE_DEPS) \
 			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
-OS_D1_U_DEPS = $(BASE_DEPS) \
+OS_D1_DEPS = $(BASE_DEPS) \
 			src/machine/d1/timer.c src/drivers/uart/uart-d1.c
 
 .PHONY: run-baremetal
@@ -183,28 +183,28 @@ $(OUT)/os_hifive1_revb: ${OS_SIFIVE_E32_DEPS}
 		-include include/machine/hifive1-revb.h \
 		${OS_SIFIVE_E32_DEPS} -o $@
 
-$(OUT)/os_ox64_u: ${OS_OX64_U_DEPS}
+$(OUT)/os_ox64: ${OS_OX64_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,RAM_START=0x50200000 -g \
 		-include include/machine/ox64.h \
-		${OS_OX64_U_DEPS} -o $@
+		${OS_OX64_DEPS} -o $@
 
-$(OUT)/os_ox64_u.bin: $(OUT)/os_ox64_u
+$(OUT)/os_ox64.bin: $(OUT)/os_ox64
 	$(RISCV64_OBJCOPY) -O binary $< $@
 
-$(OUT)/os_ox64_u.s: $(OUT)/os_ox64_u
+$(OUT)/os_ox64.s: $(OUT)/os_ox64
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
-$(OUT)/os_d1_u: ${OS_D1_U_DEPS}
+$(OUT)/os_d1: ${OS_D1_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,RAM_START=0x40200000 -g \
 		-include include/machine/d1.h \
-		${OS_D1_U_DEPS} -o $@
+		${OS_D1_DEPS} -o $@
 
-$(OUT)/os_d1_u.bin: $(OUT)/os_d1_u
+$(OUT)/os_d1.bin: $(OUT)/os_d1
 	$(RISCV64_OBJCOPY) -O binary $< $@
 
-$(OUT)/os_d1_u.s: $(OUT)/os_d1_u
+$(OUT)/os_d1.s: $(OUT)/os_d1
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
 $(OUT)/test-output-u64.txt: $(OUT)/os_sifive_u

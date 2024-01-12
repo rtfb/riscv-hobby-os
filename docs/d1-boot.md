@@ -18,13 +18,13 @@
     * `loadb 40200000 115200`
 1. When it says `Ready for binary (kermit) download to 0x40200000 at 115200 bps...`,
    hit Ctrl-A, Ctrl-S to get it to prompt for a file, then type out the file name:
-    * `*** file: out/os_d1_u.bin`
+    * `*** file: out/os_d1.bin`
 1. When done loading, it will get back to U-Boot prompt, it’s time to boot:
     * `booti 0x40200000`
 
 Commands repeated here for more convenient copy-pasting:
 ```
 loadb 40200000 115200
-out/os_d1_u.bin
+out/os_d1.bin
 booti 0x40200000
 ```
