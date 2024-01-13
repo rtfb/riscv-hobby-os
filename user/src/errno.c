@@ -1,5 +1,4 @@
 #include "sys.h"
-#include "pagealloc.h"
 #include "userland.h"
 
 uintptr_t* _userland __errno_location() {

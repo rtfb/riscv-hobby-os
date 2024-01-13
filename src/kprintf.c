@@ -1,5 +1,4 @@
 #include "sys.h"
-#include "pagealloc.h"
 #include "printf-macro.h"
 #include "drivers/uart/uart.h"
 

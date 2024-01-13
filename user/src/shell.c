@@ -1,7 +1,5 @@
 #include "shell.h"
 #include "ustr.h"
-#include "pagealloc.h"
-
 
 char prog_name_hanger[] _user_rodata = "hang";
 

@@ -6,6 +6,8 @@
 #define BOOT_MODE_M     0
 #define HAS_S_MODE      1
 
+#define PAGE_SIZE       512 // bytes
+
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0x200000
 
 // wild guess:

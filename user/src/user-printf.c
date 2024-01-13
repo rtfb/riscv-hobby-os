@@ -1,6 +1,5 @@
 #include "userland.h"
 #include "ustr.h"
-#include "pagealloc.h"
 #include "printf-macro.h"
 
 // print_radix prints a given number in a given radix. It stores the string in

@@ -3,8 +3,6 @@
 
 #include "spinlock.h"
 
-#define PAGE_SIZE           512 // bytes
-
 // Let's hardcode it for now. Make it small enough to fit in HiFive1 (32 pages
 // * 512 bytes = 16k RAM).
 #define MAX_PAGES           32

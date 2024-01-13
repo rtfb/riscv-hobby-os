@@ -6,6 +6,8 @@
 #define BOOT_MODE_M     0
 #define HAS_S_MODE      1
 
+#define PAGE_SIZE       512 // bytes
+
 // For some reason on D1 this has to be an absolute address, not an offset.
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0x40200000
 

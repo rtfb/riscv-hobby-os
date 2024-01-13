@@ -6,6 +6,8 @@
 #define BOOT_MODE_M     1
 #define HAS_S_MODE      0
 
+#define PAGE_SIZE       512 // bytes
+
 // Irrelevant on qemu.
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0
 
