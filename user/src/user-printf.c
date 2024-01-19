@@ -1,6 +1,6 @@
+#include "printf-macro.h"
 #include "userland.h"
 #include "ustr.h"
-#include "printf-macro.h"
 
 // print_radix prints a given number in a given radix. It stores the string in
 // a provided buffer, fills it starting from the end, and returns a pointer

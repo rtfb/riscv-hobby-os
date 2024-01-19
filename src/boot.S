@@ -286,6 +286,13 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
         csrrw   t6, REG_SCRATCH, t6
         OP_STOR t6, 30*REGSZ(t0)
 
+#if HAS_S_MODE
+        OP_LOAD t6, 32*REGSZ(t0)
+        sfence.vma zero, zero
+        csrw    satp, t6         // set satp to trap_frame.ksatp
+        sfence.vma zero, zero
+#endif
+
         csrr    t6, REG_EPC
         OP_STOR t6, 31*REGSZ(t0)
 
@@ -401,27 +408,30 @@ syscall_dispatch:
         call    syscall
         la      t0, cpu
         OP_LOAD t0,  0*REGSZ(t0)   // t0 = cpu.proc
-                                   // (*process_t)[0] => lock, we skip that
-        OP_STOR ra,   1*REGSZ(t0)  // (*process_t)[1] => ctx[0] (RA)
-        OP_STOR sp,   2*REGSZ(t0)  // (*process_t)[2] => ctx[1] (SP)
-        OP_STOR s0,   3*REGSZ(t0)  // (*process_t)[3] => ctx[2] (S0, etc)
-        OP_STOR s1,   4*REGSZ(t0)  // (*process_t)[4] => ctx[3]
-        OP_STOR s2,   5*REGSZ(t0)  // (*process_t)[5] => ctx[4]
-        OP_STOR s3,   6*REGSZ(t0)  // (*process_t)[6] => ctx[5]
-        OP_STOR s4,   7*REGSZ(t0)  // (*process_t)[7] => ctx[6]
-        OP_STOR s5,   8*REGSZ(t0)  // (*process_t)[8] => ctx[7]
-        OP_STOR s6,   9*REGSZ(t0)  // (*process_t)[9] => ctx[8]
-        OP_STOR s7,  10*REGSZ(t0)  // (*process_t)[10] => ctx[9]
-        OP_STOR s8,  11*REGSZ(t0)  // (*process_t)[11] => ctx[10]
-        OP_STOR s9,  12*REGSZ(t0)  // (*process_t)[12] => ctx[11]
-        OP_STOR s10, 13*REGSZ(t0)  // (*process_t)[13] => ctx[12]
-        OP_STOR s11, 14*REGSZ(t0)  // (*process_t)[14] => ctx[13]
+                                   // (*process_t)[0] => cpu.proc.lock, we skip that
+        OP_STOR ra,   1*REGSZ(t0)  // (*process_t)[1] => cpu.proc.ctx[0] (RA)
+        OP_STOR sp,   2*REGSZ(t0)  // (*process_t)[2] => cpu.proc.ctx[1] (SP)
+        OP_STOR s0,   3*REGSZ(t0)  // (*process_t)[3] => cpu.proc.ctx[2] (S0, etc)
+        OP_STOR s1,   4*REGSZ(t0)  // ...etc
+        OP_STOR s2,   5*REGSZ(t0)  //
+        OP_STOR s3,   6*REGSZ(t0)  //
+        OP_STOR s4,   7*REGSZ(t0)  //
+        OP_STOR s5,   8*REGSZ(t0)  //
+        OP_STOR s6,   9*REGSZ(t0)  //
+        OP_STOR s7,  10*REGSZ(t0)  //
+        OP_STOR s8,  11*REGSZ(t0)  //
+        OP_STOR s9,  12*REGSZ(t0)  //
+        OP_STOR s10, 13*REGSZ(t0)  //
+        OP_STOR s11, 14*REGSZ(t0)  // (*process_t)[14] => cpu.proc.ctx[13]
+
+        OP_LOAD a0,  15*REGSZ(t0)  // (*process_t)[14] => cpu.proc.usatp
         j       ret_to_user
 
 exception_epilogue:
 .if HALT_ON_EXCEPTION == 1
 1:      j       1b
 .endif
+        li      a0, 0xbaadf00d     // TODO: deal with this code path later
         j       ret_to_user
 
 interrupt_epilogue:

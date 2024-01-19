@@ -50,8 +50,11 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     kprintf("kprintf test: str=%s, ptr=%p, pos int=%d, neg int=%d\n",
         str, p, 1337, MAX_NEG_INT);
     uint32_t runflags = parse_runflags();
+    init_paged_memory(paged_mem_end, 0);
     int running_tests = runflags & RUNFLAGS_TESTS;
-    init_paged_memory(paged_mem_end, !running_tests);
+    if (running_tests) {
+        // do_page_report();
+    }
     init_process_table(runflags, hartid);
     init_pipes();
     fs_init();
@@ -92,14 +95,19 @@ void init_trap_vector() {
 // kernel_timer_tick will be called from timer to give kernel time to do its
 // housekeeping as well as run the scheduler to pick the next user process to
 // run.
-void kernel_timer_tick() {
+regsize_t kernel_timer_tick() {
     disable_interrupts();
 #if !MIXED_MODE_TIMER
-    // with MIXED_MODE_TIMER it's advanced in k_interrupt_timer_m, otherwise we do that here:
+    // with MIXED_MODE_TIMER it's advanced in mtimertrap, otherwise we do that here:
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
 #endif
     sched();
     enable_interrupts();
+    // return proc->usatp if possible so that we have it in a0 in k_interrupt_timer
+    if (cpu.proc != 0) {
+        return cpu.proc->usatp;
+    }
+    return 0;
 }
 
 // kernel_plic_handler...
@@ -107,6 +115,11 @@ void kernel_plic_handler() {
     disable_interrupts();
     plic_dispatch_interrupts();
     enable_interrupts();
+    regsize_t satp = 0;
+    if (cpu.proc != 0) {
+        satp = cpu.proc->usatp;
+    }
+    ret_to_user(satp);
 }
 
 void disable_interrupts() {

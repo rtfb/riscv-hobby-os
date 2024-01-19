@@ -178,6 +178,7 @@ void set_supervisor_mode() {
     mstatus &= MPP_MASK;    // zero out mode bits 11:12
     mstatus |= MPP_MODE_S;  // set them to Supervisor mode
     mstatus |= (1 << MSTATUS_SIE_BIT) | (1 << MSTATUS_MPIE_BIT);
+    // mstatus |= (1 << MSTATUS_SUM_BIT);  // allow S-Mode to access U-Mode pages
     set_mstatus_csr(mstatus);
 
     regsize_t mie = (1 << MIE_STIE_BIT) | (1 << MIE_SEIE_BIT) | (1 << MIE_SSIE_BIT)
@@ -276,5 +277,15 @@ void csr_sip_clear_flags(regsize_t flags) {
         "csrc sip, %0;"  // clear requested bits of sip
         :                // no output
         : "r"(flags)     // input in flags
+    );
+}
+
+void set_satp(regsize_t value) {
+    asm volatile (
+        "sfence.vma zero, zero  \n\
+         csrw satp, %0          \n\
+         sfence.vma zero, zero"
+        :                 // no output
+        : "r"(value)      // input in value
     );
 }

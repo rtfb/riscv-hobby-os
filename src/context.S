@@ -8,6 +8,7 @@ k_interrupt_timer:
         // trap_frame with the context of the target user process.
         // ret_to_user will restore the registers from it.
         call    kernel_timer_tick
+        mv      t0, a0
 
         // we saved the wrong sp inside swtch (slightly too deep), so let's
         // save sp again, now that we're back at the same level of stack that
@@ -16,17 +17,21 @@ k_interrupt_timer:
         call    save_sp
 
         // This will restore user registers from trap_frame and then mret:
+        mv      a0, t0
         j       ret_to_user
 
 .globl k_interrupt_plic
 k_interrupt_plic:
-        call    kernel_plic_handler
-
-        // This will restore user registers from trap_frame and then mret:
-        j       ret_to_user
+        call    kernel_plic_handler  // will call ret_to_user when it's done
 
 .globl ret_to_user
 ret_to_user:
+#if HAS_S_MODE
+        sfence.vma zero, zero
+        csrw    satp, a0
+        sfence.vma zero, zero
+#endif
+
         // load a pointer to trap_frame into t6:
         la      t6, trap_frame
 

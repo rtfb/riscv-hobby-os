@@ -33,7 +33,7 @@ void sleep_scheduler() {
 #if MIXED_MODE_TIMER
     csr_sip_clear_flags(SIP_SSIP);
 #else
-    // with MIXED_MODE_TIMER it's advanced in k_interrupt_timer_m, otherwise we do that here:
+    // with MIXED_MODE_TIMER it's advanced in mtimertrap, otherwise we do that here:
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
 #endif
 
@@ -114,18 +114,36 @@ uint32_t proc_fork() {
         return -1;
     }
     child->parent = parent;
-    copy_page(child->stack_page, parent->stack_page);
+    copy_page((void*)UPA(child->stack_page), (void*)UPA(parent->stack_page));
     copy_page(child->kstack_page, parent->kstack_page);
     copy_trap_frame(&child->trap, &parent->trap);
     copy_files(child, parent);
 
+    // TODO: need to copy the mapping from parent's page tables because the
+    // child will be accessing data within that address space (e.g. in order to
+    // call exec with the right params).
+    //
+    // copy_page(child->uvpt, parent->uvpt);
+    // copy_page(child->uvptl2, parent->uvptl2);
+#if HAS_S_MODE
+    // copy_page(child->uvptl3, parent->uvptl3);
+    // copy_page_table(child->uvpt, parent->uvpt, child->pid);
+    copy_page_table2(child->uvpt, parent->uvpt, child->pid);
+    // map_page(child->uvptl3, (void*)UPA(child->stack_page), PTE_U | PTE_R | PTE_W);
+    map_page_sv39(child->uvpt, (void*)UPA(child->stack_page), (regsize_t)child->stack_page, PERM_UDATA, child->pid);
+#endif
+
+    // XXX: this should not be here:
+    // child->uvpt = parent->uvpt;
+    // child->usatp = parent->usatp;
+
     // overwrite the sp with the same offset as parent->sp, but within the child stack:
     regsize_t offset = parent->trap.regs[REG_SP] - (regsize_t)parent->stack_page;
     regsize_t koffset = parent->ctx.regs[REG_SP] - (regsize_t)parent->kstack_page;
-    child->trap.regs[REG_SP] = (regsize_t)(child->stack_page + offset);
+    child->trap.regs[REG_SP] = (regsize_t)UVA(child->stack_page + offset);
     child->ctx.regs[REG_SP] = (regsize_t)(child->kstack_page + koffset);
     offset = parent->trap.regs[REG_FP] - (regsize_t)parent->stack_page;
-    child->trap.regs[REG_FP] = (regsize_t)(child->stack_page + offset);
+    child->trap.regs[REG_FP] = (regsize_t)UVA(child->stack_page + offset);
     child->ctx.regs[REG_FP] = (regsize_t)(child->kstack_page + koffset);
     // child's return value should be a 0 pid:
     child->trap.regs[REG_A0] = 0;
@@ -149,7 +167,7 @@ void forkret() {
     copy_trap_frame(&trap_frame, &proc->trap);
     release(&proc->lock);
     enable_interrupts();
-    ret_to_user();
+    ret_to_user(MAKE_SATP(proc->uvpt));
 }
 
 regsize_t len_argv(char const* argv[]) {
@@ -184,7 +202,7 @@ sp_argv_t copy_argv(uintptr_t *sp, regsize_t argc, char const* argv[]) {
     spc--;
     int i = 0;
     for (; i < argc; i++) {
-        char const* str = argv[i];
+        char const* str = (char const*)UPA(argv[i]);
         int j = 0;
         while (str[j] != 0) {
             j++;
@@ -223,11 +241,15 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         *proc->perrno = ENOMEM;
         return -1;
     }
+#if HAS_S_MODE
+    // map_page(proc->uvptl3, sp, PTE_U | PTE_R | PTE_W);
+    map_page_sv39(proc->uvpt, sp, UVA(sp), PERM_UDATA, proc->pid);
+#endif
     acquire(&proc->lock);
-    proc->trap.pc = (regsize_t)program->entry_point;
+    proc->trap.pc = (regsize_t)UVA(program->entry_point);
     proc->name = program->name;
-    release_page(proc->stack_page);
-    proc->stack_page = sp;
+    release_page((void*)UPA(proc->stack_page));
+    proc->stack_page = (void*)UVA(sp);
     proc->perrno = _set_perrno(sp); // now that we replaced stack_page, update perrno as well
     regsize_t argc = len_argv(argv);
     uintptr_t* top_of_sp = (uintptr_t*)(sp + PAGE_SIZE);
@@ -235,10 +257,10 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     top_of_sp--;  // reserve the last word for errno
     sp_argv_t sp_argv = copy_argv(top_of_sp, argc, argv);
     proc->trap.regs[REG_RA] = (regsize_t)proc->trap.pc;
-    proc->trap.regs[REG_SP] = sp_argv.new_sp;
-    proc->trap.regs[REG_FP] = sp_argv.new_sp;
+    proc->trap.regs[REG_SP] = UVA(sp_argv.new_sp);
+    proc->trap.regs[REG_FP] = UVA(sp_argv.new_sp);
     proc->trap.regs[REG_A0] = argc;
-    proc->trap.regs[REG_A1] = sp_argv.new_argv;
+    proc->trap.regs[REG_A1] = UVA(sp_argv.new_argv);
     copy_trap_frame(&trap_frame, &proc->trap);
     release(&proc->lock);
     // syscall() assigns whatever we return here to a0, the register that
@@ -290,14 +312,50 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     }
     void *ksp = kalloc("init_proc: ksp", proc->pid);
     if (!ksp) {
+        release_page(sp);
         return ENOMEM;
     }
+#if HAS_S_MODE
+    void *uvpt = kalloc("init_proc: uvpt", proc->pid);
+    if (!uvpt) {
+        release_page(sp);
+        release_page(ksp);
+        // TODO: panic
+        return ENOMEM;
+    }
+    /*
+    void *uvptl2 = kalloc("init_proc: uvptl2", proc->pid);
+    if (!uvptl2) {
+        release_page(sp);
+        release_page(ksp);
+        release_page(uvpt);
+        // TODO: panic
+        return ENOMEM;
+    }
+    void *uvptl3 = kalloc("init_proc: uvptl3", proc->pid);
+    if (!uvptl3) {
+        release_page(sp);
+        release_page(ksp);
+        release_page(uvpt);
+        release_page(uvptl2);
+        // TODO: panic
+        return ENOMEM;
+    }
+    */
+    proc->uvpt = uvpt;
+    // proc->uvptl2 = uvptl2;
+    // proc->uvptl3 = uvptl3;
+    proc->usatp = MAKE_SATP(uvpt);
+    init_user_vpt(proc);
+    // map_page(proc->uvptl3, sp, PTE_U | PTE_R | PTE_W);
+    map_page_sv39(proc->uvpt, sp, UVA(sp), PERM_UDATA, proc->pid);
+#endif
     proc->name = name;
     proc->trap.pc = pc;
-    proc->stack_page = sp;
+    proc->stack_page = (void*)UVA(sp);  // XXX: really need to UVA here? I think I only use stack_page to track it for dealloc...
     proc->perrno = _set_perrno(sp); // reserve the last word for errno
     proc->kstack_page = ksp;
-    proc->trap.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
+    proc->trap.regs[REG_SP] = UVA(sp + PAGE_SIZE);
     proc->state = PROC_STATE_READY;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
@@ -357,7 +415,14 @@ void save_sp(regsize_t sp) {
 
 void proc_exit() {
     process_t* proc = myproc();
-    release_page(proc->stack_page);
+    // TODO: un- map_page(proc->uvptl3, sp, PTE_U | PTE_R | PTE_W);
+    release_page((void*)UPA(proc->stack_page));
+#if HAS_S_MODE
+    free_page_table(proc->uvpt);
+    // release_page(proc->uvpt);
+    // release_page(proc->uvptl2);
+    // release_page(proc->uvptl3);
+#endif
     proc->state = PROC_STATE_ZOMBIE;
     acquire(&proc->parent->lock);
     proc->parent->state = PROC_STATE_READY;
@@ -620,4 +685,31 @@ int32_t proc_dup(uint32_t fd) {
     }
     f->refcount++;
     return newfd;
+}
+
+regsize_t proc_pgalloc() {
+    process_t* proc = myproc();
+    if (!proc) {
+        return 0;
+    }
+    void *page = allocate_page("user", proc->pid, PAGE_USERMEM);
+    if (!page) {
+        return 0;
+    }
+#if HAS_S_MODE
+    // map_page(proc->uvptl3, page, PERM_UDATA);
+    map_page_sv39(proc->uvpt, page, UVA(page), PERM_UDATA, proc->pid);
+#endif
+    return UVA(page);
+}
+
+void proc_pgfree(void *page) {
+    process_t* proc = myproc();
+    if (!proc) {
+        return;
+    }
+    release_page(page);
+#if HAS_S_MODE
+    // TODO: un- map_page(proc->uvptl3, page, PERM_UDATA);
+#endif
 }

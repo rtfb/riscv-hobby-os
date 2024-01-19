@@ -21,6 +21,9 @@
 #define MSTATUS_MIE_BIT   3
 #define MSTATUS_SPIE_BIT  5
 #define MSTATUS_MPIE_BIT  7
+#define MSTATUS_SUM_BIT  18    // Supervisor User Memory access: When SUM=0, S-mode memory accesses to pages that are accessible by U-mode
+#define MSTATUS_MXR_BIT  19    // Make eXecutable Readable
+#define MSTATUS_TVM_BIT  20    // Trap Virtual Memory
 
 #define MIE_SSIE_BIT   1  // mie.SSIE (Supervisor-level Software Interrupt Enable) bit
 #define MIE_MSIE_BIT   3  // mie.MSIE (Machine-level Software Interrupt Enable) bit
@@ -31,7 +34,71 @@
 
 #define MIP_SSIP_BIT   1
 
-#define SIP_SSIP      (1 << MIP_SSIP_BIT)
+#define SATP_MODE_SV39 ((regsize_t)(8) << 60)
+
+#if __riscv_xlen == 64
+#define MAKE_SATP(ptr) (PHYS_TO_PPN(ptr) | SATP_MODE_SV39)
+#else
+#define MAKE_SATP(ptr) 0
+#endif
+
+#define PTE_V          (1 << 0)
+#define PTE_R          (1 << 1)
+#define PTE_W          (1 << 2)
+#define PTE_X          (1 << 3)
+#define PTE_U          (1 << 4)
+
+#define PERM_KCODE     (PTE_R | PTE_W | PTE_X)
+#define PERM_KDATA     (PTE_R | PTE_W)
+#define PERM_NONLEAF   PTE_V
+#define PERM_UCODE     (PTE_U | PTE_R | PTE_W | PTE_X)
+#define PERM_UDATA     (PTE_U | PTE_R | PTE_W)
+
+// TODO: fix these:
+#if HAS_S_MODE
+#define UVA(a) (((regsize_t)a) & ~0x80000000)
+#define UPA(a) (((regsize_t)a) | 0x80000000)
+#else
+#define UVA(a) (regsize_t)(a)
+#define UPA(a) (regsize_t)(a)
+#endif
+
+#define PHYS_TO_PPN(paddr)   (((regsize_t)paddr) >> 12)
+#define PHYS_TO_PTE(paddr)   (PHYS_TO_PPN(paddr) << 10)
+#define PHYS_TO_PTE2(paddr)  (PPN1(paddr) << (10+9))
+#define PPN_TO_PHYS(ppn)     (ppn << 12)
+#define PTE_TO_PHYS(pte)     (void*)(PPN_TO_PHYS((regsize_t)pte >> 10))
+
+#define IS_NONLEAF(pte)      ((pte & PTE_V) && !(pte & PTE_R) && !(pte & PTE_X))
+
+// 9 bits:
+#define PPN0_MASK      0x1ff
+#define PPN1_MASK      PPN0_MASK
+// 26 bits:
+#define PPN2_MASK      ((1 << 26) - 1)
+
+#define PPN0_OFFS      12
+#define PPN1_OFFS      (PPN0_OFFS + 9)
+#define PPN2_OFFS      (PPN1_OFFS + 9)
+
+#define PPN0(paddr)    (((regsize_t)paddr >> PPN0_OFFS) & PPN0_MASK)
+#define PPN1(paddr)    ((paddr >> PPN1_OFFS) & PPN1_MASK)
+#define PPN2(paddr)    ((((regsize_t)paddr) >> PPN2_OFFS) & PPN2_MASK)
+
+// #define VPN0_OFFS      12
+// #define VPN1_OFFS      (VPN0_OFFS + 9)
+// #define VPN2_OFFS      (VPN1_OFFS + 9)
+
+// all VPNx fields are 9 bits:
+#define VPNx_MASK      0x1ff
+
+// #define VPN0(vaddr)    ((vaddr >> VPN0_OFFS) & VPNx_MASK)
+// #define VPN1(vaddr)    ((vaddr >> VPN1_OFFS) & VPNx_MASK)
+// #define VPN2(vaddr)    ((vaddr >> VPN2_OFFS) & VPNx_MASK)
+
+#define VPN(vaddr, lvl) ((vaddr >> (12+9*(lvl))) & VPNx_MASK)
+
+#define SIP_SSIP       (1 << MIP_SSIP_BIT)
 
 // dedicated M-Mode funcs:
 unsigned int get_hartid();
@@ -54,6 +121,7 @@ void csr_sip_clear_flags(regsize_t flags);
 regsize_t get_sip_csr();
 void set_stvec_csr(void *ptr);
 void set_sscratch_csr(void* ptr);
+void set_satp(regsize_t value);
 
 // ifdef-controlled M/S-Mode funcs:
 unsigned int get_status_csr();

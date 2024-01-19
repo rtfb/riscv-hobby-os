@@ -84,20 +84,20 @@ uint32_t sys_fork() {
 
 int32_t sys_read() {
     uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
-    void *buf = (void*)trap_frame.regs[REG_A1];
+    void *buf = (void*)UPA(trap_frame.regs[REG_A1]);
     uint32_t size = (uint32_t)trap_frame.regs[REG_A2];
     return proc_read(fd, buf, size);
 }
 
 int32_t sys_write() {
     uint32_t fd = (uint32_t)trap_frame.regs[REG_A0];
-    void *buf = (void*)trap_frame.regs[REG_A1];
+    void *buf = (void*)UPA(trap_frame.regs[REG_A1]);
     uint32_t size = (uint32_t)trap_frame.regs[REG_A2];
     return proc_write(fd, buf, size);
 }
 
 int32_t sys_open() {
-    char const *filepath = (char const*)trap_frame.regs[REG_A0];
+    char const *filepath = (char const*)UPA(trap_frame.regs[REG_A0]);
     uint32_t flags = (uint32_t)trap_frame.regs[REG_A1];
     return proc_open(filepath, flags);
 }
@@ -112,8 +112,8 @@ int32_t sys_wait() {
 }
 
 uint32_t sys_execv() {
-    char const* filename = (char const*)trap_frame.regs[REG_A0];
-    char const** argv = (char const**)trap_frame.regs[REG_A1];
+    char const* filename = (char const*)UPA(trap_frame.regs[REG_A0]);
+    char const** argv = (char const**)UPA(trap_frame.regs[REG_A1]);
     return proc_execv(filename, argv);
 }
 
@@ -128,12 +128,12 @@ uint32_t sys_dup() {
 }
 
 uint32_t sys_pipe() {
-    uint32_t *fds = (uint32_t*)trap_frame.regs[REG_A0];
+    uint32_t *fds = (uint32_t*)UPA(trap_frame.regs[REG_A0]);
     return pipe_open(fds);
 }
 
 uint32_t sys_sysinfo() {
-    sysinfo_t* info = (sysinfo_t*)trap_frame.regs[REG_A0];
+    sysinfo_t* info = (sysinfo_t*)UPA(trap_frame.regs[REG_A0]);
     acquire(&proc_table.lock);
     info->procs = proc_table.num_procs;
     release(&proc_table.lock);
@@ -153,24 +153,24 @@ uint32_t sys_sleep() {
 }
 
 uint32_t sys_plist() {
-    uint32_t *pids = (uint32_t*)trap_frame.regs[REG_A0];
+    uint32_t *pids = (uint32_t*)UPA(trap_frame.regs[REG_A0]);
     uint32_t size = (uint32_t)trap_frame.regs[REG_A1];
     return proc_plist(pids, size);
 }
 
 uint32_t sys_pinfo() {
     uint32_t pid = (uint32_t)trap_frame.regs[REG_A0];
-    pinfo_t *pinfo = (pinfo_t*)trap_frame.regs[REG_A1];
+    pinfo_t *pinfo = (pinfo_t*)UPA(trap_frame.regs[REG_A1]);
     return proc_pinfo(pid, pinfo);
 }
 
 regsize_t sys_pgalloc() {
-    return (regsize_t)allocate_page("user", cpu.proc->pid, PAGE_USERMEM);
+    return proc_pgalloc();
 }
 
 regsize_t sys_pgfree() {
-    void *page = (void*)trap_frame.regs[REG_A0];
-    release_page(page);
+    void *page = (void*)UPA(trap_frame.regs[REG_A0]);
+    proc_pgfree(page);
     return 0;
 }
 

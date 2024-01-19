@@ -11,23 +11,25 @@ SECTIONS
   /* text: kernel code section */
   . = DEFINED(ROM_START) ? ROM_START : RAM_START;
   .text : { *(.text) }
-  . = ALIGN(PAGE_SIZE);
 
+  . = ALIGN(PAGE_SIZE);
+  user_code_start = .;
   /* user_text: userland code section */
   .user_text : {
       *(.user_text)
       *(.user_rodata)
   }
-  . = ALIGN(PAGE_SIZE);
 
+  . = ALIGN(PAGE_SIZE);
+  rodata_start = .;
   /* data: Initialized data segment */
   .rodata : { *(.rodata) }
   /* build-id: Store after readonly data */
   build_id = .;
   .gnu_build_id : { *(.note.gnu.build-id) }
 
+  . = ALIGN(PAGE_SIZE);
   . = DEFINED(ROM_START) ? RAM_START : .;
-  data_start = .;
   .data : { *(.data) }
   bss_start = .;
   .bss : {

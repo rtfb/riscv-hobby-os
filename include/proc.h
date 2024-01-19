@@ -46,6 +46,7 @@
 typedef struct trap_frame_s {
     regsize_t regs[31]; // all registers except r0
     regsize_t pc;
+    regsize_t ksatp;    // kernel satp
 } trap_frame_t;
 
 typedef struct context_s {
@@ -55,6 +56,10 @@ typedef struct context_s {
 typedef struct process_s {
     spinlock lock;
     context_t ctx;
+    regsize_t usatp;    // uvpt converted to satp format
+    regsize_t *uvpt;    // user virtual page table
+    regsize_t *uvptl2;  // user virtual page table, level 2
+    regsize_t *uvptl3;  // user virtual page table, level 3
     uint32_t pid;
     char const *name;
     struct process_s* parent;
@@ -134,7 +139,7 @@ void init_process_table(uint32_t runflags, unsigned int hart_id);
 void scheduler();
 void sched();
 void forkret();
-void ret_to_user();  // defined in context.s
+void ret_to_user(regsize_t satp);  // defined in context.s
 
 // find_ready_proc iterates over the proc table looking for the first available
 // proc that's in a PROC_STATE_READY state. Wraps around and starts from zero
@@ -223,6 +228,9 @@ int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes);
 // incremented.
 int32_t proc_dup(uint32_t fd);
 
+regsize_t proc_pgalloc();
+void proc_pgfree(void *page);
+
 // fd_alloc allocates a file descriptor in process's open files list and
 // assigns a file pointer to it. proc.lock must be held.
 int32_t fd_alloc(process_t *proc, file_t *f);
@@ -231,5 +239,7 @@ void fd_free(process_t *proc, int32_t fd);
 // find_proc finds a process by a given pid. Returns NULL if nothing is found.
 // Must be called with proc_table.lock held.
 process_t* find_proc(uint32_t pid);
+
+void map_user_page(process_t *proc, regsize_t phys_addr, int perm);
 
 #endif // ifndef _PROC_H_
