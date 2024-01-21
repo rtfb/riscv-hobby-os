@@ -102,27 +102,21 @@ void init_test_processes(uint32_t runflags) {
 }
 
 void assign_init_program(char const* prog) {
-    void* sp = allocate_page();
-    if (!sp) {
-        // TODO: panic
-        return;
-    }
-    void *ksp = allocate_page();
-    if (!ksp) {
-        // TODO: panic
-        return;
-    }
     user_program_t *program = find_user_program(prog);
-    process_t* p0 = alloc_process(sp, ksp);
-    acquire(&p0->lock);
-
-    // extra initialization on top of what init_proc does for us:
-    p0->pid = alloc_pid();
-    p0->trap.pc = (regsize_t)program->entry_point;
-    p0->name = program->name;
-    p0->trap.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
-    p0->ctx.regs[REG_SP] = (regsize_t)ksp + PAGE_SIZE;
+    if (!program) {
+        // TODO: panic
+        return;
+    }
+    process_t* p0 = alloc_process();
+    if (!p0) {
+        // TODO: panic
+        return;
+    }
+    uintptr_t status = init_proc(p0, (regsize_t)program->entry_point, program->name);
     release(&p0->lock);
+    if (status != 0) {
+        // TODO: panic
+    }
 }
 
 user_program_t* find_user_program(char const *name) {

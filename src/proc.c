@@ -98,31 +98,22 @@ int should_wake_up(process_t* proc) {
 
 uint32_t proc_fork() {
     process_t* parent = myproc();
-    // allocate stack. Fail early if we're out of memory:
-    void* sp = allocate_page();
-    if (!sp) {
-        *parent->perrno = ENOMEM;
-        return -1;
-    }
-    void *ksp = allocate_page();
-    if (!ksp) {
-        *parent->perrno = ENOMEM;
-        return -1;
-    }
-
     parent->trap.pc = trap_frame.pc;
     copy_trap_frame(&parent->trap, &trap_frame);
 
-    process_t* child = alloc_process(sp, ksp);
+    process_t* child = alloc_process();
     if (!child) {
         *parent->perrno = ENOMEM;  // we've probably hit MAX_PROCS, treat it as out of memory
-        release_page(ksp);
-        release_page(sp);
+        release(&child->lock);
         return -1;
     }
-    child->pid = alloc_pid();
+    uintptr_t status = init_proc(child, parent->trap.pc, 0);
+    if (status != 0) {
+        *parent->perrno = status;
+        release(&child->lock);
+        return -1;
+    }
     child->parent = parent;
-    child->trap.pc = parent->trap.pc;
     copy_page(child->stack_page, parent->stack_page);
     copy_page(child->kstack_page, parent->kstack_page);
     copy_trap_frame(&child->trap, &parent->trap);
@@ -131,11 +122,11 @@ uint32_t proc_fork() {
     // overwrite the sp with the same offset as parent->sp, but within the child stack:
     regsize_t offset = parent->trap.regs[REG_SP] - (regsize_t)parent->stack_page;
     regsize_t koffset = parent->ctx.regs[REG_SP] - (regsize_t)parent->kstack_page;
-    child->trap.regs[REG_SP] = (regsize_t)(sp + offset);
-    child->ctx.regs[REG_SP] = (regsize_t)(ksp + koffset);
+    child->trap.regs[REG_SP] = (regsize_t)(child->stack_page + offset);
+    child->ctx.regs[REG_SP] = (regsize_t)(child->kstack_page + koffset);
     offset = parent->trap.regs[REG_FP] - (regsize_t)parent->stack_page;
-    child->trap.regs[REG_FP] = (regsize_t)(sp + offset);
-    child->ctx.regs[REG_FP] = (regsize_t)(ksp + koffset);
+    child->trap.regs[REG_FP] = (regsize_t)(child->stack_page + offset);
+    child->ctx.regs[REG_FP] = (regsize_t)(child->kstack_page + koffset);
     // child's return value should be a 0 pid:
     child->trap.regs[REG_A0] = 0;
     release(&child->lock);
@@ -266,7 +257,11 @@ uint32_t alloc_pid() {
     return pid;
 }
 
-process_t* alloc_process(void *sp, void *ksp) {
+// alloc_process finds an available process slot and returns it with proc->lock
+// held. It is the caller's responsibility to release it when it's done with
+// it. The process is not yet usable, it must be initialized with init_proc
+// after that.
+process_t* alloc_process() {
     acquire(&proc_table.lock);
     for (int i = 0; i < MAX_PROCS; i++) {
         process_t *proc = &proc_table.procs[i];
@@ -275,8 +270,6 @@ process_t* alloc_process(void *sp, void *ksp) {
         }
         acquire(&proc->lock);
         if (proc->state == PROC_STATE_AVAILABLE) {
-            init_proc(proc, sp, ksp);
-            release(&proc->lock);
             release(&proc_table.lock);
             return proc;
         }
@@ -286,11 +279,25 @@ process_t* alloc_process(void *sp, void *ksp) {
     return 0;
 }
 
-// must be called with proc_table.lock and proc->lock held.
-void init_proc(process_t* proc, void *sp, void *ksp) {
+// init_proc initializes the given process. Returns 0 on success and error code
+// on failure. Must be called with proc->lock held.
+uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
+    // allocate stack. Fail early if we're out of memory:
+    void* sp = allocate_page();
+    if (!sp) {
+        return ENOMEM;
+    }
+    void *ksp = allocate_page();
+    if (!ksp) {
+        return ENOMEM;
+    }
+    proc->pid = alloc_pid();
+    proc->name = name;
+    proc->trap.pc = pc;
     proc->stack_page = sp;
     proc->perrno = _set_perrno(sp); // reserve the last word for errno
     proc->kstack_page = ksp;
+    proc->trap.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
     proc->state = PROC_STATE_READY;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
@@ -301,6 +308,7 @@ void init_proc(process_t* proc, void *sp, void *ksp) {
     for (int i = 0; i < 14; i++) {
         proc->ctx.regs[i] = 0;
     }
+    proc->ctx.regs[REG_SP] = (regsize_t)ksp + PAGE_SIZE;
     proc->ctx.regs[REG_RA] = (regsize_t)forkret;
 
     // sacrifice the first word of kstack_page for a sentinel that will be used
@@ -308,7 +316,10 @@ void init_proc(process_t* proc, void *sp, void *ksp) {
     proc->magic = (uint32_t*)proc->kstack_page;
     *proc->magic = PROC_MAGIC_STACK_SENTINEL;
 
+    acquire(&proc_table.lock);
     proc_table.num_procs++;
+    release(&proc_table.lock);
+    return 0;
 }
 
 process_t* current_proc() {

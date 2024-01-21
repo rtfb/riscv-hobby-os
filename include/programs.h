@@ -5,7 +5,7 @@
 
 typedef struct user_program_s {
     void *entry_point;
-    char *name;
+    char const *name;
 } user_program_t;
 
 // defined in proc_test.c:

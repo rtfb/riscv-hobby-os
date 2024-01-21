@@ -56,7 +56,7 @@ typedef struct process_s {
     spinlock lock;
     context_t ctx;
     uint32_t pid;
-    char *name;
+    char const *name;
     struct process_s* parent;
     trap_frame_t trap;
 
@@ -181,15 +181,8 @@ void proc_mark_for_wakeup(void *chan);
 // returns true if wakeup_time >= now.
 int should_wake_up(process_t* proc);
 
-// alloc_process finds an available slot in the process table and returns its
-// address. It will immediately acquire the process lock when it finds the
-// slot. It is the caller's responsibility to release it when it's done with
-// it.
-process_t* alloc_process(void *sp, void *ksp);
-
-// init_proc initializes a given process struct.
-// Must be called with proc_table.lock and proc.lock held.
-void init_proc(process_t* proc, void *sp, void *ksp);
+process_t* alloc_process();
+uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name);
 
 // alloc_pid returns a unique process identifier suitable to assign to a newly
 // created process.
