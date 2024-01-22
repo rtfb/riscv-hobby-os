@@ -9,12 +9,15 @@
 
 #define PAGE_FREE           0
 #define PAGE_ALLOCATED      1
+#define PAGE_USERMEM        2
 
 // Describes a single page of memory. Has a pointer to the actual piece of
 // memory and flags with the status.
 typedef struct page_s {
     void *ptr;
     uint32_t flags;
+    char const *site;   // allocation site
+    uint32_t pid;       // if the page is associated with a user process, this holds the process pid
 } page_t;
 
 // Contains all pages. Lock should be acquired to modify anything in this
@@ -33,7 +36,8 @@ typedef struct paged_mem_s {
 extern paged_mem_t paged_memory;
 
 void init_paged_memory(void* paged_mem_end, int do_page_report);
-void* allocate_page();
+void* allocate_page(char const *site, uint32_t pid, uint32_t flags);
+void* kalloc(char const *site, uint32_t pid);
 void release_page(void *ptr);
 uint32_t count_free_pages();
 void copy_page(void* dst, void* src);

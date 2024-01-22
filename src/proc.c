@@ -218,7 +218,7 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         return -1;
     }
     // allocate stack. Fail early if we're out of memory:
-    void* sp = allocate_page(); // XXX: we already have a stack_page and kstack_page allocated in fork, do we need a new copy? Why?
+    void* sp = kalloc("proc_execv", proc->pid); // XXX: we already have a stack_page and kstack_page allocated in fork, do we need a new copy? Why?
     if (!sp) {
         *proc->perrno = ENOMEM;
         return -1;
@@ -282,16 +282,16 @@ process_t* alloc_process() {
 // init_proc initializes the given process. Returns 0 on success and error code
 // on failure. Must be called with proc->lock held.
 uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
+    proc->pid = alloc_pid();
     // allocate stack. Fail early if we're out of memory:
-    void* sp = allocate_page();
+    void* sp = kalloc("init_proc: sp", proc->pid);
     if (!sp) {
         return ENOMEM;
     }
-    void *ksp = allocate_page();
+    void *ksp = kalloc("init_proc: ksp", proc->pid);
     if (!ksp) {
         return ENOMEM;
     }
-    proc->pid = alloc_pid();
     proc->name = name;
     proc->trap.pc = pc;
     proc->stack_page = sp;

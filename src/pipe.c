@@ -8,7 +8,7 @@ pipes_t pipes;
 
 void init_pipes() {
     pipes.lock = 0;
-    pipes.buf_page = allocate_page();
+    pipes.buf_page = kalloc("init_pipes", -1);
     if (!pipes.buf_page) {
         // TODO: panic
         return;

@@ -165,7 +165,7 @@ uint32_t sys_pinfo() {
 }
 
 regsize_t sys_pgalloc() {
-    return (regsize_t)allocate_page();
+    return (regsize_t)allocate_page("user", cpu.proc->pid, PAGE_USERMEM);
 }
 
 regsize_t sys_pgfree() {

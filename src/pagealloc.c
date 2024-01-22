@@ -18,8 +18,11 @@ void init_paged_memory(void* paged_mem_end, int do_page_report) {
     paged_memory.unclaimed_end = paged_mem_start;
     int i = 0;
     while (mem < (regsize_t)paged_mem_end && i < MAX_PAGES) {
-        paged_memory.pages[i].ptr = (void*)mem;
-        paged_memory.pages[i].flags = PAGE_FREE;
+        page_t *p = &paged_memory.pages[i];
+        p->ptr = (void*)mem;
+        p->flags = PAGE_FREE;
+        p->site = 0;
+        p->pid = -1;
         mem += PAGE_SIZE;
         i++;
     }
@@ -30,18 +33,25 @@ void init_paged_memory(void* paged_mem_end, int do_page_report) {
     }
 }
 
-void* allocate_page() {
+void* allocate_page(char const *site, uint32_t pid, uint32_t flags) {
     acquire(&paged_memory.lock);
     for (int i = 0; i < paged_memory.num_pages; i++) {
         page_t* page = &paged_memory.pages[i];
         if (page->flags == PAGE_FREE) {
-            page->flags = PAGE_ALLOCATED;
+            page->flags = flags | PAGE_ALLOCATED;
+            page->site = site;
+            page->pid = pid;
             release(&paged_memory.lock);
             return page->ptr;
         }
     }
     release(&paged_memory.lock);
     return 0;
+}
+
+// kalloc is a convenience shorthand for allocating a page for kernel needs.
+void *kalloc(char const *site, uint32_t pid) {
+    return allocate_page(site, pid, 0);
 }
 
 void release_page(void *ptr) {
@@ -55,6 +65,8 @@ void release_page(void *ptr) {
                 return;
             }
             page->flags = PAGE_FREE;
+            page->site = 0;
+            page->pid = -1;
             release(&paged_memory.lock);
             return;
         }
