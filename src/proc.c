@@ -119,23 +119,15 @@ uint32_t proc_fork() {
     copy_trap_frame(&child->trap, &parent->trap);
     copy_files(child, parent);
 
-    // TODO: need to copy the mapping from parent's page tables because the
-    // child will be accessing data within that address space (e.g. in order to
-    // call exec with the right params).
-    //
-    // copy_page(child->uvpt, parent->uvpt);
-    // copy_page(child->uvptl2, parent->uvptl2);
 #if HAS_S_MODE
-    // copy_page(child->uvptl3, parent->uvptl3);
-    // copy_page_table(child->uvpt, parent->uvpt, child->pid);
-    copy_page_table2(child->uvpt, parent->uvpt, child->pid);
-    // map_page(child->uvptl3, (void*)UPA(child->stack_page), PTE_U | PTE_R | PTE_W);
+    // copy the mapping from parent's page tables because the child may be
+    // accessing data within that address space (e.g. in order to call exec
+    // with the right params).
+    copy_page_table(child->uvpt, parent->uvpt, child->pid);
+
+    // map stack to userspace
     map_page_sv39(child->uvpt, (void*)UPA(child->stack_page), (regsize_t)child->stack_page, PERM_UDATA, child->pid);
 #endif
-
-    // XXX: this should not be here:
-    // child->uvpt = parent->uvpt;
-    // child->usatp = parent->usatp;
 
     // overwrite the sp with the same offset as parent->sp, but within the child stack:
     regsize_t offset = parent->trap.regs[REG_SP] - (regsize_t)parent->stack_page;
@@ -242,7 +234,6 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         return -1;
     }
 #if HAS_S_MODE
-    // map_page(proc->uvptl3, sp, PTE_U | PTE_R | PTE_W);
     map_page_sv39(proc->uvpt, sp, UVA(sp), PERM_UDATA, proc->pid);
 #endif
     acquire(&proc->lock);
@@ -320,34 +311,11 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     if (!uvpt) {
         release_page(sp);
         release_page(ksp);
-        // TODO: panic
         return ENOMEM;
     }
-    /*
-    void *uvptl2 = kalloc("init_proc: uvptl2", proc->pid);
-    if (!uvptl2) {
-        release_page(sp);
-        release_page(ksp);
-        release_page(uvpt);
-        // TODO: panic
-        return ENOMEM;
-    }
-    void *uvptl3 = kalloc("init_proc: uvptl3", proc->pid);
-    if (!uvptl3) {
-        release_page(sp);
-        release_page(ksp);
-        release_page(uvpt);
-        release_page(uvptl2);
-        // TODO: panic
-        return ENOMEM;
-    }
-    */
     proc->uvpt = uvpt;
-    // proc->uvptl2 = uvptl2;
-    // proc->uvptl3 = uvptl3;
     proc->usatp = MAKE_SATP(uvpt);
-    init_user_vpt(proc);
-    // map_page(proc->uvptl3, sp, PTE_U | PTE_R | PTE_W);
+    init_user_vpt(uvpt, proc->pid);
     map_page_sv39(proc->uvpt, sp, UVA(sp), PERM_UDATA, proc->pid);
 #endif
     proc->name = name;
@@ -415,13 +383,9 @@ void save_sp(regsize_t sp) {
 
 void proc_exit() {
     process_t* proc = myproc();
-    // TODO: un- map_page(proc->uvptl3, sp, PTE_U | PTE_R | PTE_W);
     release_page((void*)UPA(proc->stack_page));
 #if HAS_S_MODE
     free_page_table(proc->uvpt);
-    // release_page(proc->uvpt);
-    // release_page(proc->uvptl2);
-    // release_page(proc->uvptl3);
 #endif
     proc->state = PROC_STATE_ZOMBIE;
     acquire(&proc->parent->lock);
@@ -697,7 +661,6 @@ regsize_t proc_pgalloc() {
         return 0;
     }
 #if HAS_S_MODE
-    // map_page(proc->uvptl3, page, PERM_UDATA);
     map_page_sv39(proc->uvpt, page, UVA(page), PERM_UDATA, proc->pid);
 #endif
     return UVA(page);

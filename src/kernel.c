@@ -50,11 +50,8 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     kprintf("kprintf test: str=%s, ptr=%p, pos int=%d, neg int=%d\n",
         str, p, 1337, MAX_NEG_INT);
     uint32_t runflags = parse_runflags();
-    init_paged_memory(paged_mem_end, 0);
     int running_tests = runflags & RUNFLAGS_TESTS;
-    if (running_tests) {
-        // do_page_report();
-    }
+    init_paged_memory(paged_mem_end, !running_tests);
     init_process_table(runflags, hartid);
     init_pipes();
     fs_init();

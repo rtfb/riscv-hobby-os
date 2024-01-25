@@ -178,7 +178,6 @@ void set_supervisor_mode() {
     mstatus &= MPP_MASK;    // zero out mode bits 11:12
     mstatus |= MPP_MODE_S;  // set them to Supervisor mode
     mstatus |= (1 << MSTATUS_SIE_BIT) | (1 << MSTATUS_MPIE_BIT);
-    // mstatus |= (1 << MSTATUS_SUM_BIT);  // allow S-Mode to access U-Mode pages
     set_mstatus_csr(mstatus);
 
     regsize_t mie = (1 << MIE_STIE_BIT) | (1 << MIE_SEIE_BIT) | (1 << MIE_SSIE_BIT)

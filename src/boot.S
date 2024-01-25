@@ -431,7 +431,7 @@ exception_epilogue:
 .if HALT_ON_EXCEPTION == 1
 1:      j       1b
 .endif
-        li      a0, 0xbaadf00d     // TODO: deal with this code path later
+        li      a0, 0xbaadf00d     // TODO: figure out whether this codepath is ever used
         j       ret_to_user
 
 interrupt_epilogue:

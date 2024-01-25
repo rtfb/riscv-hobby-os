@@ -58,8 +58,6 @@ typedef struct process_s {
     context_t ctx;
     regsize_t usatp;    // uvpt converted to satp format
     regsize_t *uvpt;    // user virtual page table
-    regsize_t *uvptl2;  // user virtual page table, level 2
-    regsize_t *uvptl3;  // user virtual page table, level 3
     uint32_t pid;
     char const *name;
     struct process_s* parent;
@@ -239,7 +237,5 @@ void fd_free(process_t *proc, int32_t fd);
 // find_proc finds a process by a given pid. Returns NULL if nothing is found.
 // Must be called with proc_table.lock held.
 process_t* find_proc(uint32_t pid);
-
-void map_user_page(process_t *proc, regsize_t phys_addr, int perm);
 
 #endif // ifndef _PROC_H_

@@ -91,16 +91,8 @@
 #define PPN1(paddr)    ((paddr >> PPN1_OFFS) & PPN1_MASK)
 #define PPN2(paddr)    ((((regsize_t)paddr) >> PPN2_OFFS) & PPN2_MASK)
 
-// #define VPN0_OFFS      12
-// #define VPN1_OFFS      (VPN0_OFFS + 9)
-// #define VPN2_OFFS      (VPN1_OFFS + 9)
-
 // all VPNx fields are 9 bits:
 #define VPNx_MASK      0x1ff
-
-// #define VPN0(vaddr)    ((vaddr >> VPN0_OFFS) & VPNx_MASK)
-// #define VPN1(vaddr)    ((vaddr >> VPN1_OFFS) & VPNx_MASK)
-// #define VPN2(vaddr)    ((vaddr >> VPN2_OFFS) & VPNx_MASK)
 
 #define VPN(vaddr, lvl) ((vaddr >> (12+9*(lvl))) & VPNx_MASK)
 
