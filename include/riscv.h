@@ -48,8 +48,10 @@
 #define PTE_X          (1 << 3)
 #define PTE_U          (1 << 4)
 
+// XXX: remove PTE_W from kcode?
 #define PERM_KCODE     (PTE_R | PTE_W | PTE_X)
 #define PERM_KDATA     (PTE_R | PTE_W)
+#define PERM_KRODATA   PTE_R
 #define PERM_NONLEAF   PTE_V
 #define PERM_UCODE     (PTE_U | PTE_R | PTE_W | PTE_X)
 #define PERM_UDATA     (PTE_U | PTE_R | PTE_W)
@@ -70,6 +72,10 @@
 #define PTE_TO_PHYS(pte)     (void*)(PPN_TO_PHYS((regsize_t)pte >> 10))
 
 #define IS_NONLEAF(pte)      ((pte & PTE_V) && !(pte & PTE_R) && !(pte & PTE_X))
+#define IS_USER(pte)         ((pte & PTE_U) != 0)
+
+#define PAGEROUND(p)   ((regsize_t)(p) & ~(PAGE_SIZE-1))
+#define PAGEROUNDUP(p) (PAGEROUND(p) + PAGE_SIZE)
 
 // 9 bits:
 #define PPN0_MASK      0x1ff

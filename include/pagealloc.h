@@ -31,6 +31,8 @@ typedef struct paged_mem_s {
     // the region of unclaimed memory between stack_top and the first page
     regsize_t unclaimed_start;
     regsize_t unclaimed_end;
+
+    void *kpagetable;
 } paged_mem_t;
 
 // defined in pagealloc.c
@@ -52,6 +54,7 @@ uint32_t count_free_pages();
 void copy_page(void* dst, void* src);
 void copy_page_table(regsize_t *dst, regsize_t *src, uint32_t pid);
 void copy_page_table2(regsize_t *dst, regsize_t *src, uint32_t pid);
+void copy_kernel_pagemap(regsize_t *upt, regsize_t *kpt);
 regsize_t* find_next_level_page_table(regsize_t *pagetable);
 
 #endif // ifndef _PAGEALLOC_H_

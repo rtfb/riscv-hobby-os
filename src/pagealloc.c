@@ -3,18 +3,21 @@
 #include "pmp.h"
 #include "proc.h"
 #include "riscv.h"
+#include "timer.h"
 
 paged_mem_t paged_memory;
 
 void init_paged_memory(void* paged_mem_end, int do_page_report) {
     regsize_t unclaimed_start = (regsize_t)&stack_top;
     paged_memory.lock = 0;
-    regsize_t mem = unclaimed_start;
     // up-align at page size to avoid the last page being incomplete:
+    regsize_t mem = PAGEROUNDUP(unclaimed_start);
+    /*
     mem &= ~(PAGE_SIZE - 1);
     if (unclaimed_start > mem) {
         mem += PAGE_SIZE;
     }
+    */
     regsize_t paged_mem_start = mem;
     paged_memory.unclaimed_start = unclaimed_start;
     paged_memory.unclaimed_end = paged_mem_start;
@@ -40,42 +43,76 @@ void init_paged_memory(void* paged_mem_end, int do_page_report) {
 extern void* RAM_START;
 extern void* user_code_start;
 extern void* rodata_start;
+extern void* data_start;
+extern void* _end;
 
 void init_vpt() {
 #if !HAS_S_MODE
     return;
 #endif
-    void *page = kalloc("init_vpt: page", -1);
-    if (!page) {
+    void *pagetable = kalloc("init_vpt: pagetable", -1);
+    if (!pagetable) {
         // TODO: panic
         return;
     }
-    void *l2 = kalloc("init_vpt: l2", -1);
-    if (!l2) {
-        release_page(page);
-        // TODO: panic
-        return;
-    }
-    clear_vpt(page);
-    clear_vpt(l2);
+    paged_memory.kpagetable = pagetable;
+    // void *l2 = kalloc("init_vpt: l2", -1);
+    // if (!l2) {
+    //     release_page(pagetable);
+    //     // TODO: panic
+    //     return;
+    // }
+    clear_vpt(pagetable);
+    // clear_vpt(l2);
 
-    regsize_t *pte = (regsize_t*)page;
-    regsize_t *l2pte = (regsize_t*)l2;
+    // regsize_t *pte = (regsize_t*)pagetable;
+    // regsize_t *l2pte = (regsize_t*)l2;
 
     // map level-2 pagetable at 0:
-    pte[0] = (PHYS_TO_PPN(l2pte) << 10) | PERM_NONLEAF;
+    // pte[0] = (PHYS_TO_PPN(l2pte) << 10) | PERM_NONLEAF;
 
     // map all of RAM as kernel-executable:
-    map_superpage(pte, &RAM_START, PERM_KCODE);
+    // map_superpage(pte, &RAM_START, PERM_KCODE);
+    void *pa = &RAM_START;
+    void *end = &user_code_start;
+    while (pa != end) {
+        // map_page(proc->uvptl3, pa, PERM_UCODE);
+        map_page_sv39(pagetable, pa, (regsize_t)pa, PERM_KCODE, -1);
+        pa += PAGE_SIZE;
+    }
+    // map_page_sv39(pagetable, (void*)CLINT0_BASE_ADDRESS, CLINT0_BASE_ADDRESS, PERM_KDATA, -1);
+    map_page_sv39(pagetable, (void*)PAGEROUND(MTIME), PAGEROUND(MTIME), PERM_KDATA, -1);
+    map_page_sv39(pagetable, (void*)MTIMECMP_BASE, MTIMECMP_BASE, PERM_KDATA, -1);
+    map_page_sv39(pagetable, (void*)PLIC_THRESHOLD, PLIC_THRESHOLD, PERM_KDATA, -1);
+    map_page_sv39(pagetable, (void*)UART_BASE, UART_BASE, PERM_KDATA, -1);
+    //TODO: map stack
+    pa = &rodata_start;
+    end = &data_start;
+    while (pa != end) {
+        map_page_sv39(pagetable, pa, (regsize_t)pa, PERM_KRODATA, -1);
+        pa += PAGE_SIZE;
+    }
+    pa = (void*)PAGEROUND(&data_start);
+    end = (void*)PAGEROUNDUP(&_end);
+    while (pa != end) {
+        map_page_sv39(pagetable, pa, (regsize_t)pa, PERM_KDATA, -1);
+        pa += PAGE_SIZE;
+    }
+
+    // pre-map all pages in kernel space:
+    for (int i = 0; i < MAX_PAGES; i++) {
+        page_t *p = &paged_memory.pages[i];
+        map_page_sv39(pagetable, p->ptr, (regsize_t)p->ptr, PERM_KDATA, -1);
+    }
 
     // map all special-purpose mamory addresses as kernel-read-writable:
-    map_l2page(l2pte, CLINT0_BASE_ADDRESS, PERM_KDATA);
-    map_l2page(l2pte, PLIC_THRESHOLD, PERM_KDATA);
-    map_l2page(l2pte, UART_BASE, PERM_KDATA);
+    // map_l2page(l2pte, CLINT0_BASE_ADDRESS, PERM_KDATA);
+    // map_l2page(l2pte, PLIC_THRESHOLD, PERM_KDATA);
+    // map_l2page(l2pte, UART_BASE, PERM_KDATA);
 
     // TODO:
     // add page fault handler to kill a user process doing nasty things
-    regsize_t satp = MAKE_SATP(page);
+    regsize_t satp = MAKE_SATP(pagetable);
     trap_frame.ksatp = satp;
     set_satp(satp);
 }
@@ -94,12 +131,15 @@ void init_user_vpt(process_t *proc) {
     // do because the userland will not have access to anything mapped for
     // supervisor access anyway.
     // map_superpage(proc->uvpt, &RAM_START, PERM_KCODE);
+    /*
     void *pa = &RAM_START;
     for (int i = 0; i < 16; i++) {
         // map_page(proc->uvptl3, pa, PERM_UCODE);
         map_page_sv39(proc->uvpt, pa, (regsize_t)pa, PERM_KCODE, proc->pid);
         pa += PAGE_SIZE;
     }
+    */
+    copy_kernel_pagemap(proc->uvpt, paged_memory.kpagetable);
     // Ox64: 0x50200000 => ppn2=0x1, ppn1=0x81
     // D1: 0x40200000 => ppn2=0x1, ppn1=0x1
 
@@ -109,7 +149,7 @@ void init_user_vpt(process_t *proc) {
 
     // now map all userland code as user-executable:
     void *user_code_end = &rodata_start;
-    pa = &user_code_start;
+    void *pa = &user_code_start;
     while (pa != user_code_end) {
         // map_page(proc->uvptl3, pa, PERM_UCODE);
         map_page_sv39(proc->uvpt, pa, UVA(pa), PERM_UCODE, proc->pid);
@@ -149,13 +189,22 @@ void map_page_sv39(regsize_t *pagetable, void *phys_addr, regsize_t virt_addr, i
     }
 }
 
+void copy_kernel_pagemap(regsize_t *upt, regsize_t *kpt) {
+    for (int i = 0; i < 512; i++) {
+        regsize_t pte = kpt[i];
+        // if (pte != 0 && ((pte & PTE_U) == 0)) {
+        if (pte != 0 && !IS_USER(pte)) {
+            upt[i] = pte;
+        }
+    }
+}
+
 /*
 // map_page adds a physical page mapping to a given page table with given
 // permissions.
 void map_page(regsize_t *pagetable, void *phys_addr, int perm) {
     pagetable[PPN0(phys_addr)] = PHYS_TO_PTE(phys_addr) | perm | PTE_V;
 }
-*/
 
 void map_l2page(regsize_t *pagetable, regsize_t phys_addr, int perm) {
     pagetable[PPN1(phys_addr)] = PHYS_TO_PTE2(phys_addr) | perm | PTE_V;
@@ -164,6 +213,7 @@ void map_l2page(regsize_t *pagetable, regsize_t phys_addr, int perm) {
 void map_superpage(regsize_t *pagetable, void *phys_addr, int perm) {
     pagetable[PPN2(phys_addr)] = PHYS_TO_PTE(phys_addr) | perm | PTE_V;
 }
+*/
 
 void clear_vpt(void *page) {
     for (regsize_t *pte = (regsize_t*)page; pte != page+PAGE_SIZE; pte++) {
@@ -171,14 +221,32 @@ void clear_vpt(void *page) {
     }
 }
 
-// XXX: will only work well if the pages for pagetables get allocated lazily
+/*
+void free_page_table_r(regsize_t *pt, int level) {
+    if (level == 2) {
+        release_page(PTE_TO_PHYS(*pt));
+        return;
+    }
+    for (regsize_t *pte = pt; pte != pt+PAGE_SIZE; pte++) {
+        if (IS_NONLEAF(*pte) && IS_USER(*pte)) {
+            free_page_table_r(PTE_TO_PHYS(*pte), level+1);
+        }
+    }
+}
+
+void free_page_table(regsize_t *pt) {
+    free_page_table_r(pt, 0);
+    release_page(pt);
+}
+*/
+
 void free_page_table(regsize_t *pt) {
     void *root = pt;
-    for (regsize_t *pte = pt; pte != pt+PAGE_SIZE; pte++) {
-        if (IS_NONLEAF(*pte)) {
+    for (regsize_t *pte = pt; pte != pt+512; pte++) {
+        if (IS_NONLEAF(*pte) && IS_USER(*pte)) {
             void *l2 = PTE_TO_PHYS(*pte);
             for (regsize_t *pte = l2; pte != l2+PAGE_SIZE; pte++) {
-                if (IS_NONLEAF(*pte)) {
+                if (IS_NONLEAF(*pte) && IS_USER(*pte)) {
                     void *l3 = PTE_TO_PHYS(*pte);
                     release_page(l3);
                     break;
@@ -224,7 +292,7 @@ void copy_page_table2(regsize_t *dst, regsize_t *src, uint32_t pid) {
 regsize_t* find_next_level_page_table(regsize_t *pagetable) {
     regsize_t *end = pagetable + PAGE_SIZE/sizeof(regsize_t);
     for (regsize_t *pte = pagetable; pte != end; pte++) {
-        if (IS_NONLEAF(*pte)) {
+        if (IS_NONLEAF(*pte) && IS_USER(*pte)) {
             return PTE_TO_PHYS(*pte);
         }
     }

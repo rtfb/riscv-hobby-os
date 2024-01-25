@@ -29,6 +29,7 @@ SECTIONS
   .gnu_build_id : { *(.note.gnu.build-id) }
 
   . = ALIGN(PAGE_SIZE);
+  data_start = .;
   . = DEFINED(ROM_START) ? RAM_START : .;
   .data : { *(.data) }
   bss_start = .;
