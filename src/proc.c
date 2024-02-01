@@ -33,7 +33,7 @@ void sleep_scheduler() {
 #if MIXED_MODE_TIMER
     csr_sip_clear_flags(SIP_SSIP);
 #else
-    // with MIXED_MODE_TIMER it's advanced in k_interrupt_timer_m, otherwise we do that here:
+    // with MIXED_MODE_TIMER it's advanced in mtimertrap, otherwise we do that here:
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
 #endif
 

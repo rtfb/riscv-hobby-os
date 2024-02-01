@@ -98,7 +98,7 @@ void init_trap_vector() {
 void kernel_timer_tick() {
     disable_interrupts();
 #if !MIXED_MODE_TIMER
-    // with MIXED_MODE_TIMER it's advanced in k_interrupt_timer_m, otherwise we do that here:
+    // with MIXED_MODE_TIMER it's advanced in mtimertrap, otherwise we do that here:
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
 #endif
     sched();
