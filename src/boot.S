@@ -288,7 +288,6 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
 
 #if HAS_S_MODE
         OP_LOAD t6, 32*REGSZ(t0)
-        sfence.vma zero, zero
         csrw    satp, t6         // set satp to trap_frame.ksatp
         sfence.vma zero, zero
 #endif

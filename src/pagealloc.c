@@ -26,10 +26,13 @@ void init_paged_memory(void* paged_mem_end, int do_page_report) {
     }
     paged_memory.num_pages = i;
     init_vpt();
+    kprintf("init_paged_memory1\n");
+    kprintf("init_paged_memory2\n");
     if (do_page_report) {
         kprintf("paged memory: start=%p, end=%p, npages=%d\n",
                 paged_mem_start, paged_mem_end, paged_memory.num_pages);
     }
+    kprintf("init_paged_memory3\n");
 }
 
 // defined in kernel.ld:
@@ -39,7 +42,45 @@ extern void* rodata_start;
 extern void* data_start;
 extern void* _end;
 
+void dump_pt(regsize_t *pt) {
+    for (int i = 0; i < 32; i += 2) {
+        kprintf("%d: %p    %p\n", i, pt[i], pt[i+1]);
+    }
+    pt = PTE_TO_PHYS(pt[1]);
+    kprintf("L2: %p\n", pt);
+    // int base = 128;
+    int base = 0;
+    for (int i = base; i < base+32; i += 2) {
+        kprintf("%d: %p    %p\n", i, pt[i], pt[i+1]);
+    }
+    pt = PTE_TO_PHYS(pt[base+1]);
+    kprintf("L3: %p\n", pt);
+    for (int i = 0; i < 32; i += 2) {
+        kprintf("%d: %p    %p\n", i, pt[i], pt[i+1]);
+    }
+}
+
+void dump_page(void *page) {
+    regsize_t *p;
+    for (int i = 0; i < 512; i += 2) {
+        kprintf("%d: %p    %p\n", i, p[i], p[i+1]);
+    }
+}
+
+void dump_regs() {
+    register regsize_t reg asm ("a0");
+    asm volatile ("mv a0, ra" : "=r"(reg));
+    kprintf("ra = %p\n", reg);
+    asm volatile ("mv a0, sp" : "=r"(reg));
+    kprintf("sp = %p\n", reg);
+    asm volatile ("mv a0, s0" : "=r"(reg));
+    kprintf("s0 = %p\n", reg);
+}
+
 void init_vpt() {
+    register regsize_t reg1 asm ("a0");
+    asm volatile ("mv a0, s0" : "=r"(reg1));
+    kprintf("s0 = %p\n", reg1);
 #if !HAS_S_MODE
     return;
 #endif
@@ -48,39 +89,108 @@ void init_vpt() {
         // TODO: panic
         return;
     }
+    kprintf("init_vpt: pagetable=%p\n", pagetable);
     paged_memory.kpagetable = pagetable;
     clear_vpt(pagetable);
 
+    kprintf("1 RAM_START=%p, user_code_start=%p\n", &RAM_START, &user_code_start);
     // map kernel code as kernel-executable:
     map_range_id(pagetable, &RAM_START, &user_code_start, PERM_KCODE);
     // Ox64: 0x50200000 => ppn2=0x1, ppn1=0x81
     // D1: 0x40200000 => ppn2=0x1, ppn1=0x1
 
+    kprintf("2\n");
     // map rodata:
     map_range_id(pagetable, &rodata_start, &data_start, PERM_KRODATA);
 
+    kprintf("3\n");
     // map data segment:
     void *start = (void*)PAGEROUND(&data_start);
     void *end = (void*)PAGEROUNDUP(&_end);
     map_range_id(pagetable, start, end, PERM_KDATA);
 
+    kprintf("4\n");
     // pre-map all pages in kernel space:
     for (int i = 0; i < MAX_PAGES; i++) {
         page_t *p = &paged_memory.pages[i];
         map_page_sv39(pagetable, p->ptr, (regsize_t)p->ptr, PERM_KDATA, -1);
     }
 
+    kprintf("5\n");
     // map all special-purpose memory addresses as kernel-read-writable:
     map_page_sv39(pagetable, (void*)PAGEROUND(MTIME), PAGEROUND(MTIME), PERM_KDATA, -1);
+    kprintf("6\n");
     map_page_sv39(pagetable, (void*)MTIMECMP_BASE, MTIMECMP_BASE, PERM_KDATA, -1);
+    kprintf("7\n");
     map_page_sv39(pagetable, (void*)PLIC_THRESHOLD, PLIC_THRESHOLD, PERM_KDATA, -1);
+    kprintf("8\n");
     map_page_sv39(pagetable, (void*)UART_BASE, UART_BASE, PERM_KDATA, -1);
+
+    // dump_pt(pagetable);
+
+    // regsize_t ubsatp = get_satp();
+    // uint32_t satph = ubsatp >> 32;
+    // uint32_t satpl = ubsatp & 0xffffffff;
+    // kprintf("UBOOT SATP satph=%x, satpl=%x\n", satph, satpl);
+    // dump_pt((regsize_t*)UNMAKE_SATP(ubsatp));
+    register regsize_t reg2 asm ("a0");
+    asm volatile ("mv a0, sp" : "=r"(reg2));
+    regsize_t *goodsp = (regsize_t*)PAGEROUND(reg2);
+    for (int i = 0; i < 512; i += 2) {
+        kprintf("%d: %p    %p\n", i, goodsp[i], goodsp[i+1]);
+    }
 
     // TODO:
     // add page fault handler to kill a user process doing nasty things
     regsize_t satp = MAKE_SATP(pagetable);
     trap_frame.ksatp = satp;
-    set_satp(satp);
+    asm volatile ("mv a0, s0" : "=r"(reg1));
+    kprintf("s0 = %p\n", reg1);
+    // set_satp(satp);
+    regsize_t invalidate = SMCIR_INVALIDALL;
+    asm volatile (
+        "csrw " THEAD_SMCIR_CSR ", %0"
+        :
+        : "r"(invalidate)
+    );
+    asm volatile(".word 0x1b0000b");  // sync.is
+    kprintf("THEAD_SMCIR_CSR done\n");
+    asm volatile (
+        "sfence.vma zero, zero  \n\
+         csrw satp, %0          \n\
+         sfence.vma zero, zero"
+        :                 // no output
+        : "r"(satp)      // input in value
+    );
+
+    asm volatile ("mv a0, s0" : "=r"(reg1));
+    kprintf("s0 = %p\n", reg1);
+    kprintf("/set_satp\n");
+    asm volatile ("mv a0, s0" : "=r"(reg1));
+    kprintf("s0 = %p\n", reg1);
+    kprintf("post1\n");
+    kprintf("post2\n");
+    kprintf("post3\n");
+    kprintf("post4\n");
+    kprintf("post5\n");
+    kprintf("post6\n");
+    kprintf("post7\n");
+    register regsize_t reg asm ("a0");
+    asm volatile ("mv a0, ra" : "=r"(reg));
+    kprintf("ra = %p\n", reg);
+    asm volatile ("mv a0, sp" : "=r"(reg));
+    regsize_t *sp = (regsize_t*)PAGEROUND(reg);
+    kprintf("sp = %p\n", reg);
+    asm volatile ("mv a0, s0" : "=r"(reg));
+    kprintf("s0 = %p\n", reg);
+    kprintf("----\n");
+    asm volatile ("ld a0, 56(sp)" : "=r"(reg));
+    kprintf("ra = %p\n", reg);
+    asm volatile ("ld a0, 48(sp)" : "=r"(reg));
+    kprintf("s0 = %p\n", reg);
+    for (int i = 0; i < 512; i += 2) {
+        kprintf("%d: %p    %p\n", i, sp[i], sp[i+1]);
+    }
 }
 
 void init_user_vpt(void *pagetable, uint32_t pid) {
@@ -94,15 +204,20 @@ void init_user_vpt(void *pagetable, uint32_t pid) {
     // weren't mapped as executable, it would page fault. It's safe to do
     // because the userland will not have access to anything mapped for
     // supervisor access anyway.
+    // regsize_t *kpt = (regsize_t*)0x40212000;
     copy_kernel_pagemap(pagetable, paged_memory.kpagetable);
+    // regsize_t *pt = pagetable;
+    // pt[1] = 0x10084c01;
 
     // now map all userland code as user-executable:
     void *start = &user_code_start;
     void *end = &rodata_start;
     map_range(pagetable, start, end, (void*)UVA(start), PERM_UCODE, pid);
+    // dump_pt(pagetable);
 }
 
 void map_page_sv39(regsize_t *pagetable, void *phys_addr, regsize_t virt_addr, int perm, uint32_t pid) {
+    kprintf("map_page_sv39: pagetable=%p, phys_addr=%p, virt_addr=%x\n", pagetable, phys_addr, virt_addr);
     for (int level = 2; level >= 0; level--) {
         int vpn_n = VPN(virt_addr, level);
         regsize_t pte = pagetable[vpn_n];
@@ -125,7 +240,7 @@ void map_page_sv39(regsize_t *pagetable, void *phys_addr, regsize_t virt_addr, i
         //     // TODO: panic - should never remap?
         //     return;
         // }
-        pagetable[vpn_n] = PHYS_TO_PTE(phys_addr) | perm | PTE_V;
+        pagetable[vpn_n] = PHYS_TO_PTE(phys_addr) | perm | PTE_V | PTE_A | PTE_D;
         break;
     }
 }
@@ -145,11 +260,13 @@ void map_range_id(void *pagetable, void *pa_start, void *pa_end, int perm) {
 }
 
 void copy_kernel_pagemap(regsize_t *upt, regsize_t *kpt) {
+    kprintf("copy_kernel_pagemap: upt=%p, kpt=%p\n", upt, kpt);
     for (int i = 0; i < PAGE_SIZE/sizeof(regsize_t); i++) {
-        regsize_t pte = kpt[i];
-        if ((pte & 0xf) == PERM_NONLEAF) {
-            upt[i] = pte;
+        kprintf("copy_kernel_pagemap: kpt[%d] = %p\n", i, *kpt);
+        if ((*kpt & 0xf) == PERM_NONLEAF) {
+            upt[i] = *kpt;
         }
+        kpt++;
     }
 }
 

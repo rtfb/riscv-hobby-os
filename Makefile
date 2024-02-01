@@ -166,6 +166,7 @@ $(OUT)/os_sifive_e32: ${OS_SIFIVE_E32_DEPS}
 $(OUT)/os_virt: ${OS_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wa,--defsym,QEMU_EXIT=0x100000 -g \
+		-D RAM_UPPER_ADDR=0x80000000 \
 		-include include/machine/qemu_virt.h \
 		${OS_VIRT_DEPS} -o $@
 
@@ -179,8 +180,9 @@ $(OUT)/os_hifive1_revb: ${OS_SIFIVE_E32_DEPS}
 
 $(OUT)/os_ox64: ${OS_OX64_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wl,--defsym,RAM_START=0x50200000 -g \
-		-include include/machine/ox64.h \
+		-Wl,--defsym,RAM_START=0x50200000 \
+		-D RAM_UPPER_ADDR=0x50200000 \
+		-g -include include/machine/ox64.h \
 		${OS_OX64_DEPS} -o $@
 
 $(OUT)/os_ox64.bin: $(OUT)/os_ox64
@@ -191,8 +193,9 @@ $(OUT)/os_ox64.s: $(OUT)/os_ox64
 
 $(OUT)/os_d1: ${OS_D1_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
-		-Wl,--defsym,RAM_START=0x40200000 -g \
-		-include include/machine/d1.h \
+		-Wl,--defsym,RAM_START=0x40200000 \
+		-D RAM_UPPER_ADDR=0x40200000 \
+		-g -include include/machine/d1.h \
 		${OS_D1_DEPS} -o $@
 
 $(OUT)/os_d1.bin: $(OUT)/os_d1

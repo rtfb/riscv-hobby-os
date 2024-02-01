@@ -126,7 +126,7 @@ uint32_t proc_fork() {
     copy_page_table(child->uvpt, parent->uvpt, child->pid);
 
     // map stack to userspace
-    map_page_sv39(child->uvpt, (void*)UPA(child->stack_page), (regsize_t)child->stack_page, PERM_UDATA, child->pid);
+    // map_page_sv39(child->uvpt, (void*)UPA(child->stack_page), (regsize_t)child->stack_page, PERM_UDATA, child->pid);
 #endif
 
     // overwrite the sp with the same offset as parent->sp, but within the child stack:
@@ -159,6 +159,7 @@ void forkret() {
     copy_trap_frame(&trap_frame, &proc->trap);
     release(&proc->lock);
     enable_interrupts();
+    kprintf("forkret: uvpt=%p, satp=%p\n", proc->uvpt, MAKE_SATP(proc->uvpt));
     ret_to_user(MAKE_SATP(proc->uvpt));
 }
 

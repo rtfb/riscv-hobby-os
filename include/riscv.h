@@ -34,19 +34,27 @@
 
 #define MIP_SSIP_BIT   1
 
-#define SATP_MODE_SV39 ((regsize_t)(8) << 60)
+#define SATP_MODE_SV39 (8UL << 60)
 
 #if __riscv_xlen == 64
 #define MAKE_SATP(ptr) (PHYS_TO_PPN(ptr) | SATP_MODE_SV39)
+#define UNMAKE_SATP(satp) (PPN_TO_PHYS(satp & ~((1L << 44) -1 )))
 #else
 #define MAKE_SATP(ptr) 0
 #endif
+
+#define THEAD_SMCIR_CSR  "0x9c3"
+
+#define SMCIR_INVALIDALL (1 << 26)
 
 #define PTE_V          (1 << 0)
 #define PTE_R          (1 << 1)
 #define PTE_W          (1 << 2)
 #define PTE_X          (1 << 3)
 #define PTE_U          (1 << 4)
+// PTE_G (1 << 5)
+#define PTE_A          (1 << 6)
+#define PTE_D          (1 << 7)
 
 // XXX: remove PTE_W from kcode?
 #define PERM_KCODE     (PTE_R | PTE_W | PTE_X)
@@ -58,18 +66,19 @@
 
 // TODO: fix these:
 #if HAS_S_MODE
-#define UVA(a) (((regsize_t)a) & ~0x80000000)
-#define UPA(a) (((regsize_t)a) | 0x80000000)
+#define UVA(a) (((regsize_t)a) & ~0xffe00000)
+#define UPA(a) (((regsize_t)a) |  RAM_UPPER_ADDR)
 #else
 #define UVA(a) (regsize_t)(a)
 #define UPA(a) (regsize_t)(a)
 #endif
 
 #define PHYS_TO_PPN(paddr)   (((regsize_t)paddr) >> 12)
+// #define PHYS_TO_PTE(paddr)   ((PHYS_TO_PPN(paddr) << 10) | (7UL << 60))
 #define PHYS_TO_PTE(paddr)   (PHYS_TO_PPN(paddr) << 10)
-#define PHYS_TO_PTE2(paddr)  (PPN1(paddr) << (10+9))
 #define PPN_TO_PHYS(ppn)     (ppn << 12)
-#define PTE_TO_PHYS(pte)     (void*)(PPN_TO_PHYS((regsize_t)pte >> 10))
+// #define PTE_TO_PHYS(pte)     (void*)(PPN_TO_PHYS((regsize_t)(pte & ~0xf000000000000000) >> 10))
+#define PTE_TO_PHYS(pte)     (void*)(PPN_TO_PHYS((regsize_t)(pte) >> 10))
 
 #define IS_NONLEAF(pte)      ((pte & PTE_V) && !(pte & PTE_R) && !(pte & PTE_X))
 #define IS_USER(pte)         ((pte & PTE_U) != 0)
@@ -120,6 +129,7 @@ regsize_t get_sip_csr();
 void set_stvec_csr(void *ptr);
 void set_sscratch_csr(void* ptr);
 void set_satp(regsize_t value);
+regsize_t get_satp();
 
 // ifdef-controlled M/S-Mode funcs:
 unsigned int get_status_csr();

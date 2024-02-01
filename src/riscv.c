@@ -281,10 +281,18 @@ void csr_sip_clear_flags(regsize_t flags) {
 
 void set_satp(regsize_t value) {
     asm volatile (
-        "sfence.vma zero, zero  \n\
-         csrw satp, %0          \n\
+        "csrw satp, %0          \n\
          sfence.vma zero, zero"
         :                 // no output
         : "r"(value)      // input in value
     );
+}
+
+regsize_t get_satp() {
+    register regsize_t a0 asm ("a0");
+    asm volatile (
+        "csrr a0, satp"
+        : "=r"(a0)   // output in a0
+    );
+    return a0;
 }

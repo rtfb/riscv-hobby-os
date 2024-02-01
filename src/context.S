@@ -27,7 +27,9 @@ k_interrupt_plic:
 .globl ret_to_user
 ret_to_user:
 #if HAS_S_MODE
-        sfence.vma zero, zero
+        li      t6, 1
+        slli    t6, t6, 26
+        csrw    0x9c3, t6
         csrw    satp, a0
         sfence.vma zero, zero
 #endif
