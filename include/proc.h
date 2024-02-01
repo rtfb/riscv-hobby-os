@@ -223,6 +223,9 @@ int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes);
 // incremented.
 int32_t proc_dup(uint32_t fd);
 
+void* proc_pgalloc();
+void proc_pgfree(void *page);
+
 // fd_alloc allocates a file descriptor in process's open files list and
 // assigns a file pointer to it. proc.lock must be held.
 int32_t fd_alloc(process_t *proc, file_t *f);

@@ -621,3 +621,23 @@ int32_t proc_dup(uint32_t fd) {
     f->refcount++;
     return newfd;
 }
+
+void* proc_pgalloc() {
+    process_t* proc = myproc();
+    if (!proc) {
+        return 0;
+    }
+    void *page = allocate_page("user", proc->pid, PAGE_USERMEM);
+    if (!page) {
+        return 0;
+    }
+    return page;
+}
+
+void proc_pgfree(void *page) {
+    process_t* proc = myproc();
+    if (!proc) {
+        return;
+    }
+    release_page(page);
+}
