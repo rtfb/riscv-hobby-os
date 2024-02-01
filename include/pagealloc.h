@@ -11,6 +11,9 @@
 #define PAGE_ALLOCATED      1
 #define PAGE_USERMEM        2
 
+#define PAGE_ROUND_DOWN(p)  ((regsize_t)(p) & ~(PAGE_SIZE-1))
+#define PAGE_ROUND_UP(p)    (PAGE_ROUND_DOWN(p) + PAGE_SIZE)
+
 // Describes a single page of memory. Has a pointer to the actual piece of
 // memory and flags with the status.
 typedef struct page_s {
