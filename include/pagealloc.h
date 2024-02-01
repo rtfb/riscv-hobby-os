@@ -35,7 +35,8 @@ typedef struct paged_mem_s {
 // defined in pagealloc.c
 extern paged_mem_t paged_memory;
 
-void init_paged_memory(void* paged_mem_end, int do_page_report);
+void init_paged_memory(void* paged_mem_end);
+void do_page_report(void* paged_mem_end);
 void* allocate_page(char const *site, uint32_t pid, uint32_t flags);
 void* kalloc(char const *site, uint32_t pid);
 void release_page(void *ptr);
