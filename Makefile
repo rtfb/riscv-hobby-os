@@ -76,6 +76,7 @@ BASE_DEPS = $(BOOT) \
 	src/spinlock.c \
 	src/string.c \
 	src/syscalls.c \
+	src/vm-stub.c \
 	user/src/errno.c \
 	user/src/shell.c \
 	user/src/userland.c \
