@@ -1,6 +1,6 @@
-#include "pipe.h"
 #include "errno.h"
 #include "pagealloc.h"
+#include "pipe.h"
 
 #define PIPE_BUF_SIZE    (PAGE_SIZE / 4)
 

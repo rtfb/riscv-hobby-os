@@ -1,5 +1,5 @@
-#include "riscv.h"
 #include "asm.h"
+#include "riscv.h"
 
 void set_status_interrupt_pending() {
     // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:

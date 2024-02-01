@@ -1,9 +1,9 @@
-#include "proc.h"
 #include "kernel.h"
-#include "string.h"
 #include "pagealloc.h"
+#include "proc.h"
 #include "programs.h"
 #include "runflags.h"
+#include "string.h"
 
 // defined in userland.c:
 extern int u_main_shell();

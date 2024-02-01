@@ -1,12 +1,12 @@
 // Entry points for all the syscalls here
 
-#include "kernel.h"
-#include "syscalls.h"
 #include "errno.h"
-#include "proc.h"
+#include "gpio.h"
+#include "kernel.h"
 #include "pagealloc.h"
 #include "pipe.h"
-#include "gpio.h"
+#include "proc.h"
+#include "syscalls.h"
 
 // for fun let's pretend syscall table is kinda like 32bit Linux on x86,
 // /usr/include/asm/unistd_32.h: __NR_restart_syscall 0, __NR_exit 1, _NR_fork 2, __NR_read 3, __NR_write 4

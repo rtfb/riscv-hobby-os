@@ -1,5 +1,5 @@
-#include "sys.h"
 #include "sbi.h"
+#include "sys.h"
 
 struct sbi_ret sbi_ecall(
     int ext, int fid,

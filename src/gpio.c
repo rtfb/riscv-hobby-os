@@ -1,5 +1,5 @@
-#include "mmreg.h"
 #include "gpio.h"
+#include "mmreg.h"
 
 #define read(reg) read32(GPIO_BASE + reg)
 #define write(reg, val) write32(GPIO_BASE + reg, val)

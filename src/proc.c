@@ -1,12 +1,12 @@
+#include "drivers/uart/uart.h"
+#include "errno.h"
+#include "kernel.h"
+#include "pagealloc.h"
 #include "pmp.h"
 #include "proc.h"
-#include "errno.h"
-#include "pagealloc.h"
 #include "programs.h"
-#include "kernel.h"
 #include "string.h"
 #include "timer.h"
-#include "drivers/uart/uart.h"
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;

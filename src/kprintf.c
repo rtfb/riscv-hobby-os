@@ -1,6 +1,6 @@
-#include "sys.h"
-#include "printf-macro.h"
 #include "drivers/uart/uart.h"
+#include "printf-macro.h"
+#include "sys.h"
 
 // kprint_radix prints a given number in a given radix. It stores the string in
 // a provided buffer, fills it starting from the end, and returns a pointer

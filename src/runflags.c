@@ -1,5 +1,5 @@
-#include "runflags.h"
 #include "fdt.h"
+#include "runflags.h"
 #include "string.h"
 
 uint32_t parse_runflags() {

@@ -1,6 +1,8 @@
 #ifndef _GPIO_H_
 #define _GPIO_H_
 
+#include "sys.h"
+
 // This is a mapping of on-board Arduino-compatible PIN numbers to the GPIO
 // pins internal to the FE310 chip, based on HiFive1 RevB Schematics[1]. In
 // GPIO_PIN_x, the x corresponds to the label next to a pin on the board, and
