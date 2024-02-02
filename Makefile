@@ -94,7 +94,10 @@ OS_SIFIVE_E32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
 OS_SIFIVE_U32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_VIRT_DEPS = $(TEST_DEPS)
-OS_VIRT_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-ns16550a.c
+OS_VIRT_DEPS = $(BASE_DEPS) \
+	src/drivers/uart/uart-ns16550a.c \
+	src/timer.c \
+	src/vm.c
 OS_OX64_DEPS = $(BASE_DEPS) \
 			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
 OS_D1_DEPS = $(BASE_DEPS) \

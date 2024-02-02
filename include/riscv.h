@@ -33,6 +33,46 @@
 
 #define SIP_SSIP      (1 << MIP_SSIP_BIT)
 
+#define SATP_MODE_SV39 (8UL << 60)
+
+#if CONFIG_MMU
+#define MAKE_SATP(ptr) (PHYS_TO_PPN(ptr) | SATP_MODE_SV39)
+#define USR_VIRT(pa)   (((regsize_t)pa) & ~0xffe00000)
+#else
+#define MAKE_SATP(ptr) 0
+#define USR_VIRT(a)    (regsize_t)(a)
+#endif
+
+#define PTE_V          (1 << 0)
+#define PTE_R          (1 << 1)
+#define PTE_W          (1 << 2)
+#define PTE_X          (1 << 3)
+#define PTE_U          (1 << 4)
+#define PTE_G          (1 << 5)
+#define PTE_A          (1 << 6)
+#define PTE_D          (1 << 7)
+
+#define PERM_KCODE     (PTE_R | PTE_X)
+#define PERM_KDATA     (PTE_R | PTE_W)
+#define PERM_KRODATA   PTE_R
+#define PERM_NONLEAF   PTE_V
+#define PERM_UCODE     (PTE_U | PTE_R | PTE_X)
+#define PERM_UDATA     (PTE_U | PTE_R | PTE_W)
+
+#define PHYS_TO_PPN(paddr)   (((regsize_t)paddr) >> 12)
+#define PHYS_TO_PTE(paddr)   (PHYS_TO_PPN(paddr) << 10)
+#define PPN_TO_PHYS(ppn)     (ppn << 12)
+#define PTE_TO_PHYS(pte)     (void*)(PPN_TO_PHYS((regsize_t)(pte) >> 10))
+
+#define IS_NONLEAF(pte)      ((pte & PTE_V) && !(pte & PTE_R) && !(pte & PTE_X))
+#define IS_USER(pte)         ((pte & PTE_U) != 0)
+
+// all VPNx fields are 9 bits:
+#define VPNx_MASK      0x1ff
+
+// extract level'th virtual page number of a given vaddr
+#define VPN(vaddr, level) ((vaddr >> (12+9*(level))) & VPNx_MASK)
+
 // dedicated M-Mode funcs:
 unsigned int get_hartid();
 void set_mscratch_csr(void* ptr);

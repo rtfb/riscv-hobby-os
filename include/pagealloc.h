@@ -26,6 +26,11 @@ typedef struct page_s {
 // Contains all pages. Lock should be acquired to modify anything in this
 // struct.
 typedef struct paged_mem_s {
+#if CONFIG_MMU
+    regsize_t ksatp;
+    void *kpagetable;
+#endif
+
     spinlock lock;
     page_t pages[MAX_PAGES];
     uint32_t num_pages;

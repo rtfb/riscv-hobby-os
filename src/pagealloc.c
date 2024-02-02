@@ -1,6 +1,8 @@
 #include "kernel.h"
 #include "pagealloc.h"
 #include "pmp.h"
+#include "riscv.h"
+#include "vm.h"
 
 paged_mem_t paged_memory;
 
@@ -21,6 +23,13 @@ void init_paged_memory(void* paged_mem_end) {
         i++;
     }
     paged_memory.num_pages = i;
+#if CONFIG_MMU
+    void *pagetable = make_kernel_page_table(paged_memory.pages, i);
+    paged_memory.kpagetable = pagetable;
+    regsize_t satp = MAKE_SATP(pagetable);
+    paged_memory.ksatp = satp;
+    // TODO: set_satp(satp);
+#endif
 }
 
 void do_page_report(void* mem_end) {

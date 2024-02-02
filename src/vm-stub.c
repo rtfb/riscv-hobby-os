@@ -13,5 +13,6 @@ void map_page_id(void *pagetable, void *pa, int perm) {}
 void copy_page_table(regsize_t *dst, regsize_t *src, uint32_t pid) {}
 void copy_kernel_pagemap(regsize_t *upt, regsize_t *kpt) {}
 regsize_t* find_next_level_page_table(regsize_t *pagetable) {}
+void* va2pa(regsize_t *pagetable, void *va) { return va; }
 
 #endif // if !CONFIG_MMU
