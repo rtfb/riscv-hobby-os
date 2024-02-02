@@ -286,6 +286,13 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
         csrrw   t6, REG_SCRATCH, t6
         OP_STOR t6, 30*REGSZ(t0)
 
+#if CONFIG_MMU
+        la      t6, paged_memory
+        OP_LOAD t6, (t6)
+        csrw    satp, t6         // set satp to paged_memory.ksatp
+        sfence.vma zero, zero
+#endif
+
         csrr    t6, REG_EPC
         OP_STOR t6, 31*REGSZ(t0)
 
@@ -416,12 +423,15 @@ syscall_dispatch:
         OP_STOR s9,  12*REGSZ(t0)  // (*process_t)[12] => ctx[11]
         OP_STOR s10, 13*REGSZ(t0)  // (*process_t)[13] => ctx[12]
         OP_STOR s11, 14*REGSZ(t0)  // (*process_t)[14] => ctx[13]
+
+        OP_LOAD a0,  15*REGSZ(t0)  // (*process_t)[15] => cpu.proc.usatp
         j       ret_to_user
 
 exception_epilogue:
 .if HALT_ON_EXCEPTION == 1
 1:      j       1b
 .endif
+        li      a0, 0xbaadf00d     // TODO: figure out whether this codepath is ever used
         j       ret_to_user
 
 interrupt_epilogue:

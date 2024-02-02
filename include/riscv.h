@@ -58,20 +58,30 @@
 #define PERM_NONLEAF   PTE_V
 #define PERM_UCODE     (PTE_U | PTE_R | PTE_X)
 #define PERM_UDATA     (PTE_U | PTE_R | PTE_W)
+#define PERM_URODATA   (PTE_U | PTE_R)
 
 #define PHYS_TO_PPN(paddr)   (((regsize_t)paddr) >> 12)
 #define PHYS_TO_PTE(paddr)   (PHYS_TO_PPN(paddr) << 10)
 #define PPN_TO_PHYS(ppn)     (ppn << 12)
 #define PTE_TO_PHYS(pte)     (void*)(PPN_TO_PHYS((regsize_t)(pte) >> 10))
 
-#define IS_NONLEAF(pte)      ((pte & PTE_V) && !(pte & PTE_R) && !(pte & PTE_X))
-#define IS_USER(pte)         ((pte & PTE_U) != 0)
+#define HAS_V(pte)           ((pte & PTE_V) != 0)
+#define HAS_R(pte)           ((pte & PTE_R) != 0)
+#define HAS_W(pte)           ((pte & PTE_W) != 0)
+#define HAS_X(pte)           ((pte & PTE_X) != 0)
+#define HAS_U(pte)           ((pte & PTE_U) != 0)
+
+#define IS_NONLEAF(pte)      (HAS_V(pte) && !HAS_R(pte) && !HAS_X(pte))
+#define IS_USER(pte)         HAS_U(pte)
+#define IS_VALID(pte)        (HAS_V(pte) || (!HAS_R(pte) && HAS_W(pte)))
 
 // all VPNx fields are 9 bits:
 #define VPNx_MASK      0x1ff
 
 // extract level'th virtual page number of a given vaddr
 #define VPN(vaddr, level) ((vaddr >> (12+9*(level))) & VPNx_MASK)
+
+#define PAGE_OFFS(addr)   ((regsize_t)addr & (PAGE_SIZE - 1))
 
 // dedicated M-Mode funcs:
 unsigned int get_hartid();
@@ -94,6 +104,7 @@ void csr_sip_clear_flags(regsize_t flags);
 regsize_t get_sip_csr();
 void set_stvec_csr(void *ptr);
 void set_sscratch_csr(void* ptr);
+void set_satp(regsize_t value);
 
 // ifdef-controlled M/S-Mode funcs:
 unsigned int get_status_csr();

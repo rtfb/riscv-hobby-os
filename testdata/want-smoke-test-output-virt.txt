@@ -5,13 +5,13 @@ bootargs: smoke-test
 kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-9223372036854775807
 Init userland smoke test!
 Total RAM: 32
-Free RAM: 23
+Free RAM: 12
 Num procs: 3
 formatted string: num=387, zero=0, char=X, hex=0xaddbeef, str=foo
 only groks 7 args: 11 12 13 14 15 16 17 %d %d
 I will hang now, bye
 Total RAM: 32
-Free RAM: 21
+Free RAM: 9
 Num procs: 4
 PID  STATE  NAME
 0    S      smoke-test

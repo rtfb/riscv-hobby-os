@@ -95,7 +95,7 @@ void init_trap_vector() {
 // kernel_timer_tick will be called from timer to give kernel time to do its
 // housekeeping as well as run the scheduler to pick the next user process to
 // run.
-void kernel_timer_tick() {
+regsize_t kernel_timer_tick() {
     disable_interrupts();
 #if !MIXED_MODE_TIMER
     // with MIXED_MODE_TIMER it's advanced in mtimertrap, otherwise we do that here:
@@ -103,6 +103,11 @@ void kernel_timer_tick() {
 #endif
     sched();
     enable_interrupts();
+    // return proc->usatp if possible so that we have it in a0 in k_interrupt_timer
+    if (cpu.proc != 0) {
+        return cpu.proc->usatp;
+    }
+    return 0;
 }
 
 // kernel_plic_handler...
@@ -110,6 +115,11 @@ void kernel_plic_handler() {
     disable_interrupts();
     plic_dispatch_interrupts();
     enable_interrupts();
+    regsize_t satp = 0;
+    if (cpu.proc != 0) {
+        satp = cpu.proc->usatp;
+    }
+    ret_to_user(satp);
 }
 
 void disable_interrupts() {

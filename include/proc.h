@@ -55,15 +55,17 @@ typedef struct context_s {
 typedef struct process_s {
     spinlock lock;
     context_t ctx;
+    regsize_t usatp;        // upagetable converted to satp format
+    regsize_t *upagetable;  // user virtual page table
     uint32_t pid;
     char const *name;
     struct process_s* parent;
     trap_frame_t trap;
 
-    // stack_page points to the base of the page allocated for stack (i.e. it's
-    // the value returned by allocate_page()). We need to save it so that we
-    // can later pass it to release_page(), as well as when copying the entire
-    // stack around, e.g. during fork().
+    // stack_page is a physical address of the base of the page allocated for
+    // stack (i.e. it's the value returned by allocate_page()). We need to save
+    // it so that we can later pass it to release_page(), as well as when
+    // copying the entire stack around, e.g. during fork().
     void *stack_page;
 
     uintptr_t *perrno;  // points to the last word within stack_page, that's where we store errno
@@ -134,7 +136,7 @@ void init_process_table(uint32_t runflags, unsigned int hart_id);
 void scheduler();
 void sched();
 void forkret();
-void ret_to_user();  // defined in context.s
+void ret_to_user(regsize_t satp);  // defined in context.s
 
 // find_ready_proc iterates over the proc table looking for the first available
 // proc that's in a PROC_STATE_READY state. Wraps around and starts from zero
@@ -234,5 +236,7 @@ void fd_free(process_t *proc, int32_t fd);
 // find_proc finds a process by a given pid. Returns NULL if nothing is found.
 // Must be called with proc_table.lock held.
 process_t* find_proc(uint32_t pid);
+
+regsize_t reoffset_user_stack(process_t *dest, process_t *src, int reg);
 
 #endif // ifndef _PROC_H_

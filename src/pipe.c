@@ -1,6 +1,7 @@
 #include "errno.h"
 #include "pagealloc.h"
 #include "pipe.h"
+#include "vm.h"
 
 #define PIPE_BUF_SIZE    (PAGE_SIZE / 4)
 
@@ -77,8 +78,9 @@ int32_t pipe_open(uint32_t pipefd[2]) {
         return -1;
     }
     release(&pipe->lock);
-    pipefd[0] = fd0;
-    pipefd[1] = fd1;
+    uint32_t *pipefd_phys = va2pa(proc->upagetable, pipefd);
+    pipefd_phys[0] = fd0;
+    pipefd_phys[1] = fd1;
     return 0;
 }
 

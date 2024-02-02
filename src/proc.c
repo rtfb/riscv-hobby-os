@@ -7,6 +7,7 @@
 #include "programs.h"
 #include "string.h"
 #include "timer.h"
+#include "vm.h"
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;
@@ -119,19 +120,33 @@ uint32_t proc_fork() {
     copy_trap_frame(&child->trap, &parent->trap);
     copy_files(child, parent);
 
-    // overwrite the sp with the same offset as parent->sp, but within the child stack:
-    regsize_t offset = parent->trap.regs[REG_SP] - (regsize_t)parent->stack_page;
+#if CONFIG_MMU
+    // copy the mapping from parent's page tables because the child may be
+    // accessing data within that address space (e.g. in order to call exec
+    // with the right params).
+    copy_page_table(child->upagetable, parent->upagetable, child->pid);
+#endif
+
+    // overwrite sp and fp with the same offset as parent's, but within the child stack:
     regsize_t koffset = parent->ctx.regs[REG_SP] - (regsize_t)parent->kstack_page;
-    child->trap.regs[REG_SP] = (regsize_t)(child->stack_page + offset);
     child->ctx.regs[REG_SP] = (regsize_t)(child->kstack_page + koffset);
-    offset = parent->trap.regs[REG_FP] - (regsize_t)parent->stack_page;
-    child->trap.regs[REG_FP] = (regsize_t)(child->stack_page + offset);
     child->ctx.regs[REG_FP] = (regsize_t)(child->kstack_page + koffset);
+    reoffset_user_stack(child, parent, REG_SP);
+    reoffset_user_stack(child, parent, REG_FP);
     // child's return value should be a 0 pid:
     child->trap.regs[REG_A0] = 0;
     release(&child->lock);
     trap_frame.regs[REG_A0] = child->pid;
     return child->pid;
+}
+
+// reoffset_user_stack takes a specified register reg from the source process's
+// trap frame and calculates an equivalent stack offset in the destination
+// process's stack.
+regsize_t reoffset_user_stack(process_t *dest, process_t *src, int reg) {
+    regsize_t src_stack_page_virt = USR_VIRT(src->stack_page);
+    regsize_t offset = src->trap.regs[reg] - src_stack_page_virt;
+    dest->trap.regs[reg] = USR_VIRT(dest->stack_page + offset);
 }
 
 void copy_files(process_t *dst, process_t *src) {
@@ -147,9 +162,10 @@ void copy_files(process_t *dst, process_t *src) {
 void forkret() {
     process_t* proc = myproc();
     copy_trap_frame(&trap_frame, &proc->trap);
+    regsize_t satp = proc->usatp;
     release(&proc->lock);
     enable_interrupts();
-    ret_to_user();
+    ret_to_user(satp);
 }
 
 regsize_t len_argv(char const* argv[]) {
@@ -171,7 +187,7 @@ typedef struct {
 // copy_argv takes argv from the calling process and copies it over to the top
 // of the stack page of the new process. Returns the new value for sp and argv
 // pointing to the new location.
-sp_argv_t copy_argv(uintptr_t *sp, regsize_t argc, char const* argv[]) {
+sp_argv_t copy_argv(process_t *proc, uintptr_t *sp, regsize_t argc, char const* argv[]) {
     if (argc == 0 || argv == 0) {
         return (sp_argv_t){
             .new_sp = (regsize_t)sp,
@@ -184,7 +200,7 @@ sp_argv_t copy_argv(uintptr_t *sp, regsize_t argc, char const* argv[]) {
     spc--;
     int i = 0;
     for (; i < argc; i++) {
-        char const* str = argv[i];
+        char const* str = (char const*)va2pa(proc->upagetable, (void*)argv[i]);
         int j = 0;
         while (str[j] != 0) {
             j++;
@@ -208,6 +224,8 @@ uintptr_t* _set_perrno(void *sp) {
 
 uint32_t proc_execv(char const* filename, char const* argv[]) {
     process_t* proc = myproc();
+    acquire(&proc->lock);
+    filename = (char const*)va2pa(proc->upagetable, (void*)filename);
     if (filename == 0) {
         *proc->perrno = EINVAL;
         return -1;
@@ -223,22 +241,25 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         *proc->perrno = ENOMEM;
         return -1;
     }
-    acquire(&proc->lock);
-    proc->trap.pc = (regsize_t)program->entry_point;
+#if CONFIG_MMU
+    map_page_sv39(proc->upagetable, sp, USR_VIRT(sp), PERM_UDATA, proc->pid);
+#endif
+    proc->trap.pc = USR_VIRT(program->entry_point);
     proc->name = program->name;
     release_page(proc->stack_page);
     proc->stack_page = sp;
     proc->perrno = _set_perrno(sp); // now that we replaced stack_page, update perrno as well
+    argv = va2pa(proc->upagetable, argv);
     regsize_t argc = len_argv(argv);
     uintptr_t* top_of_sp = (uintptr_t*)(sp + PAGE_SIZE);
     top_of_sp--;  // compensate for one past the end
     top_of_sp--;  // reserve the last word for errno
-    sp_argv_t sp_argv = copy_argv(top_of_sp, argc, argv);
+    sp_argv_t sp_argv = copy_argv(proc, top_of_sp, argc, argv);
     proc->trap.regs[REG_RA] = (regsize_t)proc->trap.pc;
-    proc->trap.regs[REG_SP] = sp_argv.new_sp;
-    proc->trap.regs[REG_FP] = sp_argv.new_sp;
+    proc->trap.regs[REG_SP] = USR_VIRT(sp_argv.new_sp);
+    proc->trap.regs[REG_FP] = USR_VIRT(sp_argv.new_sp);
     proc->trap.regs[REG_A0] = argc;
-    proc->trap.regs[REG_A1] = sp_argv.new_argv;
+    proc->trap.regs[REG_A1] = USR_VIRT(sp_argv.new_argv);
     copy_trap_frame(&trap_frame, &proc->trap);
     release(&proc->lock);
     // syscall() assigns whatever we return here to a0, the register that
@@ -290,14 +311,27 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     }
     void *ksp = kalloc("init_proc: ksp", proc->pid);
     if (!ksp) {
+        release_page(sp);
         return ENOMEM;
     }
+#if CONFIG_MMU
+    void *upagetable = kalloc("init_proc: upagetable", proc->pid);
+    if (!upagetable) {
+        release_page(sp);
+        release_page(ksp);
+        return ENOMEM;
+    }
+    proc->upagetable = upagetable;
+    proc->usatp = MAKE_SATP(upagetable);
+    init_user_page_table(upagetable, proc->pid, paged_memory.kpagetable);
+    map_page_sv39(proc->upagetable, sp, USR_VIRT(sp), PERM_UDATA, proc->pid);
+#endif
     proc->name = name;
     proc->trap.pc = pc;
     proc->stack_page = sp;
     proc->perrno = _set_perrno(sp); // reserve the last word for errno
     proc->kstack_page = ksp;
-    proc->trap.regs[REG_SP] = (regsize_t)(sp + PAGE_SIZE);
+    proc->trap.regs[REG_SP] = USR_VIRT(sp + PAGE_SIZE);
     proc->state = PROC_STATE_READY;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
@@ -358,6 +392,9 @@ void save_sp(regsize_t sp) {
 void proc_exit() {
     process_t* proc = myproc();
     release_page(proc->stack_page);
+#if CONFIG_MMU
+    free_page_table(proc->upagetable);
+#endif
     proc->state = PROC_STATE_ZOMBIE;
     acquire(&proc->parent->lock);
     proc->parent->state = PROC_STATE_READY;
@@ -459,6 +496,7 @@ void proc_mark_for_wakeup(void *chan) {
 
 uint32_t proc_plist(uint32_t *pids, uint32_t size) {
     process_t* proc = myproc();
+    pids = va2pa(proc->upagetable, pids);
     if (!pids) {
         *proc->perrno = EINVAL;
         return -1;
@@ -480,10 +518,11 @@ uint32_t proc_plist(uint32_t *pids, uint32_t size) {
 }
 
 uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo) {
+    process_t* self = myproc();
+    pinfo = va2pa(self->upagetable, pinfo);
     if (!pinfo) {
         return -1;
     }
-    process_t* self = myproc();
     acquire(&proc_table.lock);
     for (int i = 0; i < MAX_PROCS; i++) {
         process_t *proc = &proc_table.procs[i];
@@ -522,6 +561,7 @@ void fd_free(process_t *proc, int32_t fd) {
 
 int32_t proc_open(char const *filepath, uint32_t flags) {
     process_t* proc = myproc();
+    filepath = (char const*)va2pa(proc->upagetable, (void*)filepath);
     if (!filepath) {
         *proc->perrno = EINVAL;
         return -1;
@@ -556,6 +596,7 @@ int32_t proc_read(uint32_t fd, void *buf, uint32_t size) {
         *proc->perrno = EBADF;
         return -1;
     }
+    buf = va2pa(proc->upagetable, buf);
     if (!buf) {
         *proc->perrno = EINVAL;
         return -1;
@@ -576,6 +617,7 @@ int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes) {
         *proc->perrno = EBADF;
         return -1;
     }
+    buf = va2pa(proc->upagetable, buf);
     if (!buf) {
         *proc->perrno = EINVAL;
         return -1;
@@ -631,7 +673,10 @@ void* proc_pgalloc() {
     if (!page) {
         return 0;
     }
-    return page;
+#if CONFIG_MMU
+    map_page_sv39(proc->upagetable, page, USR_VIRT(page), PERM_UDATA, proc->pid);
+#endif
+    return (void*)USR_VIRT(page);
 }
 
 void proc_pgfree(void *page) {
@@ -639,5 +684,6 @@ void proc_pgfree(void *page) {
     if (!proc) {
         return;
     }
+    page = va2pa(proc->upagetable, page);
     release_page(page);
 }

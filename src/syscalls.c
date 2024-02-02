@@ -7,6 +7,7 @@
 #include "pipe.h"
 #include "proc.h"
 #include "syscalls.h"
+#include "vm.h"
 
 // for fun let's pretend syscall table is kinda like 32bit Linux on x86,
 // /usr/include/asm/unistd_32.h: __NR_restart_syscall 0, __NR_exit 1, _NR_fork 2, __NR_read 3, __NR_write 4
@@ -40,7 +41,8 @@ void syscall() {
     int nr = trap_frame.regs[REG_A7];
     *cpu.proc->perrno = 0; // clear errno
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
-    if (trap_frame.regs[REG_SP] < (regsize_t)cpu.proc->stack_page) {
+    regsize_t sp = (regsize_t)va2pa(cpu.proc->upagetable, (void*)trap_frame.regs[REG_SP]);
+    if (sp < (regsize_t)cpu.proc->stack_page) {
         kprintf("STACK OVERFLOW in userland before pid:syscall %d:%d\n", cpu.proc->pid, nr);
         trap_frame.regs[REG_A0] = -1;
         *cpu.proc->perrno = EFAULT;
@@ -132,8 +134,11 @@ uint32_t sys_pipe() {
     return pipe_open(fds);
 }
 
+// TODO: move implementation to proc layer
 uint32_t sys_sysinfo() {
     sysinfo_t* info = (sysinfo_t*)trap_frame.regs[REG_A0];
+    process_t *proc = myproc();
+    info = va2pa(proc->upagetable, info);
     acquire(&proc_table.lock);
     info->procs = proc_table.num_procs;
     release(&proc_table.lock);

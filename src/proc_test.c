@@ -112,11 +112,12 @@ void assign_init_program(char const* prog) {
         // TODO: panic
         return;
     }
-    uintptr_t status = init_proc(p0, (regsize_t)program->entry_point, program->name);
+    uintptr_t status = init_proc(p0, USR_VIRT(program->entry_point), program->name);
     release(&p0->lock);
     if (status != 0) {
         // TODO: panic
     }
+    cpu.proc = p0;
 }
 
 user_program_t* find_user_program(char const *name) {
