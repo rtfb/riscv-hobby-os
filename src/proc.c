@@ -68,8 +68,6 @@ void scheduler() {
                 // trap_frame currently corresponds to a sleeping scheduler.
                 // Overwrite trap_frame with what the user process has:
                 copy_trap_frame(&trap_frame, &p->trap);
-                // trap_frame.pc = p->trap.pc;
-                // trap_frame.regs[REG_RA] = p->trap.regs[REG_RA];
             }
             if (p->state == PROC_STATE_READY) {
                 p->state = PROC_STATE_RUNNING;
