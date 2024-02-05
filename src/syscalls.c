@@ -39,28 +39,34 @@ void *syscall_vector[] _text = {
 void syscall(regsize_t kernel_sp) {
     disable_interrupts();
     int nr = trap_frame.regs[REG_A7];
-    *cpu.proc->perrno = 0; // clear errno
+    process_t *proc = cpu.proc;
+    if (!proc) {
+        // TODO: panic: a system call when no user process was scheduled
+        return;
+    }
+    *proc->perrno = 0; // clear errno
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
-    regsize_t user_sp = (regsize_t)va2pa(cpu.proc->upagetable, (void*)trap_frame.regs[REG_SP]);
-    if (user_sp < (regsize_t)cpu.proc->stack_page) {
-        kprintf("STACK OVERFLOW in userland before pid:syscall %d:%d\n", cpu.proc->pid, nr);
+    regsize_t user_sp = (regsize_t)va2pa(proc->upagetable, (void*)trap_frame.regs[REG_SP]);
+    if (user_sp < (regsize_t)proc->stack_page) {
+        kprintf("STACK OVERFLOW in userland before pid:syscall %d:%d\n", proc->pid, nr);
         trap_frame.regs[REG_A0] = -1;
-        *cpu.proc->perrno = EFAULT;
+        *proc->perrno = EFAULT;
+        // TODO: kill proc
         return;
     }
     if (nr >= 0 && nr < ARRAY_LENGTH(syscall_vector) && syscall_vector[nr] != 0) {
         int32_t (*funcPtr)(void) = syscall_vector[nr];
         trap_frame.regs[REG_A0] = (*funcPtr)();
     } else {
-        kprintf("BAD pid:syscall %d:%d\n", cpu.proc->pid, nr);
+        kprintf("BAD pid:syscall %d:%d\n", proc->pid, nr);
         trap_frame.regs[REG_A0] = -1;
-        *cpu.proc->perrno = ENOSYS;
+        *proc->perrno = ENOSYS;
     }
-    if (*cpu.proc->magic != PROC_MAGIC_STACK_SENTINEL) {
+    if (*proc->magic != PROC_MAGIC_STACK_SENTINEL) {
         kprintf("STACK OVERFLOW in kernel pid:syscall %d:%d (magic=0x%x)\n",
-            cpu.proc->pid, nr, *cpu.proc->magic);
+            proc->pid, nr, *proc->magic);
         trap_frame.regs[REG_A0] = -1;
-        *cpu.proc->perrno = EFAULT;
+        *proc->perrno = EFAULT;
         // TODO: panic
         return;
     }
@@ -70,8 +76,8 @@ void syscall(regsize_t kernel_sp) {
     // so ensure we will go back to U-mode, not back to one of the privileged
     // ones:
     set_user_mode();
-    patch_proc_sp(cpu.proc, kernel_sp);
-    ret_to_user(cpu.proc->usatp);
+    patch_proc_sp(proc, kernel_sp);
+    ret_to_user(proc->usatp);
 }
 
 void sys_restart() {
