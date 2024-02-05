@@ -36,13 +36,13 @@ void *syscall_vector[] _text = {
     [SYS_NR_gpio]      sys_gpio,
 };
 
-void syscall() {
+void syscall(regsize_t kernel_sp) {
     disable_interrupts();
     int nr = trap_frame.regs[REG_A7];
     *cpu.proc->perrno = 0; // clear errno
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
-    regsize_t sp = (regsize_t)va2pa(cpu.proc->upagetable, (void*)trap_frame.regs[REG_SP]);
-    if (sp < (regsize_t)cpu.proc->stack_page) {
+    regsize_t user_sp = (regsize_t)va2pa(cpu.proc->upagetable, (void*)trap_frame.regs[REG_SP]);
+    if (user_sp < (regsize_t)cpu.proc->stack_page) {
         kprintf("STACK OVERFLOW in userland before pid:syscall %d:%d\n", cpu.proc->pid, nr);
         trap_frame.regs[REG_A0] = -1;
         *cpu.proc->perrno = EFAULT;
@@ -70,6 +70,8 @@ void syscall() {
     // so ensure we will go back to U-mode, not back to one of the privileged
     // ones:
     set_user_mode();
+    patch_proc_sp(cpu.proc, kernel_sp);
+    ret_to_user(cpu.proc->usatp);
 }
 
 void sys_restart() {
