@@ -300,8 +300,8 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
         la      t0, cpu
         OP_LOAD t0, 0*REGSZ(t0)  // t0 = cpu.proc
         // cpu.proc may be NULL, so we check for that and if so, jump to
-        // set_global_stack. This can happen if the CPU had nothing to schedule
-        // and was idling.
+        // set_global_stack. This can happen if the scheduler had nothing to
+        // schedule and the CPU was idling.
         beq     x0, t0, set_global_stack
         OP_LOAD sp, 2*REGSZ(t0)  // (*process_t)[0] => lock
                                  // (*process_t)[1] => ctx[0] (RA)

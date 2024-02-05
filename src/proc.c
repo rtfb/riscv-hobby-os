@@ -381,12 +381,13 @@ void copy_context(context_t *dst, context_t *src) {
     }
 }
 
-void save_sp(regsize_t sp) {
-    process_t *p = cpu.proc;
-    if (!p) {
-        return;
-    }
-    p->ctx.regs[REG_SP] = sp;
+// patch_proc_sp updates the proc's kernel-side sp. This is needed in
+// kernel_timer_tick() because it knows the topmost value of sp before the proc
+// gets interrupted. Otherwise, sp gets saved inside swtch(), which is called a
+// bit too deep in the call stack and with every timer interrupt the kernel
+// stack would slowly erode.
+void patch_proc_sp(process_t *proc, regsize_t sp) {
+    proc->ctx.regs[REG_SP] = sp;
 }
 
 void proc_exit() {

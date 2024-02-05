@@ -5,7 +5,7 @@
 
 void kinit(regsize_t hartid, uintptr_t fdt_header_addr);
 void init_trap_vector();
-regsize_t kernel_timer_tick();
+void kernel_timer_tick(regsize_t sp);
 void set_timer();
 void disable_interrupts();
 void enable_interrupts();

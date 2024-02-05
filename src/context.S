@@ -4,21 +4,10 @@
 
 .globl k_interrupt_timer
 k_interrupt_timer:
-        // kernel_timer_tick will run the scheduler and will have populated
-        // trap_frame with the context of the target user process.
-        // ret_to_user will restore the registers from it.
-        call    kernel_timer_tick
-        mv      t0, a0
-
-        // we saved the wrong sp inside swtch (slightly too deep), so let's
-        // save sp again, now that we're back at the same level of stack that
-        // the interrupt has entered in:
+        // kernel_timer_tick expects the current sp as an argument because
+        // otherwise it might save sp of a frame that's too deep.
         mv      a0, sp
-        call    save_sp
-
-        // This will restore user registers from trap_frame and then mret:
-        mv      a0, t0
-        j       ret_to_user
+        call    kernel_timer_tick  // will call ret_to_user when it's done
 
 .globl k_interrupt_plic
 k_interrupt_plic:

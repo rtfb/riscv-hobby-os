@@ -201,7 +201,7 @@ process_t* myproc();
 // copy_trap_frame copies the contents of src into dst.
 void copy_trap_frame(trap_frame_t* dst, trap_frame_t* src);
 void copy_context(context_t *dst, context_t *src);
-void save_sp(regsize_t sp);
+void patch_proc_sp(process_t *proc, regsize_t sp);
 
 // copy_files copies non-NULL files from src to dst and increases reference
 // count of each.
