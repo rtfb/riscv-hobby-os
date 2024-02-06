@@ -77,7 +77,6 @@ BASE_DEPS = $(BOOT) \
 	src/plic.c \
 	src/pmp.c \
 	src/proc.c \
-	src/proc_test.c \
 	src/riscv.c \
 	src/runflags.c \
 	src/sbi.c \
@@ -164,16 +163,21 @@ GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
 ZIG=zig \
         build-obj -target riscv64-freestanding-none \
         -mcpu generic_rv64 -mcmodel=medium \
-        -fno-strip -fno-PIC -fno-PIE
+        -fno-strip -fno-PIC -fno-PIE \
+        -I include
 
 $(OUT)/%.o: src/%.zig
 	@mkdir -p $(OUT)
 	$(ZIG) $< -femit-bin=$@
 
-$(OUT)/os_sifive_u: ${OS_SIFIVE_U_DEPS} $(OUT)/zstr.o
+ZIG_DEPS = \
+	$(OUT)/programs.o \
+	$(OUT)/zstr.o
+
+$(OUT)/os_sifive_u: ${OS_SIFIVE_U_DEPS} ${ZIG_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-g -include include/machine/qemu_u.h \
-		${OS_SIFIVE_U_DEPS} $(OUT)/zstr.o -o $@
+		${OS_SIFIVE_U_DEPS} $(OUT)/zstr.o $(OUT)/programs.o -o $@
 
 $(OUT)/os_sifive_u32: ${OS_SIFIVE_U32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
