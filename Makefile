@@ -271,8 +271,13 @@ debug-board: $(OUT)/os_hifive1_revb
 	JLinkGDBServer -device RISC-V -port 1234 &
 	$(GDB) $< -ex "set remotetimeout 240" -ex "target extended-remote localhost:1234"
 
+.PHONY: clean
 clean:
 	rm -Rf $(OUT)
+
+.PHONY: tags
+tags:
+	ctags --recurse include/ src/ user/
 
 # On OSX:
 # brew tap riscv-software-src/riscv

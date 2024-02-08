@@ -1,13 +1,5 @@
-busybox
-linux
-qemu
-qemu-build
-riscv-isa-sim
-riscv-pk
-initramfs
-initramfs-busybox-riscv64.cpio.gz
-generic-elf
 out
 /sifive-freedom-toolchain
 /.debug-session
 /.gdbinit
+/tags
