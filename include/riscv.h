@@ -60,6 +60,8 @@
 #define PERM_UDATA     (PTE_U | PTE_R | PTE_W)
 #define PERM_URODATA   (PTE_U | PTE_R)
 
+#define PERM_MASK(pte) (pte & 0x3ff)
+
 #define PHYS_TO_PPN(paddr)   (((regsize_t)paddr) >> 12)
 #define PHYS_TO_PTE(paddr)   (PHYS_TO_PPN(paddr) << 10)
 #define PPN_TO_PHYS(ppn)     (ppn << 12)
@@ -70,6 +72,9 @@
 #define HAS_W(pte)           ((pte & PTE_W) != 0)
 #define HAS_X(pte)           ((pte & PTE_X) != 0)
 #define HAS_U(pte)           ((pte & PTE_U) != 0)
+#define HAS_G(pte)           ((pte & PTE_G) != 0)
+#define HAS_A(pte)           ((pte & PTE_A) != 0)
+#define HAS_D(pte)           ((pte & PTE_D) != 0)
 
 #define IS_NONLEAF(pte)      (HAS_V(pte) && !HAS_R(pte) && !HAS_X(pte))
 #define IS_USER(pte)         HAS_U(pte)

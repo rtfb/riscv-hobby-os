@@ -17,4 +17,9 @@ void copy_page_table(regsize_t *dst, regsize_t *src, uint32_t pid);
 regsize_t* find_next_level_page_table(regsize_t *pagetable);
 void* va2pa(regsize_t *pagetable, void *va);
 
+// Debug helpers
+void print_perms(regsize_t pte);
+void dump_page_table_r(regsize_t *pagetable, int level);
+void dump_page_table(regsize_t *pagetable);
+
 #endif // ifndef _VM_H_

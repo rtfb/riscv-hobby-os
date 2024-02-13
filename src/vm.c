@@ -1,3 +1,4 @@
+#include "kernel.h"
 #include "riscv.h"
 #include "timer.h"
 #include "vm.h"
@@ -222,6 +223,44 @@ void* va2pa(regsize_t *pagetable, void *va) {
         pagetable = PTE_TO_PHYS(pte);
         level--;
     }
+}
+
+void print_perms(regsize_t pte) {
+    if (HAS_D(pte)) kprintf("D");
+    if (HAS_A(pte)) kprintf("A");
+    if (HAS_G(pte)) kprintf("G");
+    if (HAS_U(pte)) kprintf("U");
+    if (HAS_X(pte)) kprintf("X");
+    if (HAS_W(pte)) kprintf("W");
+    if (HAS_R(pte)) kprintf("R");
+    if (HAS_V(pte)) kprintf("V");
+}
+
+void dump_page_table_r(regsize_t *pagetable, int level) {
+    kprintf("PT DUMP, L%d: %p\n", level, pagetable);
+    for (int i = 0; i < PAGE_SIZE/sizeof(regsize_t); i++) {
+        regsize_t pte = pagetable[i];
+        if (IS_VALID(pte)) {
+            if (IS_NONLEAF(pte)) {
+                void *pte_pa = (void*)PTE_TO_PHYS(pte);
+                kprintf("recurse %d: %x - %x\n", i, pte, pte_pa);
+                dump_page_table_r(pte_pa, level - 1);
+            } else {
+                void *pa = (void*)PTE_TO_PHYS(pte);
+                int perms = PERM_MASK(pte);
+                if (i < 10) {
+                    kprintf(" ");
+                }
+                kprintf("%d: %x - %x; ", i, pte, pa);
+                print_perms(pte);
+                kprintf("\n");
+            }
+        }
+    }
+}
+
+void dump_page_table(regsize_t *pagetable) {
+    dump_page_table_r(pagetable, 2);
 }
 
 #endif // if CONFIG_MMU
