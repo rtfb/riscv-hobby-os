@@ -119,7 +119,7 @@ void map_range(void *pagetable, void *pa_start, void *pa_end, void *va_start, in
     void *page_pa = pa_start;
     regsize_t va = (regsize_t)va_start;
     while (page_pa != pa_end) {
-        map_page_sv39(pagetable, page_pa, va, perm, -1);
+        map_page_sv39(pagetable, page_pa, va, perm, pid);
         page_pa += PAGE_SIZE;
         va += PAGE_SIZE;
     }
