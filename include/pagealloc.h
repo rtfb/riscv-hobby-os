@@ -4,8 +4,13 @@
 #include "spinlock.h"
 
 // Let's hardcode it for now. Make it small enough to fit in HiFive1 (32 pages
-// * 512 bytes = 16k RAM).
+// * 512 bytes = 16k RAM). On machines with MMU we need more since a lot of
+// pages get consumed for pagetable bookkeeping.
+#if CONFIG_MMU
+#define MAX_PAGES           48
+#else
 #define MAX_PAGES           32
+#endif
 
 #define PAGE_FREE           0
 #define PAGE_ALLOCATED      1

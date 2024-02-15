@@ -123,6 +123,7 @@ uint32_t proc_fork() {
     // accessing data within that address space (e.g. in order to call exec
     // with the right params).
     copy_page_table(child->upagetable, parent->upagetable, child->pid);
+    map_page_sv39(child->upagetable, child->stack_page, USR_VIRT(child->stack_page), PERM_UDATA, child->pid);
 #endif
 
     // overwrite sp and fp with the same offset as parent's, but within the child stack:
@@ -208,7 +209,7 @@ sp_argv_t copy_argv(process_t *proc, uintptr_t *sp, regsize_t argc, char const* 
             *spc-- = str[j];
             j--;
         }
-        sp[i] = (regsize_t)(spc + 1);
+        sp[i] = USR_VIRT(spc + 1);
     }
     return (sp_argv_t){
         .new_sp = (regsize_t)(spc) & ~7, // down-align at 8, we don't want sp to be odd
@@ -234,7 +235,7 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         return -1;
     }
     // allocate stack. Fail early if we're out of memory:
-    void* sp = kalloc("proc_execv", proc->pid); // XXX: we already have a stack_page and kstack_page allocated in fork, do we need a new copy? Why?
+    void* sp = kalloc("proc_execv: sp", proc->pid); // XXX: we already have a stack_page and kstack_page allocated in fork, do we need a new copy? Why?
     if (!sp) {
         *proc->perrno = ENOMEM;
         return -1;
@@ -321,7 +322,7 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     }
     proc->upagetable = upagetable;
     proc->usatp = MAKE_SATP(upagetable);
-    init_user_page_table(upagetable, proc->pid, paged_memory.kpagetable);
+    init_user_page_table(upagetable, proc->pid);
     map_page_sv39(proc->upagetable, sp, USR_VIRT(sp), PERM_UDATA, proc->pid);
 #endif
     proc->name = name;

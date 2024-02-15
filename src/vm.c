@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "proc.h"
 #include "riscv.h"
 #include "timer.h"
 #include "vm.h"
@@ -50,15 +51,15 @@ void* make_kernel_page_table(page_t *pages, int num_pages) {
 }
 
 // init_user_page_table initializes a given pagetable for userland consumption.
-void init_user_page_table(void *pagetable, uint32_t pid, void *kpagetable) {
+void init_user_page_table(void *pagetable, uint32_t pid) {
     clear_page_table(pagetable);
 
-    // Copy non-leaf pointers from the kernel pagetable to user. That's because
-    // the kernel sets satp while still executing its own code, and if it
-    // weren't mapped as executable, it would page fault. It's safe to do
-    // because the userland will not have access to anything mapped for
+    // Set a few kernel address space pages in the user pagetable. That's
+    // needed because the kernel sets satp while still executing its own code,
+    // and if it weren't mapped as executable, it would page fault. It's safe
+    // to do because the userland will not have access to anything mapped for
     // supervisor access anyway.
-    copy_kernel_pagemap(pagetable, kpagetable);
+    set_kernel_pages(pagetable, pid);
 
     // map rodata to user address space:
     void *start = &rodata_start;
@@ -71,15 +72,12 @@ void init_user_page_table(void *pagetable, uint32_t pid, void *kpagetable) {
     map_range(pagetable, start, end, (void*)USR_VIRT(start), PERM_UCODE, pid);
 }
 
-// copy_kernel_pagemap copies the non-leaf pointers to lower level page tables
-// from the kernel page table to a given user table.
-void copy_kernel_pagemap(regsize_t *upt, regsize_t *kpt) {
-    for (int i = 0; i < PAGE_SIZE/sizeof(regsize_t); i++) {
-        if ((*kpt & 0xf) == PERM_NONLEAF) {
-            upt[i] = *kpt;
-        }
-        kpt++;
-    }
+void set_kernel_pages(regsize_t *pagetable, int pid) {
+    map_page_id(pagetable, &RAM_START, PERM_KCODE, pid);
+    void *trap_frame_page = (void*)PAGE_ROUND_DOWN(&trap_frame);
+    map_page_id(pagetable, trap_frame_page, PERM_KDATA, pid);
+    void *paged_memory_page = (void*)PAGE_ROUND_DOWN(&paged_memory);
+    map_page_id(pagetable, paged_memory_page, PERM_KDATA, pid);
 }
 
 // map_page_sv39 populates a given pagetable with an entry that maps a given
@@ -146,12 +144,12 @@ void clear_page_table(void *page) {
 void free_page_table_r(regsize_t *pt, int level) {
     regsize_t *end = pt + PAGE_SIZE/sizeof(regsize_t);
     for (regsize_t *pte = pt; pte != end; pte++) {
-        if (IS_NONLEAF(*pte) && IS_USER(*pte)) {
-            if (level == 1) {
+        if (IS_NONLEAF(*pte)) {
+            free_page_table_r(PTE_TO_PHYS(*pte), level+1);
+            if (level < 2) {
                 release_page(PTE_TO_PHYS(*pte));
                 continue;
             }
-            free_page_table_r(PTE_TO_PHYS(*pte), level+1);
         }
     }
     if (level == 1) {
@@ -164,32 +162,29 @@ void free_page_table(regsize_t *pt) {
     release_page(pt);
 }
 
-// XXX: this is a quick hack to get me going, but it's wrong for a general case.
-// It should be recursive, like free_page_table
 void copy_page_table(regsize_t *dst, regsize_t *src, uint32_t pid) {
-    copy_page(dst, src); // copy root table
-    regsize_t *l2 = find_next_level_page_table(src);
-    if (l2 == 0) {
-        return;
+    int num_ptes = PAGE_SIZE/sizeof(regsize_t);
+    for (int vpn2 = 0; vpn2 < num_ptes; vpn2++) {
+        if (!IS_VALID(src[vpn2])) {
+            continue;
+        }
+        regsize_t *src2 = PTE_TO_PHYS(src[vpn2]);
+        for (int vpn1 = 0; vpn1 < num_ptes; vpn1++) {
+            if (!IS_VALID(src2[vpn1])) {
+                continue;
+            }
+            regsize_t *src3 = PTE_TO_PHYS(src2[vpn1]);
+            for (int vpn0 = 0; vpn0 < num_ptes; vpn0++) {
+                regsize_t pte = src3[vpn0];
+                if (IS_VALID(pte) && IS_USER(pte)) {
+                    void *pa = PTE_TO_PHYS(pte);
+                    int perm = PERM_MASK(pte);
+                    regsize_t va = (vpn2 << 30) | (vpn1 << 21) | (vpn0 << 12);
+                    map_page_sv39(dst, pa, va, perm, pid);
+                }
+            }
+        }
     }
-    regsize_t *l2dst = kalloc("pagetable", pid);
-    if (l2dst == 0) {
-        // TODO: panic OOM
-        return;
-    }
-    copy_page(l2dst, l2);
-    dst[VPN((regsize_t)l2dst, 2)] = PHYS_TO_PTE(l2dst) | PERM_NONLEAF;
-    regsize_t *l3 = find_next_level_page_table(l2);
-    if (l3 == 0) {
-        return;
-    }
-    regsize_t *l3dst = kalloc("pagetable", pid);
-    if (l3dst == 0) {
-        // TODO: panic OOM
-        return;
-    }
-    copy_page(l3dst, l3);
-    l2dst[VPN((regsize_t)l3dst, 1)] = PHYS_TO_PTE(l3dst) | PERM_NONLEAF;
 }
 
 regsize_t* find_next_level_page_table(regsize_t *pagetable) {
