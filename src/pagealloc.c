@@ -28,7 +28,6 @@ void init_paged_memory(void* paged_mem_end) {
     paged_memory.kpagetable = pagetable;
     regsize_t satp = MAKE_SATP(pagetable);
     paged_memory.ksatp = satp;
-    set_satp(satp);
 #endif
 }
 

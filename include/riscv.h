@@ -109,7 +109,6 @@ void csr_sip_clear_flags(regsize_t flags);
 regsize_t get_sip_csr();
 void set_stvec_csr(void *ptr);
 void set_sscratch_csr(void* ptr);
-void set_satp(regsize_t value);
 
 // ifdef-controlled M/S-Mode funcs:
 unsigned int get_status_csr();
