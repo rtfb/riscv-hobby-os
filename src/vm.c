@@ -37,14 +37,14 @@ void* make_kernel_page_table(page_t *pages, int num_pages) {
     // pre-map all pages in kernel space:
     page_t *p = pages;
     for (int i = 0; i < num_pages; i++, p++) {
-        map_page_id(pagetable, p->ptr, PERM_KDATA);
+        map_page_id(pagetable, p->ptr, PERM_KDATA, -1);
     }
 
     // map all special-purpose memory addresses as kernel-read-writable:
-    map_page_id(pagetable, (void*)PAGE_ROUND_DOWN(MTIME), PERM_KDATA);
-    map_page_id(pagetable, (void*)MTIMECMP_BASE, PERM_KDATA);
-    map_page_id(pagetable, (void*)PLIC_THRESHOLD, PERM_KDATA);
-    map_page_id(pagetable, (void*)UART_BASE, PERM_KDATA);
+    map_page_id(pagetable, (void*)PAGE_ROUND_DOWN(MTIME), PERM_KDATA, -1);
+    map_page_id(pagetable, (void*)MTIMECMP_BASE, PERM_KDATA, -1);
+    map_page_id(pagetable, (void*)PLIC_THRESHOLD, PERM_KDATA, -1);
+    map_page_id(pagetable, (void*)UART_BASE, PERM_KDATA, -1);
 
     return pagetable;
 }
@@ -133,8 +133,8 @@ void map_range_id(void *pagetable, void *pa_start, void *pa_end, int perm) {
 
 // map_page_id is a convenience wrapper around map_page_sv39 for
 // identity-mapping the page in kernel address space.
-void map_page_id(void *pagetable, void *pa, int perm) {
-    map_page_sv39(pagetable, pa, (regsize_t)pa, perm, -1);
+void map_page_id(void *pagetable, void *pa, int perm, int pid) {
+    map_page_sv39(pagetable, pa, (regsize_t)pa, perm, pid);
 }
 
 void clear_page_table(void *page) {
