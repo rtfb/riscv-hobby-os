@@ -175,6 +175,15 @@ def make_qemu_command(args):
     return cmd, machine, binary, is_32bit
 
 
+def kill_qemu_container():
+    cp = subprocess.run([
+        'docker', 'ps', '-q', '--filter', 'ancestor=qemu-image'],
+        capture_output=True,
+    )
+    container_id = cp.stdout.strip()
+    subprocess.run(['docker', 'kill', container_id], capture_output=True)
+
+
 def run(args):
     """Runs qemu in a bit more user-friendly way, capturing stdout+stderr to a
     file, allowing to terminate it with C-c and optionally exit automatically
@@ -211,7 +220,7 @@ def run(args):
             if timeout is not None:
                 if start + timeout < datetime.now():
                     print('\nqemu-launcher: killing qemu due to timeout')
-                    p.terminate()
+                    kill_qemu_container()
                     break
             time.sleep(0.001)  # yield CPU
         # write the remainder:
