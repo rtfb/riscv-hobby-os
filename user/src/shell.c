@@ -88,7 +88,6 @@ int _userland run_shell_script(char const *filepath, cmdbuf_t cmdpool) {
     int start = 0;
     int end = 0;
     char pbuf[32];
-    char *parsed_args[8];
     while (fbuf[end] != 0) {
         pbuf[0] = 0;
         int i = 0;
