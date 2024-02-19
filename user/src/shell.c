@@ -77,14 +77,14 @@ int _userland run_shell_script(char const *filepath, cmdbuf_t cmdpool) {
         return -1;
     }
     char *fbuf = (char*)pgalloc();
-    int32_t status = read(fd, fbuf, PAGE_SIZE);
-    if (status == -1) {
+    int32_t nread = read(fd, fbuf, PAGE_SIZE);
+    if (nread == -1) {
         pgfree(fbuf);
         prints("ERROR: read=-1\n");
         return -1;
     }
     close(fd);
-    fbuf[status] = 0;
+    fbuf[nread] = 0;
     int start = 0;
     int end = 0;
     char pbuf[32];
