@@ -123,15 +123,22 @@ uint32_t proc_fork() {
     // accessing data within that address space (e.g. in order to call exec
     // with the right params).
     copy_page_table(child->upagetable, parent->upagetable, child->pid);
-    map_page_sv39(child->upagetable, child->stack_page, USR_VIRT(child->stack_page), PERM_UDATA, child->pid);
+    // remap child stack page again, to overwrite parent stack's page table entry:
+    regsize_t guard_page = TOPMOST_VIRT_PAGE - PAGE_SIZE;
+    map_page_sv39(child->upagetable, child->stack_page, TOPMOST_VIRT_PAGE, PERM_UDATA, child->pid);
+    map_page_sv39(child->upagetable, 0, guard_page, PERM_KDATA, child->pid);
 #endif
 
     // overwrite sp and fp with the same offset as parent's, but within the child stack:
     regsize_t koffset = parent->ctx.regs[REG_SP] - (regsize_t)parent->kstack_page;
     child->ctx.regs[REG_SP] = (regsize_t)(child->kstack_page + koffset);
     child->ctx.regs[REG_FP] = (regsize_t)(child->kstack_page + koffset);
+#if !CONFIG_MMU
+    // in the presence of MMU, virtual addresses of stacks are identical, so
+    // only do reoffset_user_stack when we don't have MMU
     reoffset_user_stack(child, parent, REG_SP);
     reoffset_user_stack(child, parent, REG_FP);
+#endif
     // child's return value should be a 0 pid:
     child->trap.regs[REG_A0] = 0;
     release(&child->lock);
@@ -209,7 +216,7 @@ sp_argv_t copy_argv(process_t *proc, uintptr_t *sp, regsize_t argc, char const* 
             *spc-- = str[j];
             j--;
         }
-        sp[i] = USR_VIRT(spc + 1);
+        sp[i] = USR_STK_VIRT(spc + 1);
     }
     return (sp_argv_t){
         .new_sp = (regsize_t)(spc) & ~7, // down-align at 8, we don't want sp to be odd
@@ -240,13 +247,8 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
         *proc->perrno = ENOMEM;
         return -1;
     }
-#if CONFIG_MMU
-    map_page_sv39(proc->upagetable, sp, USR_VIRT(sp), PERM_UDATA, proc->pid);
-#endif
     proc->trap.pc = USR_VIRT(program->entry_point);
     proc->name = program->name;
-    release_page(proc->stack_page);
-    proc->stack_page = sp;
     proc->perrno = _set_perrno(sp); // now that we replaced stack_page, update perrno as well
     argv = va2pa(proc->upagetable, argv);
     regsize_t argc = len_argv(argv);
@@ -254,11 +256,22 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     top_of_sp--;  // compensate for one past the end
     top_of_sp--;  // reserve the last word for errno
     sp_argv_t sp_argv = copy_argv(proc, top_of_sp, argc, argv);
+
+#if CONFIG_MMU
+    // map user stack to the top of user address space. Allocate a guard page
+    // right below it and map that guard page to null physical page with kernel
+    // permissions in order to cause a page fault on stack overflow.
+    regsize_t guard_page = TOPMOST_VIRT_PAGE - PAGE_SIZE;
+    map_page_sv39(proc->upagetable, sp, TOPMOST_VIRT_PAGE, PERM_UDATA, proc->pid);
+    map_page_sv39(proc->upagetable, 0, guard_page, PERM_KDATA, proc->pid);
+#endif
+    release_page(proc->stack_page);
+    proc->stack_page = sp;
     proc->trap.regs[REG_RA] = (regsize_t)proc->trap.pc;
-    proc->trap.regs[REG_SP] = USR_VIRT(sp_argv.new_sp);
-    proc->trap.regs[REG_FP] = USR_VIRT(sp_argv.new_sp);
+    proc->trap.regs[REG_SP] = USR_STK_VIRT(sp_argv.new_sp);
+    proc->trap.regs[REG_FP] = USR_STK_VIRT(sp_argv.new_sp);
     proc->trap.regs[REG_A0] = argc;
-    proc->trap.regs[REG_A1] = USR_VIRT(sp_argv.new_argv);
+    proc->trap.regs[REG_A1] = USR_STK_VIRT(sp_argv.new_argv);
     copy_trap_frame(&trap_frame, &proc->trap);
     release(&proc->lock);
     // syscall() assigns whatever we return here to a0, the register that
@@ -323,14 +336,17 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->upagetable = upagetable;
     proc->usatp = MAKE_SATP(upagetable);
     init_user_page_table(upagetable, proc->pid);
-    map_page_sv39(proc->upagetable, sp, USR_VIRT(sp), PERM_UDATA, proc->pid);
+
+    regsize_t guard_page = TOPMOST_VIRT_PAGE - PAGE_SIZE;
+    map_page_sv39(proc->upagetable, sp, TOPMOST_VIRT_PAGE, PERM_UDATA, proc->pid);
+    map_page_sv39(proc->upagetable, 0, guard_page, PERM_KDATA, proc->pid);
 #endif
     proc->name = name;
     proc->trap.pc = pc;
     proc->stack_page = sp;
     proc->perrno = _set_perrno(sp); // reserve the last word for errno
     proc->kstack_page = ksp;
-    proc->trap.regs[REG_SP] = USR_VIRT(sp + PAGE_SIZE);
+    proc->trap.regs[REG_SP] = USR_STK_VIRT(sp) + PAGE_SIZE;
     proc->state = PROC_STATE_READY;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
