@@ -18,6 +18,7 @@
 #endif
 
 spinlock init_lock = 0;
+int user_stack_size = 0;
 
 void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     acquire(&init_lock);
@@ -50,6 +51,7 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     kprintf("kprintf test: str=%s, ptr=%p, pos int=%d, neg int=%d\n",
         str, p, 1337, MAX_NEG_INT);
     uint32_t runflags = parse_runflags();
+    user_stack_size = (runflags == RUNFLAGS_TINY_STACK) ? 512 : PAGE_SIZE;
     int running_tests = runflags & RUNFLAGS_TESTS;
     init_paged_memory(paged_mem_end);
     if (!running_tests) {

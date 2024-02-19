@@ -13,6 +13,9 @@ void enable_interrupts();
 // defined in boot.S
 extern void* trap_vector;
 
+// defined in kernel.c
+extern int user_stack_size;
+
 // implemented in kprintf.S
 // NOTE: gcc has a neat attribute, like this:
 //     void kprintf(char const *msg, ...) __attribute__ ((format (printf, 1, 2)));

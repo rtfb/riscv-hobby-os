@@ -225,7 +225,7 @@ sp_argv_t copy_argv(process_t *proc, uintptr_t *sp, regsize_t argc, char const* 
 }
 
 uintptr_t* _set_perrno(void *sp) {
-    return (uintptr_t*)(sp + PAGE_SIZE) -1;
+    return (uintptr_t*)(sp + user_stack_size) - 1;
 }
 
 uint32_t proc_execv(char const* filename, char const* argv[]) {
@@ -252,9 +252,10 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     proc->perrno = _set_perrno(sp); // now that we replaced stack_page, update perrno as well
     argv = va2pa(proc->upagetable, argv);
     regsize_t argc = len_argv(argv);
-    uintptr_t* top_of_sp = (uintptr_t*)(sp + PAGE_SIZE);
+    uintptr_t* top_of_sp = (uintptr_t*)(sp + user_stack_size);
     top_of_sp--;  // compensate for one past the end
     top_of_sp--;  // reserve the last word for errno
+
     sp_argv_t sp_argv = copy_argv(proc, top_of_sp, argc, argv);
 
 #if CONFIG_MMU
@@ -346,7 +347,7 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->stack_page = sp;
     proc->perrno = _set_perrno(sp); // reserve the last word for errno
     proc->kstack_page = ksp;
-    proc->trap.regs[REG_SP] = USR_STK_VIRT(sp) + PAGE_SIZE;
+    proc->trap.regs[REG_SP] = USR_STK_VIRT(sp) + user_stack_size;
     proc->state = PROC_STATE_READY;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;

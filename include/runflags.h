@@ -10,6 +10,7 @@
 
 #define RUNFLAGS_DRY_RUN    ((1 << 1) | RUNFLAGS_TESTS)
 #define RUNFLAGS_SMOKE_TEST ((1 << 2) | RUNFLAGS_TESTS)
+#define RUNFLAGS_TINY_STACK ((1 << 3) | RUNFLAGS_TESTS)
 
 uint32_t parse_runflags();
 

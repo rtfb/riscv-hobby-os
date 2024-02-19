@@ -152,7 +152,7 @@ def make_qemu_command(args):
         machine = 'sifive_e'
 
     is_interactive = ('test' not in binary) and (
-        args.bootargs not in ['dry-run', 'smoke-test']
+        args.bootargs not in ['dry-run', 'smoke-test', 'tiny-stack']
     )
     cmd = make_docker_cmd(is_32bit, is_interactive)
 

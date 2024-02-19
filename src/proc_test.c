@@ -94,7 +94,7 @@ void init_test_processes(uint32_t runflags) {
     if (runflags == RUNFLAGS_DRY_RUN) {
         return;
     }
-    if (runflags == RUNFLAGS_SMOKE_TEST) {
+    if (runflags == RUNFLAGS_SMOKE_TEST || runflags == RUNFLAGS_TINY_STACK) {
         assign_init_program("smoke-test");
     } else {
         assign_init_program("sh");
