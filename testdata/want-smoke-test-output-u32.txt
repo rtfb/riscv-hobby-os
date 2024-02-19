@@ -19,5 +19,6 @@ PID  STATE  NAME
 4    S      hang
 6    R      ps
 23
+formatted string: num=387, zero=0, char=X, hex=0xaddbeef, str=foo
 
 qemu-launcher: killing qemu due to timeout

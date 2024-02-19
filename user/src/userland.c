@@ -422,3 +422,12 @@ int _userland u_main_iter(int argc, char const *argv[]) {
     exit(0);
     return 0;
 }
+
+char testprintf_fmt[] _user_rodata = "formatted string: num=%d, zero=%d, char=%c, hex=0x%x, str=%s\n";
+int _userland u_main_test_printf(int argc, char const* argv[]) {
+    char buf[32+32+32+9]; // placeholder: it's here just to use up a lot of stack
+    char foo[] = "foo";
+    printf(testprintf_fmt, 387, 0, 'X', 0xaddbeef, foo);
+    exit(0);
+    return 0;
+}

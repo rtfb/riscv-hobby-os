@@ -235,6 +235,11 @@ $(OUT)/smoke-test-output-virt.txt: $(OUT)/os_virt
 	@diff -u testdata/want-smoke-test-output-virt.txt $@
 	@echo "OK"
 
+$(OUT)/smoke-test-output-tiny-stack.txt: $(OUT)/os_virt
+	@$(QEMU_LAUNCHER) --bootargs tiny-stack --timeout=5s --binary=$< > $@
+	@diff -u testdata/want-smoke-test-output-tiny-stack.txt $@
+	@echo "OK"
+
 $(OUT):
 	mkdir -p $(OUT)
 

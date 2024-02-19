@@ -15,6 +15,10 @@ char const* print_radixu(unsigned long int num, int radix, char *buf, unsigned i
 }
 
 int32_t _userland printfvecbuf(char const* fmt, regsize_t* args, int nargs, char *buf, int bufsize) {
+    // place the digit_buf at the top of the given buf:
+    bufsize -= DIGIT_BUF_SZ;
+    char *digit_buf = buf + bufsize;
+
     #define _PRINTF_WRITE_CHAR(c) buf[dsti] = c
     #define _PRINT_RADIX print_radix
     #define _PRINT_RADIXU print_radixu

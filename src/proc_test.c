@@ -21,6 +21,7 @@ extern int u_main_pipe2();
 extern int u_main_wc();
 extern int u_main_gpio();
 extern int u_main_iter();
+extern int u_main_test_printf();
 
 user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
@@ -82,6 +83,10 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
         .entry_point = &u_main_iter,
         .name = "iter",
+    },
+    (user_program_t){
+        .entry_point = &u_main_test_printf,
+        .name = "testprintf",
     },
     // keep this last, it's a sentinel:
     (user_program_t){

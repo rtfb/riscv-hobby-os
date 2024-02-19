@@ -31,5 +31,7 @@ jobs:
       run: make out/smoke-test-output-u64.txt
     - name: Run u32 smoke tests
       run: make out/smoke-test-output-u32.txt
+    - name: Run tiny-stack smoke tests
+      run: make out/smoke-test-output-tiny-stack.txt
     - name: Make all binaries
       run: make all

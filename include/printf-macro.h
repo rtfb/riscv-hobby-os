@@ -1,14 +1,14 @@
 #ifndef _PRINTF_MACRO_H_
 #define _PRINTF_MACRO_H_
 
+// DIGIT_BUF_SZ should be large enough to hold the largest int64 with a minus
+// sign in front of it, and a terminating zero after it
+#define DIGIT_BUF_SZ   21
+
 #define PRINTF_IMPL                                                    \
     int argnum = 0;                                                    \
     int srci = 0;                                                      \
     int dsti = 0;                                                      \
-    /* rbufsz should be large enough to hold the largest int64 with */ \
-    /* a minus sign in front of it, and a terminating zero after it */ \
-    const int rbufsz = 21;                                             \
-    char rbuf[rbufsz];                                                 \
     while (fmt[srci] != 0) {                                           \
         char c = fmt[srci];                                            \
         if (c == '%' && argnum < nargs) {                              \
@@ -29,19 +29,19 @@
                     case 'd':                                          \
                         ;                                              \
                         long int i = args[argnum++];                   \
-                        tmp = _PRINT_RADIX(i, 10, rbuf, rbufsz);       \
+                        tmp = _PRINT_RADIX(i, 10, digit_buf, DIGIT_BUF_SZ); \
                         break;                                         \
                     case 'p':                                          \
                         /* do a 0x, then print an unsigned %x: */      \
                         _PRINTF_WRITE_CHAR('0');                       \
                         _PRINTF_WRITE_CHAR('x');                       \
                         unsigned long int uh = args[argnum++];         \
-                        tmp = _PRINT_RADIXU(uh, 16, rbuf, rbufsz);     \
+                        tmp = _PRINT_RADIXU(uh, 16, digit_buf, DIGIT_BUF_SZ); \
                         break;                                         \
                     case 'x':                                          \
                         ;                                              \
                         long int h = args[argnum++];                   \
-                        tmp = _PRINT_RADIX(h, 16, rbuf, rbufsz);       \
+                        tmp = _PRINT_RADIX(h, 16, digit_buf, DIGIT_BUF_SZ); \
                         break;                                         \
                     case 's':                                          \
                         tmp = (char const*)args[argnum++];             \

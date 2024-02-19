@@ -1,7 +1,7 @@
 kinit: cpu 0
 Reading FDT...
 FDT ok
-bootargs: smoke-test
+bootargs: tiny-stack
 kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-9223372036854775807
 Init userland smoke test!
 Total RAM: 48

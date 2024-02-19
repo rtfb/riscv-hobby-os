@@ -8,3 +8,5 @@ make out/test-output-u32.txt
 make out/test-output-u64.txt
 make out/smoke-test-output-u32.txt
 make out/smoke-test-output-u64.txt
+make out/smoke-test-output-virt.txt
+make out/smoke-test-output-tiny-stack.txt
