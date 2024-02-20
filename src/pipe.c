@@ -1,4 +1,5 @@
 #include "errno.h"
+#include "kernel.h"
 #include "pagealloc.h"
 #include "pipe.h"
 #include "vm.h"
@@ -11,7 +12,7 @@ void init_pipes() {
     pipes.lock = 0;
     pipes.buf_page = kalloc("init_pipes", -1);
     if (!pipes.buf_page) {
-        // TODO: panic
+        panic("init pipes alloc");
         return;
     }
     for (int i = 0; i < MAX_PIPES; i++) {

@@ -39,11 +39,7 @@ void *syscall_vector[] _text = {
 void syscall(regsize_t kernel_sp) {
     disable_interrupts();
     int nr = trap_frame.regs[REG_A7];
-    process_t *proc = cpu.proc;
-    if (!proc) {
-        // TODO: panic: a system call when no user process was scheduled
-        return;
-    }
+    process_t *proc = myproc();
     *proc->perrno = 0; // clear errno
     trap_frame.pc += 4; // step over the ecall instruction that brought us here
     regsize_t user_sp = (regsize_t)va2pa(proc->upagetable, (void*)trap_frame.regs[REG_SP]);
@@ -67,7 +63,7 @@ void syscall(regsize_t kernel_sp) {
             proc->pid, nr, *proc->magic);
         trap_frame.regs[REG_A0] = -1;
         *proc->perrno = EFAULT;
-        // TODO: panic
+        panic("kernel stack overflow");
         return;
     }
     enable_interrupts();

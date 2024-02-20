@@ -30,4 +30,7 @@ extern void kprintf(char const *msg, ...);
 // implement in kprintf.c
 extern int32_t kprintfvec(char const* fmt, regsize_t* args);
 
+// panic prints "panic: <message>" and halts the CPU.
+void panic(char const *message);
+
 #endif // ifndef _KERNEL_H_

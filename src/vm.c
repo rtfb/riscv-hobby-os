@@ -19,7 +19,7 @@ extern void* _end;
 void* make_kernel_page_table(page_t *pages, int num_pages) {
     void *pagetable = kalloc("make_kernel_page_table", -1);
     if (!pagetable) {
-        // TODO: panic
+        panic("kernel pagetable alloc");
         return 0;
     }
     clear_page_table(pagetable);
@@ -91,7 +91,7 @@ void map_page_sv39(regsize_t *pagetable, void *phys_addr, regsize_t virt_addr, i
         if (pte == 0 && level > 0) {
             regsize_t *pagetable_next = kalloc("pagetable", pid);
             if (pagetable_next == 0) {
-                // TODO: panic OOM
+                panic("pagetable subtable alloc");
                 return;
             }
             clear_page_table(pagetable_next);

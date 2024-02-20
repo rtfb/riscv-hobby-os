@@ -57,8 +57,6 @@ void* allocate_page(char const *site, uint32_t pid, uint32_t flags) {
 void *kalloc(char const *site, uint32_t pid) {
     void *page = allocate_page(site, pid, 0);
     if (!page) {
-        kprintf("kalloc: OOM!\n");
-        // TODO: panic
         return 0;
     }
     return page;
@@ -71,7 +69,16 @@ void release_page(void *ptr) {
         if (page->ptr == ptr) {
             if (page->flags == PAGE_FREE) {
                 release(&paged_memory.lock);
-                // TODO: panic here: release of an unallocated page
+// Trying to release_page() that wasn't allocated is a bug. But leave this bug
+// silent on targets without an MMU. That's because the user program can choose
+// to free a random address and we don't want that to halt the kernel. With the
+// presence of an MMU, though, the given ptr is not directly specified by the
+// user, but is resolved via a pagetable. So whatever is capable to bring us
+// here, indicates a bug on the kernel side and should panic.
+#if CONFIG_MMU
+                // XXX: commented out for now because free_page_table() is known to double-free
+                // panic("free unallocated page");
+#endif
                 return;
             }
             page->flags = PAGE_FREE;
@@ -82,7 +89,6 @@ void release_page(void *ptr) {
         }
     }
     release(&paged_memory.lock);
-    // TODO: panic here: can't find such page
 }
 
 uint32_t count_free_pages() {

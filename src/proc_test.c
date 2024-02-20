@@ -109,18 +109,18 @@ void init_test_processes(uint32_t runflags) {
 void assign_init_program(char const* prog) {
     user_program_t *program = find_user_program(prog);
     if (!program) {
-        // TODO: panic
+        panic("no init program");
         return;
     }
     process_t* p0 = alloc_process();
     if (!p0) {
-        // TODO: panic
+        panic("alloc p0 process");
         return;
     }
     uintptr_t status = init_proc(p0, USR_VIRT(program->entry_point), program->name);
     release(&p0->lock);
     if (status != 0) {
-        // TODO: panic
+        panic("init p0 process");
     }
     cpu.proc = p0;
 }

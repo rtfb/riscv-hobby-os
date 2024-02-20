@@ -379,7 +379,7 @@ process_t* current_proc() {
 process_t* myproc() {
     process_t *proc = current_proc();
     if (!proc) {
-        // TODO: panic
+        panic("null in myproc");
         return 0;
     }
     return proc;
@@ -462,7 +462,7 @@ int32_t wait_or_sleep(uint64_t wakeup_time) {
 }
 
 void sched() {
-    process_t* proc = myproc();
+    process_t* proc = current_proc();
     if (!proc) {
         scheduler(); // no process was scheduled, let the scheduler run, forever
         return; // this is just for clarity: scheduler() never returns
@@ -683,9 +683,6 @@ int32_t proc_dup(uint32_t fd) {
 
 void* proc_pgalloc() {
     process_t* proc = myproc();
-    if (!proc) {
-        return 0;
-    }
     void *page = allocate_page("user", proc->pid, PAGE_USERMEM);
     if (!page) {
         return 0;
@@ -698,9 +695,6 @@ void* proc_pgalloc() {
 
 void proc_pgfree(void *page) {
     process_t* proc = myproc();
-    if (!proc) {
-        return;
-    }
     page = va2pa(proc->upagetable, page);
     release_page(page);
 }

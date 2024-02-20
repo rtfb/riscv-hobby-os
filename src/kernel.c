@@ -139,3 +139,10 @@ void enable_interrupts() {
     csr_sip_clear_flags(SIP_SSIP);
 #endif
 }
+
+void panic(char const *message) {
+    uart_prints("panic: ");
+    uart_prints(message);
+    uart_prints("\n");
+    park_hart();
+}
