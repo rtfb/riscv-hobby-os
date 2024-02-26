@@ -431,3 +431,15 @@ int _userland u_main_test_printf(int argc, char const* argv[]) {
     exit(0);
     return 0;
 }
+
+int _userland u_main_fibd(int argc, char const* argv[]) {
+    uint64_t fib1 = 1;
+    uint64_t fib2 = 1;
+    while (1) {
+        uint64_t fib = fib1 + fib2;
+        fib1 = fib2;
+        fib2 = fib;
+        sleep(500);
+    }
+    return 0;
+}
