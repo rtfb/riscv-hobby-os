@@ -40,9 +40,7 @@ Debugging with gdb
 
 #### Qemu
 
-1. `make download-sifive-toolchain` to download [SiFive version of
-   toolchain][sifive-toolchain], as the regular apt-gettable toolchain won't
-   work.
+1. Obtain gdb ([`docs/gdb.md`][docs-gdb]).
 2. Run as usual with an extra `DBG=1` argument, e.g. `make run-virt DBG=1`.
 3. In a separate terminal, run `make gdb`. Gdb will connect to the above, and
    you can use it as usual.
@@ -63,10 +61,10 @@ Handy RISC-V Quick References:
 [riscv-asm-man]: https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md
 [sifive-u]: https://static.dev.sifive.com/FU540-C000-v1.0.pdf
 [sifive-e]: https://sifive.cdn.prismic.io/sifive%2F59a1f74e-d918-41c5-b837-3fe01ba7eaa1_fe310-g002-manual-v19p05.pdf
-[sifive-toolchain]: https://www.sifive.com/software
 
 [d1-url]: https://d1.docs.aw-ol.com/en/d1_dev/
 [hifive-url]: https://www.sifive.com/boards/hifive1-rev-b
 [ox64-url]: https://wiki.pine64.org/wiki/Ox64
 
 [docs-folder]: https://github.com/rtfb/riscv-hobby-os/tree/master/docs
+[docs-gdb]: https://github.com/rtfb/riscv-hobby-os/tree/master/docs/gdb.md

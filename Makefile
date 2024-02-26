@@ -17,7 +17,11 @@ ifeq (, $(shell which $(RISCV64_OBJCOPY)))
 endif
 
 FREEDOM_SDK_DIR := sifive-freedom-toolchain
+ifneq ("$(wildcard $(HOME)/binutils-gdb/bin/riscv-gdb)","")
+GDB := $(HOME)/binutils-gdb/bin/riscv-gdb
+else
 GDB := $(FREEDOM_SDK_DIR)/*/bin/riscv64-unknown-elf-gdb
+endif
 
 # If the links below get outdated, head to https://www.sifive.com/software and
 # download GNU Embedded Toolchain.
@@ -132,7 +136,7 @@ run-virt: $(OUT)/os_virt
 # * qemu-launcher also creates a .gbdinit file so that gdb sets the correct
 #   arch and automatically attaches to the target
 .PHONY: gdb
-gdb: $(FREEDOM_SDK_DIR)
+gdb:
 	$(GDB) $(shell cat .debug-session)
 
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
