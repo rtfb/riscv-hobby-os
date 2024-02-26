@@ -141,6 +141,7 @@ void enable_interrupts() {
 }
 
 void panic(char const *message) {
+    disable_interrupts();
     uart_prints("panic: ");
     uart_prints(message);
     uart_prints("\n");
