@@ -96,3 +96,8 @@ pgfree:
 gpio:
         macro_syscall SYS_NR_gpio
         ret
+
+.globl detach
+detach:
+        macro_syscall SYS_NR_detach
+        ret

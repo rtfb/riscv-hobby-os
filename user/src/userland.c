@@ -433,12 +433,15 @@ int _userland u_main_test_printf(int argc, char const* argv[]) {
 }
 
 int _userland u_main_fibd(int argc, char const* argv[]) {
+    detach();
     uint64_t fib1 = 1;
     uint64_t fib2 = 1;
+    uint32_t i = 3;
     while (1) {
         uint64_t fib = fib1 + fib2;
         fib1 = fib2;
         fib2 = fib;
+        i += 1;
         sleep(500);
     }
     return 0;

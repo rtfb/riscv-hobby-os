@@ -63,17 +63,15 @@ void scheduler() {
             acquire(&p->lock);
             if (p->state == PROC_STATE_SLEEPING && should_wake_up(p)) {
                 p->state = PROC_STATE_READY;
-                // we're waking up the process, which means it's possible that
-                // we interrupted sleep_scheduler, which in turn means
-                // trap_frame currently corresponds to a sleeping scheduler.
-                // Overwrite trap_frame with what the user process has:
-                copy_trap_frame(&trap_frame, &p->trap);
             }
             if (p->state == PROC_STATE_READY) {
                 p->state = PROC_STATE_RUNNING;
                 cpu.proc = p;
+                // make sure ret_to_user() returns to p's userland, not to
+                // whatever happens to be inside trap_frame now:
+                copy_trap_frame(&trap_frame, &p->trap);
                 // switch context into p. This will not return until p itself
-                // does not call swtch().
+                // does not call swtch():
                 swtch(&cpu.context, &p->ctx);
                 i_after_wakeup = i;
                 new_loop = 0;
@@ -697,4 +695,24 @@ void proc_pgfree(void *page) {
     process_t* proc = myproc();
     page = va2pa(proc->upagetable, page);
     release_page(page);
+}
+
+// proc_detach detaches the current process from its parent. The parent will no
+// longer wait() on this child. In effect, this daemonizes the current process.
+uint32_t proc_detach() {
+    process_t *proc = myproc();
+    process_t *parent = proc->parent;
+    if (parent == 0) {
+        return 0;
+    }
+    acquire(&proc->lock);
+    proc->parent = 0;
+    release(&proc->lock);
+    // parent may already be wait()ing, so mark it for wakeup:
+    acquire(&parent->lock);
+    if (parent->state == PROC_STATE_SLEEPING) {
+        parent->state = PROC_STATE_READY;
+    }
+    release(&parent->lock);
+    return 0;
 }
