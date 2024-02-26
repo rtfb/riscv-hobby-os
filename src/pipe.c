@@ -197,6 +197,11 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
             return -ENOBUFS;
         }
         int32_t wr = pipe_do_write(pipe, buf+nwritten, nbytes - nwritten);
+        if (wr > 0) {
+            // if at least one byte was written, let the reading end know that
+            // it can wake up and try reading
+            proc_mark_for_wakeup(pipe);
+        }
         nwritten += wr;
         if (nwritten == nbytes) {
             // If we were able to write everything, report a complete
@@ -204,10 +209,7 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
             release(&pipe->lock);
             return nwritten;
         }
-        // Otherwise, block on a (maybe partial) write. But it's possible the
-        // reading end has already tried reading and it fell asleep. So first
-        // let it know it has something to read now.
-        proc_mark_for_wakeup(pipe);
+        // Otherwise, block on a (maybe partial) write.
         release(&pipe->lock); // release the lock before sleep, otherwise the reading end will deadlock
         proc_yield(pipe);
         if (!f->fs_file) { // the pipe was closed while we slept

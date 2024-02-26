@@ -433,16 +433,70 @@ int _userland u_main_test_printf(int argc, char const* argv[]) {
 }
 
 int _userland u_main_fibd(int argc, char const* argv[]) {
-    detach();
+    close(1); // close own stdout
+    detach(); // detach from the shell
     uint64_t fib1 = 1;
     uint64_t fib2 = 1;
-    uint32_t i = 3;
+    uint32_t i = 2;
     while (1) {
         uint64_t fib = fib1 + fib2;
         fib1 = fib2;
         fib2 = fib;
         i += 1;
+        if (isopen(1)) {                // check if a client has attached a pipe to stdout
+            printf("%d, %d\n", i, fib); // if yes, write a response to it
+            close(1);                   // and close the stdout again, so that the client can attach again
+        }
         sleep(500);
     }
+    return 0;
+}
+
+char fib_parse_err_fmt[] _user_rodata = "ERROR: parse pid '%s': %d\n";
+
+// fib is the client talking to fibd
+int _userland u_main_fib(int argc, char const* argv[]) {
+    if (argc < 2) {
+        prints("USAGE: fib <pid of fibd>\n");
+        exit(0);
+        return 0;
+    }
+    int parse_err = 0;
+    int fibd_pid = uatoi(argv[1], &parse_err);
+    if (parse_err != 0) {
+        printf(fib_parse_err_fmt, argv[1], parse_err);
+        exit(-1);
+        return -1;
+    }
+    uint32_t pipefd[2] = {-1, -1};
+    if (pipe(pipefd) == -1) {
+        prints("ERROR: pipe=-1\n");
+        exit(-2);
+        return -2;
+    }
+    // attach the pipe's writing end to the daemon's stdout:
+    if (pipeattch(fibd_pid, pipefd[1]) == -1) {
+        prints("ERROR: pipeattch=-1\n");
+        exit(-3);
+        return -3;
+    }
+    char fbuf[64];
+    // read from the pipe. This will block until the daemon responds:
+    int32_t nread = read(pipefd[0], fbuf, 64);
+    if (nread == -1) {
+        prints("ERROR: read=-1\n");
+        exit(-4);
+        return -4;
+    }
+    fbuf[nread] = 0;
+    int32_t nwrit = write(1, fbuf, nread);
+    if (nwrit == -1) {
+        prints("ERROR: write=-1\n");
+        exit(-5);
+        return -5;
+    }
+    close(pipefd[0]);
+    close(pipefd[1]);
+    exit(0);
     return 0;
 }

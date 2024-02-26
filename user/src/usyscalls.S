@@ -101,3 +101,13 @@ gpio:
 detach:
         macro_syscall SYS_NR_detach
         ret
+
+.globl isopen
+isopen:
+        macro_syscall SYS_NR_isopen
+        ret
+
+.globl pipeattch
+pipeattch:
+        macro_syscall SYS_NR_pipeattch
+        ret

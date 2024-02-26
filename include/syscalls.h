@@ -65,6 +65,8 @@ regsize_t sys_pgalloc();
 regsize_t sys_pgfree();
 uint32_t sys_gpio();
 uint32_t sys_detach();
+int32_t sys_isopen();
+uint32_t sys_pipeattch();
 
 // These are implemented in assembler as of now:
 extern void poweroff();

@@ -31,5 +31,7 @@ extern regsize_t pgalloc();
 extern regsize_t pgfree(void *page);
 extern uint32_t gpio(uint32_t pin_num, uint32_t enable, uint32_t value);
 extern uint32_t detach();
+extern int32_t isopen(int32_t fd);
+extern uint32_t pipeattch(uint32_t pid, int32_t src_fd);
 
 #endif // ifndef _USYSCALLS_H_

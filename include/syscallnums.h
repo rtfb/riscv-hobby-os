@@ -27,3 +27,5 @@
 #define SYS_NR_pgfree         35
 #define SYS_NR_gpio           36
 #define SYS_NR_detach         37
+#define SYS_NR_isopen         38
+#define SYS_NR_pipeattch      39

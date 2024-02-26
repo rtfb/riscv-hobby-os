@@ -229,15 +229,17 @@ void* proc_pgalloc();
 void proc_pgfree(void *page);
 
 uint32_t proc_detach();
+int32_t proc_isopen(int32_t fd);
+uint32_t proc_pipeattch(uint32_t pid, int32_t src_fd);
 
 // fd_alloc allocates a file descriptor in process's open files list and
 // assigns a file pointer to it. proc.lock must be held.
 int32_t fd_alloc(process_t *proc, file_t *f);
 void fd_free(process_t *proc, int32_t fd);
 
-// find_proc finds a process by a given pid. Returns NULL if nothing is found.
-// Must be called with proc_table.lock held.
-process_t* find_proc(uint32_t pid);
+// find_proc_by_pid finds a process by a given pid. Returns NULL if nothing is
+// found. Must be called with proc_table.lock held.
+process_t* find_proc_by_pid(uint32_t pid);
 
 regsize_t reoffset_user_stack(process_t *dest, process_t *src, int reg);
 

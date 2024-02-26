@@ -23,6 +23,7 @@ extern int u_main_gpio();
 extern int u_main_iter();
 extern int u_main_test_printf();
 extern int u_main_fibd();
+extern int u_main_fib();
 
 user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
@@ -92,6 +93,10 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
         .entry_point = &u_main_fibd,
         .name = "fibd",
+    },
+    (user_program_t){
+        .entry_point = &u_main_fib,
+        .name = "fib",
     },
     // keep this last, it's a sentinel:
     (user_program_t){

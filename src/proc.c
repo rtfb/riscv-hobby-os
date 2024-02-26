@@ -716,3 +716,49 @@ uint32_t proc_detach() {
     release(&parent->lock);
     return 0;
 }
+
+process_t* find_proc_by_pid(uint32_t pid) {
+    for (int i = 0; i < MAX_PROCS; i++) {
+        process_t *proc = &proc_table.procs[i];
+        if (proc->pid == pid) {
+            return proc;
+        }
+    }
+    return 0;
+}
+
+// proc_pipeattch attaches a file object referred to by a given src_fd to the
+// target pid's stdout.
+uint32_t proc_pipeattch(uint32_t pid, int32_t src_fd) {
+    process_t *proc = myproc();
+    acquire(&proc->lock);
+    file_t *f = proc->files[src_fd];
+    if (!f) {
+        *proc->perrno = EBADF;
+        return -1;
+    }
+    f->refcount++;
+    release(&proc->lock);
+    process_t *target_proc = find_proc_by_pid(pid);
+    if (!target_proc) {
+        f->refcount--;
+        *proc->perrno = ESRCH;
+        return -1;
+    }
+    acquire(&target_proc->lock);
+    if (target_proc->files[FD_STDOUT] != 0) {
+        f->refcount--;
+        release(&target_proc->lock);
+        *proc->perrno = EBUSY;
+        return -1;
+    }
+    target_proc->files[FD_STDOUT] = f;
+    target_proc->chan = f->fs_file;
+    release(&target_proc->lock);
+    return 0;
+}
+
+int32_t proc_isopen(int32_t fd) {
+    process_t *proc = myproc();
+    return proc->files[fd] != 0;
+}

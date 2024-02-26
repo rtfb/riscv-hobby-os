@@ -35,6 +35,8 @@ void *syscall_vector[] _text = {
     [SYS_NR_pgfree]    sys_pgfree,
     [SYS_NR_gpio]      sys_gpio,
     [SYS_NR_detach]    sys_detach,
+    [SYS_NR_isopen]    sys_isopen,
+    [SYS_NR_pipeattch] sys_pipeattch,
 };
 
 void syscall(regsize_t kernel_sp) {
@@ -193,4 +195,15 @@ uint32_t sys_gpio() {
 
 uint32_t sys_detach() {
     return proc_detach();
+}
+
+int32_t sys_isopen() {
+    int32_t fd = (int32_t)trap_frame.regs[REG_A0];
+    return proc_isopen(fd);
+}
+
+uint32_t sys_pipeattch() {
+    uint32_t pid = (uint32_t)trap_frame.regs[REG_A0];
+    int32_t src_fd = (int32_t)trap_frame.regs[REG_A1];
+    return proc_pipeattch(pid, src_fd);
 }
