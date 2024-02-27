@@ -539,21 +539,18 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo) {
         return -1;
     }
     acquire(&proc_table.lock);
-    for (int i = 0; i < MAX_PROCS; i++) {
-        process_t *proc = &proc_table.procs[i];
-        if (proc->pid == pid) {
-            if (pid != self->pid) {
-                // only acquire if we're looking up other proc's info,
-                // self->pid is already acquired
-                acquire(&proc->lock);
-            }
-            pinfo->pid = proc->pid;
-            strncpy(pinfo->name, proc->name, 16);
-            pinfo->state = proc->state;
-            if (pid != self->pid) {
-                release(&proc->lock);
-            }
-            break;
+    process_t *proc = find_proc_by_pid(pid);
+    if (proc) {
+        if (pid != self->pid) {
+            // only acquire if we're looking up other proc's info,
+            // self->pid is already acquired
+            acquire(&proc->lock);
+        }
+        pinfo->pid = proc->pid;
+        strncpy(pinfo->name, proc->name, 16);
+        pinfo->state = proc->state;
+        if (pid != self->pid) {
+            release(&proc->lock);
         }
     }
     release(&proc_table.lock);
