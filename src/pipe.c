@@ -18,8 +18,6 @@ void init_pipes() {
     for (int i = 0; i < MAX_PIPES; i++) {
         pipe_t *p = &pipes.all[i];
         p->flags = 0;
-        // p->read = pipe_read;
-        // p->write = pipe_write;
         p->buf = pipes.buf_page + PIPE_BUF_SIZE * i;
     }
 }

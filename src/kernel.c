@@ -115,7 +115,7 @@ void kernel_timer_tick(regsize_t sp) {
     ret_to_user(satp);
 }
 
-// kernel_plic_handler...
+// kernel_plic_handler is the C entry point for PLIC interrupt handling.
 void kernel_plic_handler() {
     disable_interrupts();
     plic_dispatch_interrupts();
