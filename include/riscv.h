@@ -46,6 +46,10 @@
 #define USR_STK_VIRT(pa)    (regsize_t)(pa)
 #endif
 
+// stack should always be 16-byte aligned, so whenever we adjust it, always
+// wrap in STK_ROUND()
+#define STK_ROUND(addr)     ((regsize_t)(addr) & ~0xf)
+
 #define PTE_V          (1 << 0)
 #define PTE_R          (1 << 1)
 #define PTE_W          (1 << 2)

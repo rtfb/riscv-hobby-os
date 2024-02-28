@@ -217,7 +217,7 @@ sp_argv_t copy_argv(process_t *proc, uintptr_t *sp, regsize_t argc, char const* 
         sp[i] = USR_STK_VIRT(spc + 1);
     }
     return (sp_argv_t){
-        .new_sp = (regsize_t)(spc) & ~7, // down-align at 8, we don't want sp to be odd
+        .new_sp = STK_ROUND(spc),
         .new_argv = (regsize_t)(sp),
     };
 }
@@ -345,7 +345,11 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->stack_page = sp;
     proc->perrno = _set_perrno(sp); // reserve the last word for errno
     proc->kstack_page = ksp;
-    proc->trap.regs[REG_SP] = USR_STK_VIRT(sp) + user_stack_size;
+    proc->trap.regs[REG_SP] = STK_ROUND(
+        USR_STK_VIRT(sp)    // base of the stack page
+        + user_stack_size   // stack size to get to the end
+        - sizeof(uintptr_t) // compensate for perrno
+    );
     proc->state = PROC_STATE_READY;
     for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
         proc->files[i] = 0;
