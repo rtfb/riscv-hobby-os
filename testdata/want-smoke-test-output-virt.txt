@@ -1,23 +1,21 @@
 kinit: cpu 0
 Reading FDT...
 FDT ok
-bootargs: smoke-test
+bootargs: test-script=/home/smoke-test.sh
 kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-9223372036854775807
-Init userland smoke test!
 Total RAM: 48
-Free RAM: 17
-Num procs: 3
+Free RAM: 24
+Num procs: 2
 formatted string: num=387, zero=0, char=X, hex=0xaddbeef, str=foo
 only groks 7 args: 11 12 13 14 15 16 17 %d %d
 I will hang now, bye
 Total RAM: 48
-Free RAM: 10
-Num procs: 4
+Free RAM: 17
+Num procs: 3
 PID  STATE  NAME
-0    S      smoke-test
-1    S      sh
-4    S      hang
-6    R      ps
+0    S      sh
+3    S      hang
+5    R      ps
 23
 formatted string: num=387, zero=0, char=X, hex=0xaddbeef, str=foo
 

@@ -222,6 +222,27 @@ sp_argv_t copy_argv(process_t *proc, uintptr_t *sp, regsize_t argc, char const* 
     };
 }
 
+// inject_argv assigns a given argc and argv to a given process. It stores the
+// values at the end of the page allocated for stack, pushing the stack pointer
+// (and thus, the bottom of the stack) below them. That should only ever be
+// done to a freshly initialized process, otherwise the bottom of the stack
+// would be ruined. Intended for use in the code path for automated tests.
+void inject_argv(process_t *proc, int argc, char const *argv[]) {
+    void *stack_bottom = proc->perrno - argc - 1;
+    char const **new_argv = stack_bottom;
+    for (int i = 0; i < argc; i++) {
+        int len = kstrlen(argv[i]);
+        stack_bottom -= len + 1;
+        strncpy(stack_bottom, argv[i], len + 1);
+        *new_argv = (char const*)USR_STK_VIRT(stack_bottom);
+        new_argv++;
+    }
+    *new_argv = 0;
+    proc->trap.regs[REG_SP] = STK_ROUND(USR_STK_VIRT(stack_bottom));
+    proc->trap.regs[REG_A0] = argc;
+    proc->trap.regs[REG_A1] = USR_STK_VIRT(new_argv - argc);
+}
+
 uintptr_t* _set_perrno(void *sp) {
     return (uintptr_t*)(sp + user_stack_size) - 1;
 }

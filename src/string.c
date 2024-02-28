@@ -25,6 +25,21 @@ int strncmp(char const *a, char const *b, unsigned int num) {
     return *a - *b;
 }
 
+// has_prefix checks whether str has a given prefix. Returns 0 if at least one
+// character of str is different than the corresponding character in prefix. If
+// end_of_prefix is not null, it will be set to the index of the first
+// character within str after the prefix.
+int has_prefix(char const *str, char const *prefix, int *end_of_prefix) {
+    int prefix_len = kstrlen(prefix);
+    if (strncmp(str, prefix, prefix_len)) {
+        return 0;
+    }
+    if (end_of_prefix != 0) {
+        *end_of_prefix = prefix_len;
+    }
+    return 1;
+}
+
 char* strncpy(char *dest, char const *src, unsigned int num) {
     char *orig_dest = dest;
     for (unsigned int i = 0; i < num - 1 && *src; i++) {

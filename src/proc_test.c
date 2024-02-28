@@ -11,7 +11,6 @@ extern int u_main_hello1();
 extern int u_main_hello2();
 extern int u_main_sysinfo();
 extern int u_main_fmt();
-extern int u_main_smoke_test();
 extern int u_main_hanger();
 extern int u_main_ps();
 extern int u_main_cat();
@@ -45,10 +44,6 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
         .entry_point = &u_main_fmt,
         .name = "fmt",
-    },
-    (user_program_t){
-        .entry_point = &u_main_smoke_test,
-        .name = "smoke-test",
     },
     (user_program_t){
         .entry_point = &u_main_hanger,
@@ -110,13 +105,13 @@ void init_test_processes(uint32_t runflags) {
         return;
     }
     if (runflags == RUNFLAGS_SMOKE_TEST || runflags == RUNFLAGS_TINY_STACK) {
-        assign_init_program("smoke-test");
+        assign_init_program("sh", test_script);
     } else {
-        assign_init_program("sh");
+        assign_init_program("sh", 0);
     }
 }
 
-void assign_init_program(char const* prog) {
+void assign_init_program(char const* prog, char const *test_script) {
     user_program_t *program = find_user_program(prog);
     if (!program) {
         panic("no init program");
@@ -128,6 +123,10 @@ void assign_init_program(char const* prog) {
         return;
     }
     uintptr_t status = init_proc(p0, USR_VIRT(program->entry_point), program->name);
+    if (test_script != 0) {
+        char const *args[] = {program->name, "-f", test_script};
+        inject_argv(p0, 3, args);
+    }
     release(&p0->lock);
     if (status != 0) {
         panic("init p0 process");

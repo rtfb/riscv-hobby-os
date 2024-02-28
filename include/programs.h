@@ -13,5 +13,6 @@ extern user_program_t userland_programs[MAX_USERLAND_PROGS];
 
 // defined in proc_test.c:
 user_program_t* find_user_program(char const *name);
+void assign_init_program(char const* prog, char const *test_script);
 
 #endif // ifndef _PROGRAMS_H_

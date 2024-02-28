@@ -130,7 +130,6 @@ void swtch(context_t *old, context_t *new);
 // processes that will get executed by default. Kind of like what an initrd
 // would do, but a poor man's version until we can do better.
 void init_test_processes(uint32_t runflags);
-void assign_init_program(char const* prog);
 
 void init_process_table(uint32_t runflags, unsigned int hart_id);
 void scheduler();
@@ -242,5 +241,6 @@ void fd_free(process_t *proc, int32_t fd);
 process_t* find_proc_by_pid(uint32_t pid);
 
 regsize_t reoffset_user_stack(process_t *dest, process_t *src, int reg);
+void inject_argv(process_t *proc, int argc, char const *argv[]);
 
 #endif // ifndef _PROC_H_

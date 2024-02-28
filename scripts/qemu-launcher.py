@@ -141,6 +141,19 @@ def make_docker_cmd(is_32bit, is_interactive):
     return cmd
 
 
+def is_interactive(args):
+    if 'test' in args.binary:
+        return False
+    if args.bootargs == 'dry-run':
+        return False
+    ba = args.bootargs
+    if not ba:
+        return True
+    if ba.startswith('test-script') or ba.startswith('tiny-stack'):
+        return False
+    return True
+
+
 def make_qemu_command(args):
     binary = args.binary
 
@@ -156,10 +169,7 @@ def make_qemu_command(args):
     else:
         machine = 'sifive_e'
 
-    is_interactive = ('test' not in binary) and (
-        args.bootargs not in ['dry-run', 'smoke-test', 'tiny-stack']
-    )
-    cmd = make_docker_cmd(is_32bit, is_interactive)
+    cmd = make_docker_cmd(is_32bit, is_interactive(args))
 
     # Override our guesses if args were passed explicitly:
     if args.qemu is not None:

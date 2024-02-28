@@ -12,6 +12,9 @@
 #define RUNFLAGS_SMOKE_TEST ((1 << 2) | RUNFLAGS_TESTS)
 #define RUNFLAGS_TINY_STACK ((1 << 3) | RUNFLAGS_TESTS)
 
+// defined in runflags.c
+extern char const *test_script;
+
 uint32_t parse_runflags();
 
 #endif // ifndef _RUNFLAGS_H_

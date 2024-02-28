@@ -77,7 +77,7 @@ int _userland run_shell_script(char const *filepath, cmdbuf_t cmdpool) {
         return -1;
     }
     char *fbuf = (char*)pgalloc();
-    int32_t nread = read(fd, fbuf, PAGE_SIZE);
+    int32_t nread = read(fd, fbuf, PAGE_SIZE - 32); // reserve 32 bytes for pbuf
     if (nread == -1) {
         pgfree(fbuf);
         prints("ERROR: read=-1\n");
@@ -87,7 +87,7 @@ int _userland run_shell_script(char const *filepath, cmdbuf_t cmdpool) {
     fbuf[nread] = 0;
     int start = 0;
     int end = 0;
-    char pbuf[32];
+    char *pbuf = fbuf + PAGE_SIZE - 32;
     while (fbuf[end] != 0) {
         pbuf[0] = 0;
         int i = 0;
@@ -225,7 +225,17 @@ int _userland u_main_shell(int argc, char* argv[]) {
     cmdbuf_t cmdpool = sh_init_cmd_slots(cmd_slots, num_slots);
 
     if (argc > 1) {
-        int code = run_shell_script(argv[1], cmdpool);
+        int freeze = 0;
+        int script_i = 1;
+        if (argv[1][0] == '-' && argv[1][1] == 'f') {
+            freeze = 1;
+            script_i = 2;
+        }
+        int code = run_shell_script(argv[script_i], cmdpool);
+        if (freeze) {
+            for (;;)
+                sleep(1000);
+        }
         exit(code);
         return code;
     }

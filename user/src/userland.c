@@ -68,29 +68,6 @@ int _userland u_main_hanger() {
     return 0;
 }
 
-int _userland u_main_smoke_test(int argc, char const *argv[]) {
-    prints("Init userland smoke test!\n");
-    char *sh_args[] = {"sh", "/home/smoke-test.sh"};
-    uint32_t pid = fork();
-    if (pid == -1) {
-        prints("ERROR: fork!\n");
-    } else if (pid == 0) { // child
-        uint32_t code = execv("sh", (char const**)sh_args);
-        // normally exec doesn't return, but if it did, it's an error:
-        prints("ERROR: execv\n");
-        exit(code);
-    } else { // parent
-        wait();
-    }
-
-    // any trailing arg will cause it to exit and not hang forever
-    if (argc > 1) {
-        exit(0);
-    }
-    for (;;)
-        ;
-}
-
 char ps_header_fmt[] _user_rodata = "PID  STATE  NAME\n";
 char ps_process_info_fmt[] _user_rodata = "%d    %c      %s\n";
 char ps_dash_s_flag[] _user_rodata = "-s";

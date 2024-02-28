@@ -225,22 +225,22 @@ $(OUT)/test-output-virt.txt: $(OUT)/os_virt
 	@echo "OK"
 
 $(OUT)/smoke-test-output-u32.txt: $(OUT)/os_sifive_u32
-	@$(QEMU_LAUNCHER) --bootargs smoke-test --timeout=5s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs test-script=/home/smoke-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-u32.txt $@
 	@echo "OK"
 
 $(OUT)/smoke-test-output-u64.txt: $(OUT)/os_sifive_u
-	@$(QEMU_LAUNCHER) --bootargs smoke-test --timeout=5s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs test-script=/home/smoke-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-u64.txt $@
 	@echo "OK"
 
 $(OUT)/smoke-test-output-virt.txt: $(OUT)/os_virt
-	@$(QEMU_LAUNCHER) --bootargs smoke-test --timeout=5s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs test-script=/home/smoke-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-virt.txt $@
 	@echo "OK"
 
 $(OUT)/smoke-test-output-tiny-stack.txt: $(OUT)/os_virt
-	@$(QEMU_LAUNCHER) --bootargs tiny-stack --timeout=5s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs tiny-stack=/home/smoke-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-tiny-stack.txt $@
 	@echo "OK"
 
