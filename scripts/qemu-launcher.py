@@ -222,7 +222,7 @@ def run(args):
     if args.debug:
         write_gdb_files(binary, machine, is_32bit)
     filename = 'out/test-run-{}.log'.format(os.path.basename(args.binary))
-    with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
+    with io.open(filename, 'wb') as writer, io.open(filename, 'rb') as reader:
         p = subprocess.Popen(cmd,
                              # stdin=subprocess.PIPE,
                              stdout=writer, stderr=writer,
