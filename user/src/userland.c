@@ -409,6 +409,8 @@ int _userland u_main_test_printf(int argc, char const* argv[]) {
     return 0;
 }
 
+char fibd_print_resp_fmt[] _user_rodata = "%d, %d\n";
+
 int _userland u_main_fibd(int argc, char const* argv[]) {
     close(1); // close own stdout
     detach(); // detach from the shell
@@ -421,7 +423,7 @@ int _userland u_main_fibd(int argc, char const* argv[]) {
         fib2 = fib;
         i += 1;
         if (isopen(1)) {                // check if a client has attached a pipe to stdout
-            printf("%d, %d\n", i, fib); // if yes, write a response to it
+            printf(fibd_print_resp_fmt, i, fib); // if yes, write a response to it
             close(1);                   // and close the stdout again, so that the client can attach again
         }
         sleep(500);
@@ -474,6 +476,27 @@ int _userland u_main_fib(int argc, char const* argv[]) {
     }
     close(pipefd[0]);
     close(pipefd[1]);
+    exit(0);
+    return 0;
+}
+
+char sleep_parse_err_fmt[] _user_rodata = "ERROR: parse millis '%s': %d\n";
+
+// sleep calls the sleep() syscall and returns.
+int _userland u_main_sleep(int argc, char const* argv[]) {
+    if (argc < 2) {
+        prints("USAGE: sleep <milliseconds>\n");
+        exit(0);
+        return 0;
+    }
+    int parse_err = 0;
+    int millis = uatoi(argv[1], &parse_err);
+    if (parse_err != 0) {
+        printf(sleep_parse_err_fmt, argv[1], parse_err);
+        exit(-1);
+        return -1;
+    }
+    sleep(millis);
     exit(0);
     return 0;
 }

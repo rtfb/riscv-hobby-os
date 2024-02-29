@@ -1,0 +1,16 @@
+kinit: cpu 0
+Reading FDT...
+FDT ok
+bootargs: tiny-stack=/home/daemon-test.sh
+kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-9223372036854775807
+PID  STATE  NAME
+0    S      sh
+1    S      fibd
+2    R      ps
+8, 21
+10, 55
+Total RAM: 48
+Free RAM: 17
+Num procs: 3
+
+qemu-launcher: killing qemu due to timeout

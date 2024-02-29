@@ -33,5 +33,12 @@ jobs:
       run: make out/smoke-test-output-u32.txt
     - name: Run tiny-stack smoke tests
       run: make out/smoke-test-output-tiny-stack.txt
+    - name: Run daemon tests
+      run: make out/daemon-test-output-virt.txt
+    # Commented out for now because of a difference in output due to timing issues
+    # - name: Run u64 daemon tests
+    #   run: make out/daemon-test-output-u64.txt
+    - name: Run tiny-stack daemon tests
+      run: make out/daemon-test-output-tiny-stack.txt
     - name: Make all binaries
       run: make all
