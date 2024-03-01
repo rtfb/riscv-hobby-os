@@ -3,10 +3,10 @@ Reading FDT...
 FDT ok
 bootargs: test-script=/home/daemon-test.sh
 kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-9223372036854775807
-PID  STATE  NAME
-0    S      sh
-1    S      fibd
-2    R      ps
+ST  PID   NSCH   NAME
+S   0     2      sh
+S   1     1      fibd
+R   2     1      ps
 8, 21
 10, 55
 Total RAM: 48

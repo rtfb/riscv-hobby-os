@@ -67,6 +67,7 @@ void scheduler() {
             if (p->state == PROC_STATE_READY) {
                 p->state = PROC_STATE_RUNNING;
                 cpu.proc = p;
+                p->nscheds++;
                 // make sure ret_to_user() returns to p's userland, not to
                 // whatever happens to be inside trap_frame now:
                 copy_trap_frame(&trap_frame, &p->trap);
@@ -383,6 +384,7 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     }
     proc->ctx.regs[REG_SP] = (regsize_t)ksp + PAGE_SIZE;
     proc->ctx.regs[REG_RA] = (regsize_t)forkret;
+    proc->nscheds = 0;
 
     // sacrifice the first word of kstack_page for a sentinel that will be used
     // to detect stack overflows on the kernel side:
@@ -574,6 +576,7 @@ uint32_t proc_pinfo(uint32_t pid, pinfo_t *pinfo) {
         pinfo->pid = proc->pid;
         strncpy(pinfo->name, proc->name, 16);
         pinfo->state = proc->state;
+        pinfo->nscheds = proc->nscheds;
         if (pid != self->pid) {
             release(&proc->lock);
         }

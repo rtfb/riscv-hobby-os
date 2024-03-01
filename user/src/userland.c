@@ -68,8 +68,8 @@ int _userland u_main_hanger() {
     return 0;
 }
 
-char ps_header_fmt[] _user_rodata = "PID  STATE  NAME\n";
-char ps_process_info_fmt[] _user_rodata = "%d    %c      %s\n";
+char ps_header_fmt[] _user_rodata = "ST  PID   NSCH   NAME\n";
+char ps_process_info_fmt[] _user_rodata = "%c   %d     %d      %s\n";
 char ps_dash_s_flag[] _user_rodata = "-s";
 char ps_state_lookup_table[] _user_rodata = {
     'A', // 0, available
@@ -111,7 +111,8 @@ int _userland u_main_ps(int argc, char const *argv[]) {
             prints("ERROR: pinfo\n");
             continue;
         }
-        printf(ps_process_info_fmt, info.pid, state_to_char(info.state), info.name);
+        printf(ps_process_info_fmt, state_to_char(info.state), info.pid,
+                                    info.nscheds, info.name);
     }
     exit(0);
     return 0;

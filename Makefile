@@ -265,6 +265,9 @@ $(OUT):
 $(OUT)/os_sifive_u.s: $(OUT)/os_sifive_u
 	$(RISCV64_OBJDUMP) -D $< > $@
 
+$(OUT)/os_sifive_u32.s: $(OUT)/os_sifive_u32
+	$(RISCV64_OBJDUMP) -D $< > $@
+
 $(OUT)/os_sifive_u.rodata: $(OUT)/os_sifive_u
 	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
 

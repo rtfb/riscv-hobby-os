@@ -87,6 +87,8 @@ typedef struct process_s {
     void *chan; // pointer to an object this process is waiting on (e.g. a pipe)
 
     file_t* files[MAX_PROC_FDS];
+
+    uint64_t nscheds; // number of times the process was scheduled
 } process_t;
 
 typedef struct proc_table_s {

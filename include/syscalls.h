@@ -27,6 +27,7 @@ typedef struct pinfo_s {
     uint32_t pid;
     char name[16];
     uint32_t state;
+    uint64_t nscheds; // number of times the process was scheduled
 } pinfo_t;
 
 #define DIRENT_READABLE   (1 << 0)
