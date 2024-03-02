@@ -111,8 +111,11 @@ int _userland u_main_ps(int argc, char const *argv[]) {
             prints("ERROR: pinfo\n");
             continue;
         }
+        // truncate nscheds to 32 bits on 32-bit targets. That's because printf
+        // doesn't support 64-bit params on 32-bit hosts.
+        regsize_t nscheds = info.nscheds;
         printf(ps_process_info_fmt, state_to_char(info.state), info.pid,
-                                    info.nscheds, info.name);
+                                    nscheds, info.name);
     }
     exit(0);
     return 0;
