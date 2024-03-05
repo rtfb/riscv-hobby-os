@@ -116,7 +116,7 @@ def write_gdb_files(binary, machine, is_32bit):
             f.write(f'add-symbol-file {binary} -o 0xffffffff80000000\n')
         f.write('set disassemble-next-line auto\n')
         if is_multicore:
-            f.write('add-inferior\n')
+            f.write(f'add-inferior -exec {binary}\n')
             f.write('inferior 2\n')
             f.write('attach 2\n')
             f.write('set schedule-multiple\n')

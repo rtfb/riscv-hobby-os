@@ -60,10 +60,10 @@ _start_kernel:
 #endif
                                         // setup stack pointer:
         la      t0, stack_top           // set it at stack_top for hart0,
-        mv      t1, a0                  // at stack_top+512 for hart1, etc.
+        mv      t1, a0                  // at stack_top-512 for hart1, etc.
         li      t2, 512
         mul     t1, t1, t2
-        add     t0, t0, t1
+        sub     t0, t0, t1
         mv      sp, t0
 
         // only allow mhartid==BOOT_HART_ID to jump to the init_segments code;
@@ -318,7 +318,7 @@ set_global_stack:
 
         li      t2, 512
         mul     t1, t1, t2
-        add     t0, t0, t1
+        sub     t0, t0, t1
         mv      sp, t0
 
 stack_done:
