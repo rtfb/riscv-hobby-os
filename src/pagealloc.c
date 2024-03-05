@@ -9,8 +9,8 @@ paged_mem_t paged_memory;
 void init_paged_memory(void* paged_mem_end) {
     paged_memory.lock = 0;
     // up-align to page size to make all pages naturally aligned:
-    regsize_t mem = PAGE_ROUND_UP(&stack_top);
-    paged_memory.unclaimed_start = (regsize_t)&stack_top;
+    regsize_t mem = PAGE_ROUND_UP(&stack_top_addr);
+    paged_memory.unclaimed_start = (regsize_t)&stack_top_addr;
     paged_memory.unclaimed_end = mem;
     int i = 0;
     while (mem < (regsize_t)paged_mem_end && i < MAX_PAGES) {

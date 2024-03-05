@@ -24,7 +24,7 @@ void init_process_table(uint32_t runflags, unsigned int hart_id) {
     for (int i = 0; i < 14; i++) {
         cpu.context.regs[i] = 0;
     }
-    cpu.context.regs[REG_SP] = (regsize_t)(&stack_top - hart_id*PAGE_SIZE);
+    cpu.context.regs[REG_SP] = (regsize_t)(&stack_top_addr - hart_id*PAGE_SIZE);
 }
 
 // sleep_scheduler is called when there's nothing to schedule; this either

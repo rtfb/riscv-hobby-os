@@ -40,7 +40,7 @@ typedef struct paged_mem_s {
     page_t pages[MAX_PAGES];
     uint32_t num_pages;
 
-    // the region of unclaimed memory between stack_top and the first page
+    // the region of unclaimed memory between stack_top_addr and the first page
     regsize_t unclaimed_start;
     regsize_t unclaimed_end;
 } paged_mem_t;

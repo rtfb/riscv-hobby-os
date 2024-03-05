@@ -45,9 +45,9 @@ SECTIONS
    * bytes on RV32E, but not worth the effort.
    */
   . = ALIGN(16);
-  stack_bottom = .;
+  stack_bottom_addr = .;
   . += STACK_SIZE;
-  stack_top = .;
+  stack_top_addr = .;
 
   /* End of uninitialized data segment */
   _end = .;

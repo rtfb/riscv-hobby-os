@@ -42,11 +42,11 @@ void* init_pmp() {
     // define 4 memory address ranges for Physical Memory Protection
     // 0 :: [0 .. user_payload]
     // 1 :: [user_payload .. .rodata]
-    // 2 :: [.rodata .. stack_bottom]
-    // 3 :: [stack_bottom .. paged_mem_end]
+    // 2 :: [.rodata .. stack_bottom_addr]
+    // 3 :: [stack_bottom_addr .. paged_mem_end]
     set_pmpaddr0(&user_payload);
     set_pmpaddr1(&rodata);
-    set_pmpaddr2(&stack_bottom);
+    set_pmpaddr2(&stack_bottom_addr);
     set_pmpaddr3(paged_mem_end);
 
     // set 4 PMP entries to TOR (Top Of the address Range) addressing mode so that the associated
@@ -58,8 +58,8 @@ void* init_pmp() {
     // set access flags for 4 PMP entries:
     // 0 :: [0 .. user_payload]                      000  M-mode kernel code, no access in U-mode
     // 1 :: [user_payload .. .rodata]                X0R  user code, executable, non-modifiable in U-mode
-    // 2 :: [.rodata .. stack_bottom]                000  no access in U-mode
-    // 3 :: [stack_bottom .. paged_mem_end]          0WR  user stack, modifiable, but no executable in U-mode
+    // 2 :: [.rodata .. stack_bottom_addr]           000  no access in U-mode
+    // 3 :: [stack_bottom_addr .. paged_mem_end]     0WR  user stack, modifiable, but no executable in U-mode
     // access (R)ead, (W)rite and e(X)ecute are 1 bit flags and stored in 0:2 bits of every PMP entry
     unsigned long access_flags =   ((PMP_X | PMP_R) * PMP_1)
                                  | ((PMP_W | PMP_R) * PMP_3);
