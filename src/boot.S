@@ -117,12 +117,13 @@ clean_bss_loop:
 synchronize_harts:
         li      t0, 0                   // t0 = hart ID
         li      t1, CLINT0_BASE_ADDRESS // t1 = Core-Local Interrupt Controller base address
-        li      t5, NUM_HARTS           // t4 = NUM_HARTS
+        li      t5, NUM_HARTS           // t5 = NUM_HARTS
         li      t6, BOOT_HART_ID        // t6 = boot hart ID, so that we can skip over it
 
         // if we're running on a single-harted machine, there's nothing to sync,
         // so jump over:
-        beq     t0, t5, init
+        li      t4, 1
+        beq     t4, t5, init
 
         // Read loop: wait for MSIP=1 from each hart
 per_hart_read_loop:
