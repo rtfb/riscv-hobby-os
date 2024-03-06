@@ -77,9 +77,9 @@ comptime {
 
 pub export fn find_user_program(name: [*]const u8) callconv(.C) ?*const c.user_program_t {
     var len: c_uint = @truncate(zstr.kstrlen(name));
-    for (userland_programs) |prog| {
+    for (&userland_programs) |*prog| {
         if (c.strncmp(prog.name, name, len) == 0) {
-            return &prog;
+            return prog;
         }
     }
     return null;
@@ -107,7 +107,9 @@ pub fn assign_init_program(name: [*]const u8) void {
     };
     // XXX: reinstate USR_VIRT
     // var status = c.init_proc(p0, c.USR_VIRT(program.entry_point), program.name);
-    var status = c.init_proc(p0, 0, program.name);
+    var fp: *usize = @alignCast(@ptrCast(@constCast(program.entry_point)));
+    var ep: c_ulong = @intFromPtr(fp);
+    var status = c.init_proc(p0, ep, program.name);
     c.release(&p0.lock);
     if (status != 0) {
         // TODO: panic
