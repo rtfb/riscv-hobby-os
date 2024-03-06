@@ -171,13 +171,12 @@ $(OUT)/%.o: src/%.zig
 	$(ZIG) $< -femit-bin=$@
 
 ZIG_DEPS = \
-	$(OUT)/programs.o \
-	$(OUT)/zstr.o
+	$(OUT)/programs.o
 
 $(OUT)/os_sifive_u: ${OS_SIFIVE_U_DEPS} ${ZIG_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-g -include include/machine/qemu_u.h \
-		${OS_SIFIVE_U_DEPS} $(OUT)/zstr.o $(OUT)/programs.o -o $@
+		${OS_SIFIVE_U_DEPS} ${ZIG_DEPS} -o $@
 
 $(OUT)/os_sifive_u32: ${OS_SIFIVE_U32_DEPS}
 	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \

@@ -3,8 +3,10 @@ const c = @cImport({
     @cInclude("programs.h");
     @cInclude("runflags.h");
     @cInclude("proc.h");
+    @cInclude("string.h");
 });
 const mem = @import("std").mem;
+const zstr = @import("zstr.zig");
 
 const userland_programs = [_]c.user_program_t{
     c.user_program_t{
@@ -74,10 +76,9 @@ comptime {
 }
 
 pub export fn find_user_program(name: [*]const u8) callconv(.C) ?*const c.user_program_t {
-    var zname = mem.span(@as([*:0]u8, @ptrCast(@constCast(name))));
+    var len: c_uint = @truncate(zstr.kstrlen(name));
     for (userland_programs) |prog| {
-        var zpname = mem.span(@as([*:0]u8, @ptrCast(@constCast(prog.name))));
-        if (mem.eql(u8, zpname, zname)) {
+        if (c.strncmp(prog.name, name, len) == 0) {
             return &prog;
         }
     }
