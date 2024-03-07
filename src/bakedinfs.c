@@ -39,13 +39,25 @@ void bifs_init() {
     st->flags = BIFS_READABLE | BIFS_RAW;
     st->parent = home;
     st->name = "smoke-test.sh";
-    st->data = "sysinfo\nfmt\nhang\nsysinfo\nps\ncat /readme.txt | wc\ntestprintf\n";
+    st->data = "sysinfo\n\
+fmt\n\
+hang\n\
+sysinfo\n\
+ps\n\
+cat /readme.txt | wc\n\
+testprintf\n";
 
     bifs_file_t *dt = &bifs_all_files[4];
     dt->flags = BIFS_READABLE | BIFS_RAW;
     dt->parent = home;
     dt->name = "daemon-test.sh";
-    dt->data = "fibd\nps\nwait 1 3\nfib 1\nwait 1 1\nfib 1\nsysinfo\n";
+    dt->data = "fibd\n\
+ps\n\
+wait 1 3\n\
+fib 1\n\
+wait 1 1\n\
+fib 1\n\
+sysinfo\n";
 }
 
 int32_t bifs_open(char const *filepath, uint32_t flags, bifs_file_t **ppf) {
