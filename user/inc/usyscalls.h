@@ -18,7 +18,7 @@ extern int32_t read(uint32_t fd, char* buf, uint32_t size);
 extern int32_t write(uint32_t fd, char const* data, uint32_t size);
 extern int32_t open(char const *filepath, uint32_t flags);
 extern int32_t close(uint32_t fd);
-extern int32_t wait();
+extern int32_t wait(wait_cond_t *cond);
 extern uint32_t execv(char const* filename, char const* argv[]);
 extern uint32_t getpid();
 extern uint32_t dup(uint32_t fd);

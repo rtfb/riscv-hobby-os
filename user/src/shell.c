@@ -66,7 +66,7 @@ void _userland sh_wait_for_all_children(cmd_t *cmd_chain) {
             sleep(1);
             continue; // don't wait for a hanger
         }
-        wait();
+        wait(0);
     }
 }
 

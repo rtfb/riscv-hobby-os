@@ -44,6 +44,15 @@ typedef struct dirent_s {
     char name[MAX_FILENAME_LEN];
 } dirent_t;
 
+#define WAIT_COND_CHILD     0
+#define WAIT_COND_NSCHEDS   1
+
+typedef struct wait_cond_s {
+    uint32_t type;
+    uint32_t target_pid;
+    uint64_t want_nscheds;
+} wait_cond_t;
+
 // TODO: unify the return values of syscalls
 
 void sys_restart();

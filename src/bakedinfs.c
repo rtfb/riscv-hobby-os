@@ -45,7 +45,7 @@ void bifs_init() {
     dt->flags = BIFS_READABLE | BIFS_RAW;
     dt->parent = home;
     dt->name = "daemon-test.sh";
-    dt->data = "fibd\nps\nsleep 3000\nfib 1\nsleep 900\nfib 1\nsysinfo\n";
+    dt->data = "fibd\nps\nwait 1 3\nfib 1\nwait 1 1\nfib 1\nsysinfo\n";
 }
 
 int32_t bifs_open(char const *filepath, uint32_t flags, bifs_file_t **ppf) {

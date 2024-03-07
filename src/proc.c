@@ -68,6 +68,7 @@ void scheduler() {
                 p->state = PROC_STATE_RUNNING;
                 cpu.proc = p;
                 p->nscheds++;
+                proc_mark_for_wakeup(p);
                 // make sure ret_to_user() returns to p's userland, not to
                 // whatever happens to be inside trap_frame now:
                 copy_trap_frame(&trap_frame, &p->trap);
@@ -385,6 +386,11 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->ctx.regs[REG_SP] = (regsize_t)ksp + PAGE_SIZE;
     proc->ctx.regs[REG_RA] = (regsize_t)forkret;
     proc->nscheds = 0;
+    proc->cond = (pwake_cond_t){
+        .type = PWAKE_COND_CHAN,
+        .target_pid = -1,
+        .want_nscheds = 0,
+    };
 
     // sacrifice the first word of kstack_page for a sentinel that will be used
     // to detect stack overflows on the kernel side:
@@ -494,12 +500,37 @@ void sched() {
     swtch(&proc->ctx, &cpu.context);
 }
 
-int32_t proc_wait() {
+int32_t proc_wait(wait_cond_t *cond) {
     process_t* proc = myproc();
+    cond = va2pa(proc->upagetable, cond);
+    if (cond) {
+        pwake_cond_t pcond = (pwake_cond_t){
+            .type = cond->type,
+            .target_pid = cond->target_pid,
+            .want_nscheds = cond->want_nscheds,
+        };
+        return proc_wait_by_cond(proc, &pcond);
+    }
     int32_t chpid = check_exited_children(proc);
     if (chpid >= 0) {
         return chpid;
     }
+    return psleep(proc);
+}
+
+int32_t proc_wait_by_cond(process_t *proc, pwake_cond_t *cond) {
+    if (cond->type != PWAKE_COND_NSCHEDS) {
+        *proc->perrno = ENOSYS;
+        return -1;
+    }
+    process_t *target_proc = find_proc_by_pid(cond->target_pid);
+    if (!target_proc) {
+        *proc->perrno = ESRCH;
+        return -1;
+    }
+    proc->cond = *cond;
+    proc->cond.want_nscheds += target_proc->nscheds;
+    proc->chan = target_proc;
     return psleep(proc);
 }
 
@@ -528,12 +559,28 @@ void proc_mark_for_wakeup(void *chan) {
         process_t *p = &proc_table.procs[i];
         if (p->state == PROC_STATE_SLEEPING && p->chan == chan) {
             acquire(&p->lock);
-            p->state = PROC_STATE_READY;
-            p->chan = 0;
+            update_proc_by_chan(p, chan);
             release(&p->lock);
         }
     }
     release(&proc_table.lock);
+}
+
+void update_proc_by_chan(process_t *proc, void *chan) {
+    if (proc->cond.type == PWAKE_COND_CHAN) {
+        proc->state = PROC_STATE_READY;
+        proc->chan = 0;
+        return;
+    }
+    if (proc->cond.type == PWAKE_COND_NSCHEDS) {
+        process_t *other = (process_t*)chan;
+        pwake_cond_t *cond = &proc->cond;
+        if (cond->target_pid == other->pid && cond->want_nscheds <= other->nscheds) {
+            proc->state = PROC_STATE_READY;
+            proc->chan = 0;
+        }
+        return;
+    }
 }
 
 uint32_t proc_plist(uint32_t *pids, uint32_t size) {

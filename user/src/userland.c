@@ -64,7 +64,7 @@ int _userland u_main_sysinfo(int argc, char const* argv[]) {
 
 int _userland u_main_hanger() {
     prints("I will hang now, bye\n");
-    wait();
+    wait(0);
     return 0;
 }
 
@@ -195,7 +195,7 @@ int _userland u_main_pipe(int argc, char const *argv[]) {
     }
     close(pipefd[0]);
     close(pipefd[1]);
-    wait();                 // Wait for the first child
+    wait(0);                // Wait for the first child
     // wait();              // Wait for the other child.
                             // TODO: this deadlocks for some reason, investigate
     exit(0);
@@ -248,7 +248,7 @@ int _userland u_main_pipe2(int argc, char const *argv[]) {
             write(pipefd[1], "\n", 1);
         }
         close(pipefd[1]);       // Reader will see EOF
-        wait();                 // Wait for child
+        wait(0);                // Wait for child
         exit(0);
     }
     return 0;
@@ -484,23 +484,35 @@ int _userland u_main_fib(int argc, char const* argv[]) {
     return 0;
 }
 
-char sleep_parse_err_fmt[] _user_rodata = "ERROR: parse millis '%s': %d\n";
+char wait_parse_pid_err_fmt[] _user_rodata = "ERROR: parse pid '%s': %d\n";
+char wait_parse_nscheds_err_fmt[] _user_rodata = "ERROR: parse N schedules '%s': %d\n";
 
-// sleep calls the sleep() syscall and returns.
-int _userland u_main_sleep(int argc, char const* argv[]) {
-    if (argc < 2) {
-        prints("USAGE: sleep <milliseconds>\n");
+// wait calls the wait() syscall with specified conditions and returns.
+int _userland u_main_wait(int argc, char const* argv[]) {
+    if (argc < 3) {
+        prints("USAGE: wait <pid> <nscheds>\n");
         exit(0);
         return 0;
     }
     int parse_err = 0;
-    int millis = uatoi(argv[1], &parse_err);
+    int target_pid = uatoi(argv[1], &parse_err);
     if (parse_err != 0) {
-        printf(sleep_parse_err_fmt, argv[1], parse_err);
+        printf(wait_parse_pid_err_fmt, argv[1], parse_err);
         exit(-1);
         return -1;
     }
-    sleep(millis);
+    int want_nscheds = uatoi(argv[2], &parse_err);
+    if (parse_err != 0) {
+        printf(wait_parse_nscheds_err_fmt, argv[2], parse_err);
+        exit(-1);
+        return -1;
+    }
+    wait_cond_t cond = (wait_cond_t){
+        .type = WAIT_COND_NSCHEDS,
+        .target_pid = target_pid,
+        .want_nscheds = want_nscheds,
+    };
+    wait(&cond);
     exit(0);
     return 0;
 }

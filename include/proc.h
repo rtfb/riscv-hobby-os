@@ -43,6 +43,28 @@
 // overflow on the kernel side and we check for that upon exit from a syscall.
 #define PROC_MAGIC_STACK_SENTINEL 0xdeadf00d
 
+// PWAKE_COND_* constants are equivalent to the user-facing WAIT_COND_*
+// constants. They're made separate to provide different names specific to the
+// domains they're used in, and to allow kernel-private wait conditions if
+// needed.
+//
+// PWAKE_COND_CHAN means a straightforward wait on whatever object the
+// proc.chan field points to.
+//
+// PWAKE_COND_NSCHEDS means a wait until a target process's (specified by
+// .target_pid and pointed to by proc.chan) nscheds counter reaches
+// want_nscheds count.
+#define PWAKE_COND_CHAN     0
+#define PWAKE_COND_NSCHEDS  1
+
+// pwake_cond_t describes the conditions for the process to wake up. type
+// should be one of PWAKE_COND_* constants, other fields are type-specific.
+typedef struct pwake_cond_s {
+    uint32_t type;
+    uint32_t target_pid;
+    uint64_t want_nscheds;
+} pwake_cond_t;
+
 typedef struct trap_frame_s {
     regsize_t regs[31]; // all registers except r0
     regsize_t pc;
@@ -85,6 +107,7 @@ typedef struct process_s {
     uint64_t wakeup_time;
 
     void *chan; // pointer to an object this process is waiting on (e.g. a pipe)
+    pwake_cond_t cond;
 
     file_t* files[MAX_PROC_FDS];
 
@@ -185,6 +208,8 @@ void proc_mark_for_wakeup(void *chan);
 int should_wake_up(process_t* proc);
 
 int32_t psleep(process_t *proc);
+int32_t proc_wait_by_cond(process_t *proc, pwake_cond_t *cond);
+void update_proc_by_chan(process_t *proc, void *chan);
 
 process_t* alloc_process();
 uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name);

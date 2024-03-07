@@ -117,7 +117,8 @@ int32_t sys_close() {
 }
 
 int32_t sys_wait() {
-    return proc_wait();
+    wait_cond_t *cond = (wait_cond_t*)trap_frame.regs[REG_A0];
+    return proc_wait(cond);
 }
 
 uint32_t sys_execv() {

@@ -240,17 +240,17 @@ $(OUT)/smoke-test-output-virt.txt: $(OUT)/os_virt
 	@echo "OK"
 
 $(OUT)/daemon-test-output-virt.txt: $(OUT)/os_virt
-	@$(QEMU_LAUNCHER) --bootargs test-script=/home/daemon-test.sh --timeout=10s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs test-script=/home/daemon-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-daemon-test-output-virt.txt $@
 	@echo "OK"
 
 $(OUT)/daemon-test-output-u64.txt: $(OUT)/os_sifive_u
-	@$(QEMU_LAUNCHER) --bootargs test-script=/home/daemon-test.sh --timeout=10s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs test-script=/home/daemon-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-daemon-test-output-u64.txt $@
 	@echo "OK"
 
 $(OUT)/daemon-test-output-tiny-stack.txt: $(OUT)/os_virt
-	@$(QEMU_LAUNCHER) --bootargs tiny-stack=/home/daemon-test.sh --timeout=10s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs tiny-stack=/home/daemon-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-daemon-test-output-tiny-stack.txt $@
 	@echo "OK"
 
