@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "mem.h"
 #include "proc.h"
 #include "riscv.h"
 #include "timer.h"
@@ -22,7 +23,7 @@ void* make_kernel_page_table(page_t *pages, int num_pages) {
         panic("kernel pagetable alloc");
         return 0;
     }
-    clear_page_table(pagetable);
+    memset(pagetable, PAGE_SIZE, 0);
 
     // map kernel code as kernel-executable:
     map_range_id(pagetable, &RAM_START, &user_code_start, PERM_KCODE);
@@ -52,7 +53,7 @@ void* make_kernel_page_table(page_t *pages, int num_pages) {
 
 // init_user_page_table initializes a given pagetable for userland consumption.
 void init_user_page_table(void *pagetable, uint32_t pid) {
-    clear_page_table(pagetable);
+    memset(pagetable, PAGE_SIZE, 0);
 
     // Set a few kernel address space pages in the user pagetable. That's
     // needed because the kernel sets satp while still executing its own code,
@@ -94,7 +95,7 @@ void map_page_sv39(regsize_t *pagetable, void *phys_addr, regsize_t virt_addr, i
                 panic("pagetable subtable alloc");
                 return;
             }
-            clear_page_table(pagetable_next);
+            memset(pagetable_next, PAGE_SIZE, 0);
             pagetable[vpn_n] = PHYS_TO_PTE(pagetable_next) | PERM_NONLEAF;
             pagetable = pagetable_next;
             continue;
@@ -133,12 +134,6 @@ void map_range_id(void *pagetable, void *pa_start, void *pa_end, int perm) {
 // identity-mapping the page in kernel address space.
 void map_page_id(void *pagetable, void *pa, int perm, int pid) {
     map_page_sv39(pagetable, pa, (regsize_t)pa, perm, pid);
-}
-
-void clear_page_table(void *page) {
-    for (regsize_t *pte = (regsize_t*)page; pte != page+PAGE_SIZE; pte++) {
-        *pte = 0;
-    }
 }
 
 void free_page_table_r(regsize_t *pt, int level) {

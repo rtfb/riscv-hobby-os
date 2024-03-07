@@ -5,7 +5,6 @@
 #include "sys.h"
 
 void* make_kernel_page_table(page_t *pages, int num_pages);
-void clear_page_table(void *page);
 void init_user_page_table(void *pagetable, uint32_t pid);
 void set_kernel_pages(regsize_t *pagetable, int pid);
 void free_page_table(regsize_t *pt);

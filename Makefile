@@ -68,6 +68,7 @@ BASE_DEPS = $(BOOT) \
 	src/kernel.c \
 	src/kprintf.c \
 	src/kprintf.S \
+	src/mem.c \
 	src/pagealloc.c \
 	src/pipe.c \
 	src/plic.c \

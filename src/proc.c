@@ -1,6 +1,7 @@
 #include "drivers/uart/uart.h"
 #include "errno.h"
 #include "kernel.h"
+#include "mem.h"
 #include "pagealloc.h"
 #include "pmp.h"
 #include "proc.h"
@@ -20,10 +21,7 @@ void init_process_table(uint32_t runflags, unsigned int hart_id) {
         proc_table.procs[i].state = PROC_STATE_AVAILABLE;
     }
     init_test_processes(runflags);
-
-    for (int i = 0; i < 14; i++) {
-        cpu.context.regs[i] = 0;
-    }
+    memset(&cpu.context.regs, sizeof(cpu.context.regs), 0);
     cpu.context.regs[REG_SP] = (regsize_t)(&stack_top_addr - hart_id*PAGE_SIZE);
 }
 
@@ -374,15 +372,11 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
         - sizeof(uintptr_t) // compensate for perrno
     );
     proc->state = PROC_STATE_READY;
-    for (int i = FD_STDERR + 1; i < MAX_PROC_FDS; i++) {
-        proc->files[i] = 0;
-    }
+    memset(&proc->files, sizeof(proc->files), 0);
     proc->files[FD_STDIN] = &stdin;
     proc->files[FD_STDOUT] = &stdout;
     proc->files[FD_STDERR] = &stderr;
-    for (int i = 0; i < 14; i++) {
-        proc->ctx.regs[i] = 0;
-    }
+    memset(&proc->ctx.regs, sizeof(proc->ctx.regs), 0);
     proc->ctx.regs[REG_SP] = (regsize_t)ksp + PAGE_SIZE;
     proc->ctx.regs[REG_RA] = (regsize_t)forkret;
     proc->nscheds = 0;
