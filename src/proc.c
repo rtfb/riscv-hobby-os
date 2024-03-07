@@ -477,10 +477,8 @@ int32_t check_exited_children(process_t *proc) {
     return -1;
 }
 
-int32_t wait_or_sleep(uint64_t wakeup_time) {
-    process_t* proc = myproc();
+int32_t psleep(process_t *proc) {
     proc->state = PROC_STATE_SLEEPING;
-    proc->wakeup_time = wakeup_time;
     copy_trap_frame(&proc->trap, &trap_frame); // save trap context before sleep
     swtch(&proc->ctx, &cpu.context);
     return check_exited_children(proc);
@@ -502,20 +500,22 @@ int32_t proc_wait() {
     if (chpid >= 0) {
         return chpid;
     }
-    return wait_or_sleep(0);
+    return psleep(proc);
 }
 
 void proc_yield(void *chan) {
     process_t* proc = myproc();
     proc->chan = chan;
-    wait_or_sleep(0);
+    psleep(proc);
     copy_trap_frame(&trap_frame, &proc->trap); // restore trap context after wakeup
 }
 
 int32_t proc_sleep(uint64_t milliseconds) {
     uint64_t now = time_get_now();
     uint64_t delta = (ONE_SECOND/1000)*milliseconds;
-    return wait_or_sleep(now + delta);
+    process_t* proc = myproc();
+    proc->wakeup_time = now + delta;
+    return psleep(proc);
 }
 
 void proc_mark_for_wakeup(void *chan) {

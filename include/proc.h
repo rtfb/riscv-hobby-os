@@ -184,6 +184,8 @@ void proc_mark_for_wakeup(void *chan);
 // returns true if wakeup_time >= now.
 int should_wake_up(process_t* proc);
 
+int32_t psleep(process_t *proc);
+
 process_t* alloc_process();
 uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name);
 
