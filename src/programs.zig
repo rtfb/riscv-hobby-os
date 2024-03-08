@@ -10,77 +10,81 @@ const c = @cImport({
 const mem = @import("std").mem;
 const zstr = @import("zstr.zig");
 
+fn fp(p: *const fn (...) callconv(.C) c_int) ?*anyopaque {
+    return @ptrCast(@constCast(p));
+}
+
 const userland_programs = [_]c.user_program_t{
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_shell)),
+        .entry_point = fp(&c.u_main_shell),
         .name = "sh",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_hello1)),
+        .entry_point = fp(&c.u_main_hello1),
         .name = "hello1",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_hello2)),
+        .entry_point = fp(&c.u_main_hello2),
         .name = "hello2",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_sysinfo)),
+        .entry_point = fp(&c.u_main_sysinfo),
         .name = "sysinfo",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_fmt)),
+        .entry_point = fp(&c.u_main_fmt),
         .name = "fmt",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_hanger)),
+        .entry_point = fp(&c.u_main_hanger),
         .name = "hang",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_ps)),
+        .entry_point = fp(&c.u_main_ps),
         .name = "ps",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_cat)),
+        .entry_point = fp(&c.u_main_cat),
         .name = "cat",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_coma)),
+        .entry_point = fp(&c.u_main_coma),
         .name = "coma",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_pipe)),
+        .entry_point = fp(&c.u_main_pipe),
         .name = "pp",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_pipe2)),
+        .entry_point = fp(&c.u_main_pipe2),
         .name = "pp2",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_wc)),
+        .entry_point = fp(&c.u_main_wc),
         .name = "wc",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_gpio)),
+        .entry_point = fp(&c.u_main_gpio),
         .name = "gpio",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_iter)),
+        .entry_point = fp(&c.u_main_iter),
         .name = "iter",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_test_printf)),
+        .entry_point = fp(&c.u_main_test_printf),
         .name = "testprintf",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_fibd)),
+        .entry_point = fp(&c.u_main_fibd),
         .name = "fibd",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_fib)),
+        .entry_point = fp(&c.u_main_fib),
         .name = "fib",
     },
     c.user_program_t{
-        .entry_point = @ptrCast(@constCast(&c.u_main_wait)),
+        .entry_point = fp(&c.u_main_wait),
         .name = "wait",
     },
 };
