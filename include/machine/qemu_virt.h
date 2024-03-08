@@ -1,6 +1,8 @@
 #ifndef _QEMU_VIRT_H_
 #define _QEMU_VIRT_H_
 
+#define BOOT_HART_ID    0
+
 #include "machine/plic-qemu-virt.h"
 
 #define BOOT_MODE_M     1

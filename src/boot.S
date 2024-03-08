@@ -1,6 +1,5 @@
 #include "asm.h"
 .equ HALT_ON_EXCEPTION, 1
-.equ BOOT_HART_ID, 0
 .equ RISCV_HEADER_VERSION, 0x2
 
 .balign 4

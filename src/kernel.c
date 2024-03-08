@@ -23,7 +23,7 @@ int user_stack_size = 0;
 void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     acquire(&init_lock);
     unsigned int cpu_id = hartid;
-    if (cpu_id > 0) {
+    if (cpu_id != BOOT_HART_ID) {
         release(&init_lock);
         // TODO: support multi-core
         park_hart();

@@ -1,6 +1,8 @@
 #ifndef _D1_H_
 #define _D1_H_
 
+#define BOOT_HART_ID    0
+
 #include "machine/plic-d1.h"
 
 #define BOOT_MODE_M     0

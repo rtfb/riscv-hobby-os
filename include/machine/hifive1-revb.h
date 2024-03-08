@@ -1,6 +1,8 @@
 #ifndef _HIFIVE1_REVB_
 #define _HIFIVE1_REVB_
 
+#define BOOT_HART_ID    0
+
 #define CONFIG_LCD_ENABLED  1
 
 #include "machine/plic-common.h"

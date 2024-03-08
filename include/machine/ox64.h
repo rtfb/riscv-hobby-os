@@ -1,6 +1,8 @@
 #ifndef _OX64_H_
 #define _OX64_H_
 
+#define BOOT_HART_ID    0
+
 #include "machine/plic-ox64.h"
 
 #define BOOT_MODE_M     0
