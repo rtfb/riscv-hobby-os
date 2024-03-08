@@ -1,5 +1,7 @@
 const assert = @import("std").debug.assert;
 const c = @cImport({
+    @cInclude("machine/qemu_u.h");
+    @cInclude("kernel.h");
     @cInclude("programs.h");
     @cInclude("runflags.h");
     @cInclude("proc.h");
@@ -10,64 +12,76 @@ const zstr = @import("zstr.zig");
 
 const userland_programs = [_]c.user_program_t{
     c.user_program_t{
-        .entry_point = c.u_main_shell,
+        .entry_point = @ptrCast(@constCast(&c.u_main_shell)),
         .name = "sh",
     },
     c.user_program_t{
-        .entry_point = c.u_main_hello1,
+        .entry_point = @ptrCast(@constCast(&c.u_main_hello1)),
         .name = "hello1",
     },
     c.user_program_t{
-        .entry_point = c.u_main_hello2,
+        .entry_point = @ptrCast(@constCast(&c.u_main_hello2)),
         .name = "hello2",
     },
     c.user_program_t{
-        .entry_point = c.u_main_sysinfo,
+        .entry_point = @ptrCast(@constCast(&c.u_main_sysinfo)),
         .name = "sysinfo",
     },
     c.user_program_t{
-        .entry_point = c.u_main_fmt,
+        .entry_point = @ptrCast(@constCast(&c.u_main_fmt)),
         .name = "fmt",
     },
     c.user_program_t{
-        .entry_point = c.u_main_smoke_test,
-        .name = "smoke-test",
-    },
-    c.user_program_t{
-        .entry_point = c.u_main_hanger,
+        .entry_point = @ptrCast(@constCast(&c.u_main_hanger)),
         .name = "hang",
     },
     c.user_program_t{
-        .entry_point = c.u_main_ps,
+        .entry_point = @ptrCast(@constCast(&c.u_main_ps)),
         .name = "ps",
     },
     c.user_program_t{
-        .entry_point = c.u_main_cat,
+        .entry_point = @ptrCast(@constCast(&c.u_main_cat)),
         .name = "cat",
     },
     c.user_program_t{
-        .entry_point = c.u_main_coma,
+        .entry_point = @ptrCast(@constCast(&c.u_main_coma)),
         .name = "coma",
     },
     c.user_program_t{
-        .entry_point = c.u_main_pipe,
+        .entry_point = @ptrCast(@constCast(&c.u_main_pipe)),
         .name = "pp",
     },
     c.user_program_t{
-        .entry_point = c.u_main_pipe2,
+        .entry_point = @ptrCast(@constCast(&c.u_main_pipe2)),
         .name = "pp2",
     },
     c.user_program_t{
-        .entry_point = c.u_main_wc,
+        .entry_point = @ptrCast(@constCast(&c.u_main_wc)),
         .name = "wc",
     },
     c.user_program_t{
-        .entry_point = c.u_main_gpio,
+        .entry_point = @ptrCast(@constCast(&c.u_main_gpio)),
         .name = "gpio",
     },
     c.user_program_t{
-        .entry_point = c.u_main_iter,
+        .entry_point = @ptrCast(@constCast(&c.u_main_iter)),
         .name = "iter",
+    },
+    c.user_program_t{
+        .entry_point = @ptrCast(@constCast(&c.u_main_test_printf)),
+        .name = "testprintf",
+    },
+    c.user_program_t{
+        .entry_point = @ptrCast(@constCast(&c.u_main_fibd)),
+        .name = "fibd",
+    },
+    c.user_program_t{
+        .entry_point = @ptrCast(@constCast(&c.u_main_fib)),
+        .name = "fib",
+    },
+    c.user_program_t{
+        .entry_point = @ptrCast(@constCast(&c.u_main_wait)),
+        .name = "wait",
     },
 };
 
@@ -89,30 +103,31 @@ pub export fn init_test_processes(runflags: u32) void {
     if (runflags == c.RUNFLAGS_DRY_RUN) {
         return;
     }
-    if (runflags == c.RUNFLAGS_SMOKE_TEST) {
-        assign_init_program("smoke-test");
+    if (runflags == c.RUNFLAGS_SMOKE_TEST or runflags == c.RUNFLAGS_SMOKE_TEST) {
+        assign_init_program("sh", c.test_script);
     } else {
-        assign_init_program("sh");
+        assign_init_program("sh", null);
     }
 }
 
-pub fn assign_init_program(name: [*]const u8) void {
+pub fn assign_init_program(name: [*]const u8, opt_script: ?[*:0]const u8) void {
     var program: *const c.user_program_t = find_user_program(name) orelse {
-        // TODO: panic
+        c.panic("no init program");
         return;
     };
     var p0: *c.process_t = c.alloc_process() orelse {
-        // TODO: panic
+        c.panic("alloc p0 process");
         return;
     };
-    // XXX: reinstate USR_VIRT
-    // var status = c.init_proc(p0, c.USR_VIRT(program.entry_point), program.name);
-    var fp: *usize = @alignCast(@ptrCast(@constCast(program.entry_point)));
-    var ep: c_ulong = @intFromPtr(fp);
-    var status = c.init_proc(p0, ep, program.name);
+    var ep: c_ulong = @intFromPtr(program.entry_point);
+    var status = c.init_proc(p0, c.ZUSR_VIRT(ep), program.name);
+    if (opt_script) |script| {
+        var args = [_][*:0]const u8{ program.name, "-f", script };
+        c.inject_argv(p0, 3, @ptrCast(&args[0]));
+    }
     c.release(&p0.lock);
     if (status != 0) {
-        // TODO: panic
+        c.panic("init p0 process");
     }
     c.cpu.proc = p0;
 }

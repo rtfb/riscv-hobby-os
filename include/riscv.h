@@ -38,6 +38,7 @@
 #if CONFIG_MMU
 #define MAKE_SATP(ptr)      (PHYS_TO_PPN(ptr) | SATP_MODE_SV39)
 #define USR_VIRT(pa)        (((regsize_t)pa) & ~0xffe00000)
+#define ZUSR_VIRT(pa)       ((pa) & ~0xffe00000)
 #define TOPMOST_VIRT_PAGE                         0x1ff000
 #define USR_STK_VIRT(pa)    USR_VIRT((regsize_t)(pa) | TOPMOST_VIRT_PAGE)
 #else
