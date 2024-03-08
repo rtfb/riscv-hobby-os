@@ -1,7 +1,7 @@
 #ifndef _QEMU_U_H_
 #define _QEMU_U_H_
 
-#define BOOT_HART_ID    0
+#define BOOT_HART_ID    1
 
 #include "machine/plic-common.h"
 

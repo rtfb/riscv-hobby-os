@@ -7,7 +7,8 @@
 // Chapter 8: Core Local Interruptor (CLINT)
 // [1] https://static.dev.sifive.com/E31-RISCVCoreIP.pdf
 #define MTIME             0x200bff8
-#define MTIMECMP_BASE     0x2004000
+#define HART_OFFSET       8*BOOT_HART_ID
+#define MTIMECMP_BASE     (0x2004000 + HART_OFFSET)
 
 // Indicates that the timer is handled in M-Mode, the next timer tick is
 // incremented in M-Mode as well, and for the rest of the timer functionality a

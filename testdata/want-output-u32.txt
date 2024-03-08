@@ -1,4 +1,4 @@
-kinit: cpu 0
+kinit: cpu 1
 Reading FDT...
 FDT ok
 bootargs: dry-run
