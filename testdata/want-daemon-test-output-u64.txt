@@ -9,8 +9,8 @@ S   1     1      fibd
 R   2     1      ps
 7, 13
 9, 34
-Total RAM: 32
-Free RAM: 23
+Total RAM: 48
+Free RAM: 17
 Num procs: 3
 
 qemu-launcher: killing qemu due to timeout

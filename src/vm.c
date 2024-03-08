@@ -108,7 +108,7 @@ void map_page_sv39(regsize_t *pagetable, void *phys_addr, regsize_t virt_addr, i
         //     // TODO: panic - should never remap?
         //     return;
         // }
-        pagetable[vpn_n] = PHYS_TO_PTE(phys_addr) | perm | PTE_V;
+        pagetable[vpn_n] = PHYS_TO_PTE(phys_addr) | perm | PTE_A | PTE_D | PTE_V;
         break;
     }
 }

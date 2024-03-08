@@ -91,13 +91,19 @@ BASE_DEPS = $(BOOT) \
 	user/src/usyscalls.S
 
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
-OS_SIFIVE_U_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_SIFIVE_U_DEPS = $(BASE_DEPS) \
+	src/drivers/uart/uart-generic.c \
+	src/timer.c \
+	src/vm.c
+OS_SIFIVE_U32_DEPS = $(BASE_DEPS) \
+	src/drivers/uart/uart-generic.c \
+	src/timer.c \
+	src/vm.c
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
 OS_SIFIVE_E_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
 OS_SIFIVE_E32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
-OS_SIFIVE_U32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_VIRT_DEPS = $(TEST_DEPS)
 OS_VIRT_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-ns16550a.c \

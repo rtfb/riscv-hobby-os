@@ -6,7 +6,10 @@
 #define BOOT_MODE_M     1
 #define HAS_S_MODE      1
 
-#define PAGE_SIZE       512 // bytes
+// we don't support Sv32, so exclude 32-bit sifive_u
+#define CONFIG_MMU      (__riscv_xlen != 32)
+
+#define PAGE_SIZE       4096 // bytes
 
 // Irrelevant on qemu.
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0
