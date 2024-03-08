@@ -3,8 +3,6 @@
 
 #define BOOT_HART_ID    0
 
-#include "machine/plic-ox64.h"
-
 #define BOOT_MODE_M     0
 #define HAS_S_MODE      1
 
@@ -36,5 +34,7 @@
 #define CLINT0_BASE_ADDRESS   0xe4000000
 
 #define NUM_HARTS   1
+
+#include "machine/plic-ox64.h"
 
 #endif // ifndef _OX64_H_

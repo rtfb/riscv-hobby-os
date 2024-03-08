@@ -3,8 +3,6 @@
 
 #define BOOT_HART_ID    0
 
-#include "machine/plic-d1.h"
-
 #define BOOT_MODE_M     0
 #define HAS_S_MODE      1
 
@@ -24,5 +22,7 @@
 #define CLINT0_BASE_ADDRESS   0x14000000
 
 #define NUM_HARTS   1
+
+#include "machine/plic-d1.h"
 
 #endif // ifndef _D1_H_

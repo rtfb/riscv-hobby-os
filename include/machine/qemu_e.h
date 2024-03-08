@@ -3,8 +3,6 @@
 
 #define BOOT_HART_ID    0
 
-#include "machine/plic-common.h"
-
 #define BOOT_MODE_M     1
 #define HAS_S_MODE      0
 
@@ -32,5 +30,7 @@
 #define CLINT0_BASE_ADDRESS   0x2000000
 
 #define NUM_HARTS   1
+
+#include "machine/plic-common.h"
 
 #endif // ifndef _QEMU_E_H_

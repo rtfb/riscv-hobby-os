@@ -3,10 +3,8 @@
 
 #define BOOT_HART_ID    1
 
-#include "machine/plic-common.h"
-
 #define BOOT_MODE_M     1
-#define HAS_S_MODE      0
+#define HAS_S_MODE      1
 
 #define PAGE_SIZE       512 // bytes
 
@@ -30,5 +28,7 @@
 #define CLINT0_BASE_ADDRESS   0x2000000
 
 #define NUM_HARTS   2
+
+#include "machine/plic-common.h"
 
 #endif // ifndef _QEMU_U_H_
