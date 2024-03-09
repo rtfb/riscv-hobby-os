@@ -77,6 +77,7 @@ uint32_t sys_gpio();
 uint32_t sys_detach();
 int32_t sys_isopen();
 uint32_t sys_pipeattch();
+uint32_t sys_lsdir();
 
 // These are implemented in assembler as of now:
 extern void poweroff();

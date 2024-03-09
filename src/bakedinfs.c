@@ -60,26 +60,43 @@ fib 1\n\
 sysinfo\n";
 }
 
+int32_t bifs_opendirpath(bifs_directory_t **dir, char const *path, int end) {
+    int prev_slash_pos = 0;
+    int slash_pos = next_slash(path, prev_slash_pos + 1);
+    *dir = bifs_root;
+    while (path[slash_pos] && slash_pos < end) {
+        *dir = bifs_opendir(*dir, path, prev_slash_pos + 1, slash_pos);
+        if (!*dir) {
+            return -ENOENT;
+        }
+        prev_slash_pos = slash_pos;
+        slash_pos = next_slash(path, slash_pos + 1);
+    }
+    if (path[slash_pos-1] != '/' && slash_pos <= end) {
+        *dir = bifs_opendir(*dir, path, prev_slash_pos + 1, slash_pos);
+        if (!*dir) {
+            return -ENOENT;
+        }
+    }
+    return 0;
+}
+
 int32_t bifs_open(char const *filepath, uint32_t flags, bifs_file_t **ppf) {
     if (*filepath != '/') {
         return -ENOSYS;
     }
-    int prev_slash_pos = 0;
-    int slash_pos = next_slash(filepath, prev_slash_pos + 1);
-    bifs_directory_t *dir = bifs_root;
-    while (filepath[slash_pos]) {
-        dir = bifs_opendir(dir, filepath, prev_slash_pos + 1, slash_pos);
-        if (!dir) {
-            return -ENOENT;
-        }
-        prev_slash_pos = slash_pos;
-        slash_pos = next_slash(filepath, slash_pos + 1);
+    int last_slash_pos = 0;
+    int zero_pos = 0;
+    while (filepath[zero_pos] != '\0') {
+        last_slash_pos = zero_pos;
+        zero_pos = next_slash(filepath, last_slash_pos + 1);
     }
-    // by now, dir contains the directory we're interested in, and
-    // filepath[prev_slash_pos+1..slash_pos] contains the file element. Unless
-    // its a rooted path which ends in a directory, which I don't want to think
-    // about yet
-    return bifs_openfile(dir, filepath, prev_slash_pos + 1, slash_pos, ppf);
+    bifs_directory_t *dir;
+    int32_t status = bifs_opendirpath(&dir, filepath, last_slash_pos);
+    if (status != 0) {
+        return status;
+    }
+    return bifs_openfile(dir, filepath, last_slash_pos + 1, zero_pos, ppf);
 }
 
 int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size) {

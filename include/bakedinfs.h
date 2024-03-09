@@ -33,12 +33,13 @@ int32_t bifs_read(file_t *f, uint32_t pos, void *buf, uint32_t size);
 int32_t bifs_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes);
 int32_t bifs_open(char const *filepath, uint32_t flags, bifs_file_t **ppf);
 
+int32_t bifs_opendirpath(bifs_directory_t **dir, char const *path, int end);
 bifs_directory_t* bifs_opendir(bifs_directory_t *parent, char const *name, int start, int end);
 int32_t bifs_openfile(bifs_directory_t *parent, char const *name, int start, int end, bifs_file_t **ppf);
 
 // next_slash starts looking at path[pos] and keeps going until it finds a slash
-// symbol ('/'), it then returns its index. If no slash is present, pos will
-// point to the terminating zero.
+// symbol ('/'), it then returns its index. If no slash is present, an index of
+// the terminating zero is returned
 int next_slash(char const *path, int pos);
 
 #endif // ifndef _BAKEDINFS_H_

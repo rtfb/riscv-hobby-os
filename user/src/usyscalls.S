@@ -111,3 +111,8 @@ isopen:
 pipeattch:
         macro_syscall SYS_NR_pipeattch
         ret
+
+.globl lsdir
+lsdir:
+        macro_syscall SYS_NR_lsdir
+        ret

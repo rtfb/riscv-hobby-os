@@ -34,5 +34,6 @@ extern int u_main_test_printf();
 extern int u_main_fibd();
 extern int u_main_fib();
 extern int u_main_wait();
+extern int u_main_ls();
 
 #endif // ifndef _PROGRAMS_H_

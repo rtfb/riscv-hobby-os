@@ -1,3 +1,4 @@
+#include "bakedinfs.h"
 #include "drivers/uart/uart.h"
 #include "errno.h"
 #include "kernel.h"
@@ -827,4 +828,50 @@ uint32_t proc_pipeattch(uint32_t pid, int32_t src_fd) {
 int32_t proc_isopen(int32_t fd) {
     process_t *proc = myproc();
     return proc->files[fd] != 0;
+}
+
+uint32_t proc_lsdir(char const *dir, dirent_t *dirents, regsize_t size) {
+    process_t *proc = myproc();
+    dir = va2pa(proc->upagetable, (void*)dir);
+    dirents = va2pa(proc->upagetable, dirents);
+    bifs_directory_t *parent;
+    int32_t status = bifs_opendirpath(&parent, dir, kstrlen(dir));
+    if (status != 0) {
+        *proc->perrno = -status;
+        return -1;
+    }
+    if (!parent) {
+        *proc->perrno = ENOENT;
+        return -1;
+    }
+    int de_index = 0;
+    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+        if (de_index >= size) {
+            *proc->perrno = ENOBUFS;
+            return -2;
+        }
+        bifs_directory_t *d = &bifs_all_directories[i];
+        if (d->parent != parent) {
+            continue;
+        }
+        dirent_t *de = &dirents[de_index];
+        de->flags = DIRENT_DIRECTORY;
+        strncpy(de->name, d->name, MAX_FILENAME_LEN);
+        de_index++;
+    }
+    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+        if (de_index >= size) {
+            *proc->perrno = ENOBUFS;
+            return -2;
+        }
+        bifs_file_t *f = &bifs_all_files[i];
+        if (f->parent != parent) {
+            continue;
+        }
+        dirent_t *de = &dirents[de_index];
+        de->flags = 0;
+        strncpy(de->name, f->name, MAX_FILENAME_LEN);
+        de_index++;
+    }
+    return de_index;
 }

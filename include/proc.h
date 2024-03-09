@@ -253,6 +253,8 @@ int32_t proc_write(uint32_t fd, void *buf, uint32_t nbytes);
 // incremented.
 int32_t proc_dup(uint32_t fd);
 
+uint32_t proc_lsdir(char const *dir, dirent_t *dirents, regsize_t size);
+
 void* proc_pgalloc();
 void proc_pgfree(void *page);
 

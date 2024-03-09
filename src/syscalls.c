@@ -37,6 +37,7 @@ void *syscall_vector[] _text = {
     [SYS_NR_detach]    sys_detach,
     [SYS_NR_isopen]    sys_isopen,
     [SYS_NR_pipeattch] sys_pipeattch,
+    [SYS_NR_lsdir]     sys_lsdir,
 };
 
 void syscall(regsize_t kernel_sp) {
@@ -207,4 +208,11 @@ uint32_t sys_pipeattch() {
     uint32_t pid = (uint32_t)trap_frame.regs[REG_A0];
     int32_t src_fd = (int32_t)trap_frame.regs[REG_A1];
     return proc_pipeattch(pid, src_fd);
+}
+
+uint32_t sys_lsdir() {
+    char const *dir = (char const*)trap_frame.regs[REG_A0];
+    dirent_t *dirents = (dirent_t*)trap_frame.regs[REG_A1];
+    regsize_t size = trap_frame.regs[REG_A2];
+    return proc_lsdir(dir, dirents, size);
 }

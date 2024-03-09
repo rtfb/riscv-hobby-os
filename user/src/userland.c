@@ -516,3 +516,36 @@ int _userland u_main_wait(int argc, char const* argv[]) {
     exit(0);
     return 0;
 }
+
+char lsdir_err_fmt[] _user_rodata = "ERROR: lsdir status=%d, errno=%d\n";
+char list_directory_fmt[] _user_rodata = "<%s>\n";
+char list_executable_fmt[] _user_rodata = "*%s\n";
+
+int _userland u_main_ls(int argc, char const* argv[]) {
+    dirent_t *dirents = (dirent_t*)pgalloc();
+    int num_dirents = PAGE_SIZE / sizeof(dirent_t);
+    char const *wd = "/";
+    if (argc > 1) {
+        wd = argv[1];
+    }
+    int status = lsdir(wd, dirents, num_dirents);
+    if (status < 0 ) {
+        printf(lsdir_err_fmt, status, errno);
+        exit(-1);
+        return -1;
+    }
+    for (int i = 0; i < status; i++) {
+        dirent_t *de = &dirents[i];
+        if (de->flags & DIRENT_DIRECTORY) {
+            printf(list_directory_fmt, de->name);
+        } else if (de->flags & DIRENT_EXECUTABLE) {
+            printf(list_executable_fmt, de->name);
+        } else {
+            prints(de->name);
+            prints("\n");
+        }
+    }
+    pgfree(dirents);
+    exit(0);
+    return 0;
+}
