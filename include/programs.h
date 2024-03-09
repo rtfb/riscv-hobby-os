@@ -15,4 +15,24 @@ extern user_program_t userland_programs[MAX_USERLAND_PROGS];
 user_program_t* find_user_program(char const *name);
 void assign_init_program(char const* prog, char const *test_script);
 
+// defined in userland.c:
+extern int u_main_shell();
+extern int u_main_hello1();
+extern int u_main_hello2();
+extern int u_main_sysinfo();
+extern int u_main_fmt();
+extern int u_main_hanger();
+extern int u_main_ps();
+extern int u_main_cat();
+extern int u_main_coma();
+extern int u_main_pipe();
+extern int u_main_pipe2();
+extern int u_main_wc();
+extern int u_main_gpio();
+extern int u_main_iter();
+extern int u_main_test_printf();
+extern int u_main_fibd();
+extern int u_main_fib();
+extern int u_main_wait();
+
 #endif // ifndef _PROGRAMS_H_
