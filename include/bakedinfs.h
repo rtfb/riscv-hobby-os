@@ -45,6 +45,7 @@ int32_t bin_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size);
 
 bifs_directory_t* bifs_allocate_dir();
 bifs_file_t* bifs_allocate_file();
+bifs_directory_t *bifs_mkdir(char const *parent_path, char const *name);
 
 // next_slash starts looking at path[pos] and keeps going until it finds a slash
 // symbol ('/'), it then returns its index. If no slash is present, an index of

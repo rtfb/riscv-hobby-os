@@ -393,14 +393,14 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->magic = (uint32_t*)proc->kstack_page;
     *proc->magic = PROC_MAGIC_STACK_SENTINEL;
 
-    bifs_directory_t *procfs_dir = bifs_allocate_dir();
+    int status = itoa(proc->piddir, MAX_FILENAME_LEN, proc->pid);
+    if (status == 0) {
+        return ENOBUFS;
+    }
+    bifs_directory_t *procfs_dir = bifs_mkdir("/proc", proc->piddir);
     if (!procfs_dir) {
         return ENFILE;
     }
-    proc->piddir[0] = proc->pid + '0'; // XXX: sprintf properly
-    proc->piddir[1] = 0;
-    procfs_dir->name = proc->piddir;
-    procfs_dir->parent = &bifs_all_directories[1]; // XXX: unhardcode
     proc->procfs_dir = procfs_dir;
     bifs_file_t *procfs_name_file = bifs_allocate_file();
     if (!procfs_name_file) {

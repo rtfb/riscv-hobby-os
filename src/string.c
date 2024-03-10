@@ -54,3 +54,27 @@ int kstrlen(char const *s) {
     while (*s++) i++;
     return i;
 }
+
+// itoa() converts a given integer num to its string representation. Returns
+// the length of the string if successful, zero otherwise.
+//
+// Only supports unsigned integers for now.
+int itoa(char *buf, int size, uint32_t num) {
+    uint32_t orig_num = num;
+    int need_size = 0;
+    do {
+        need_size++;
+        num /= 10;
+    } while (num > 0);
+    if (need_size > size) {
+        return 0;
+    }
+    int i = need_size;
+    buf[i] = 0;
+    do {
+        i--;
+        buf[i] = (orig_num % 10) + '0';
+        orig_num /= 10;
+    } while (orig_num > 0);
+    return need_size;
+}
