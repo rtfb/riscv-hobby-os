@@ -294,6 +294,7 @@ uint32_t proc_execv(char const* filename, char const* argv[]) {
     proc->trap.regs[REG_A0] = argc;
     proc->trap.regs[REG_A1] = USR_STK_VIRT(sp_argv.new_argv);
     copy_trap_frame(&trap_frame, &proc->trap);
+    proc->procfs_name_file->data = (char*)program->name;
     release(&proc->lock);
     // syscall() assigns whatever we return here to a0, the register that
     // contains the return value. But in case of exec, we don't really return
@@ -392,6 +393,28 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->magic = (uint32_t*)proc->kstack_page;
     *proc->magic = PROC_MAGIC_STACK_SENTINEL;
 
+    bifs_directory_t *procfs_dir = bifs_allocate_dir();
+    if (!procfs_dir) {
+        return ENFILE;
+    }
+    proc->piddir[0] = proc->pid + '0'; // XXX: sprintf properly
+    proc->piddir[1] = 0;
+    procfs_dir->name = proc->piddir;
+    procfs_dir->parent = &bifs_all_directories[1]; // XXX: unhardcode
+    proc->procfs_dir = procfs_dir;
+    bifs_file_t *procfs_name_file = bifs_allocate_file();
+    if (!procfs_name_file) {
+        return ENFILE;
+    }
+    procfs_name_file->parent = procfs_dir;
+    procfs_name_file->flags = BIFS_READABLE | BIFS_RAW;
+    procfs_name_file->name = "name";
+    procfs_name_file->data = "";
+    if (name) {
+        procfs_name_file->data = (char*)name;
+    }
+    proc->procfs_name_file = procfs_name_file;
+
     acquire(&proc_table.lock);
     proc_table.num_procs++;
     release(&proc_table.lock);
@@ -450,6 +473,9 @@ void proc_exit() {
             fs_free_file(pf);
         }
     }
+
+    proc->procfs_dir->flags = 0;
+    proc->procfs_name_file->flags = 0;
 
     acquire(&proc_table.lock);
     proc_table.num_procs--;

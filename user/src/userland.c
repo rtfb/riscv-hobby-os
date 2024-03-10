@@ -127,7 +127,13 @@ int _userland u_main_cat(int argc, char const *argv[]) {
     if (argc < 2) {
         exit(0);
     }
-    uint32_t fd = open(argv[1], 0);
+    int append_newline = 0;
+    int file_index = 1;
+    if (argv[1][0] == '-' && argv[1][1] == 'n') {
+        append_newline = 1;
+        file_index++;
+    }
+    uint32_t fd = open(argv[file_index], 0);
     if (fd == -1) {
         printf(err_fmt, errno);
         exit(-1);
@@ -143,6 +149,9 @@ int _userland u_main_cat(int argc, char const *argv[]) {
     if (nwrit == -1) {
         prints("ERROR: write=-1\n");
         exit(-1);
+    }
+    if (append_newline) {
+        prints("\n");
     }
     close(fd);
     exit(0);

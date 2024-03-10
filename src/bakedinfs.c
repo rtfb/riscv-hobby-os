@@ -1,5 +1,6 @@
 #include "bakedinfs.h"
 #include "errno.h"
+#include "mem.h"
 #include "programs.h"
 #include "string.h"
 
@@ -8,19 +9,27 @@ bifs_directory_t bifs_all_directories[BIFS_MAX_FILES];
 bifs_file_t      bifs_all_files[BIFS_MAX_FILES];
 
 void bifs_init() {
+    memset(bifs_all_directories, sizeof(bifs_all_directories), 0);
+    memset(bifs_all_files, sizeof(bifs_all_files), 0);
     bifs_root = &bifs_all_directories[0];
     bifs_root->flags = BIFS_READABLE;
     bifs_root->name = "/";
     bifs_root->parent = 0;
     bifs_root->lsdir = bifs_lsdir;
 
-    bifs_directory_t *home = &bifs_all_directories[1];
+    bifs_directory_t *procfs = &bifs_all_directories[1];
+    procfs->flags = BIFS_READABLE;
+    procfs->name = "proc";
+    procfs->parent = bifs_root;
+    procfs->lsdir = bifs_lsdir;
+
+    bifs_directory_t *home = &bifs_all_directories[2];
     home->flags = BIFS_READABLE;
     home->name = "home";
     home->parent = bifs_root;
     home->lsdir = bifs_lsdir;
 
-    bifs_directory_t *bin = &bifs_all_directories[2];
+    bifs_directory_t *bin = &bifs_all_directories[3];
     bin->flags = BIFS_READABLE;
     bin->name = "bin";
     bin->parent = bifs_root;
@@ -75,7 +84,32 @@ sysinfo\n";
     lt->data = "ls\n\
 ls /home\n\
 ls /home/\n\
-ls /bin\n";
+ls /bin\n\
+ls /proc\n\
+cat -n /proc/0/name";
+}
+
+bifs_directory_t* bifs_allocate_dir() {
+    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+        bifs_directory_t *d = &bifs_all_directories[i];
+        if (d->flags == 0) {
+            d->flags = BIFS_READABLE;
+            d->lsdir = bifs_lsdir;
+            return d;
+        }
+    }
+    return 0;
+}
+
+bifs_file_t* bifs_allocate_file() {
+    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+        bifs_file_t *f = &bifs_all_files[i];
+        if (f->flags == 0) {
+            f->flags = BIFS_READABLE;
+            return f;
+        }
+    }
+    return 0;
 }
 
 int32_t bifs_opendirpath(bifs_directory_t **dir, char const *path, int end) {

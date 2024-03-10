@@ -1,11 +1,12 @@
 #ifndef _PROC_H_
 #define _PROC_H_
 
+#include "bakedinfs.h"
+#include "fs.h"
 #include "riscv.h"
-#include "sys.h"
 #include "spinlock.h"
 #include "syscalls.h"
-#include "fs.h"
+#include "sys.h"
 
 #define MAX_PROCS 8
 
@@ -110,6 +111,11 @@ typedef struct process_s {
     pwake_cond_t cond;
 
     file_t* files[MAX_PROC_FDS];
+
+    // procfs-related stuff
+    bifs_directory_t *procfs_dir;
+    char piddir[MAX_FILENAME_LEN];
+    bifs_file_t *procfs_name_file;
 
     uint64_t nscheds; // number of times the process was scheduled
 } process_t;

@@ -57,9 +57,9 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     if (!running_tests) {
         do_page_report(paged_mem_end);
     }
+    fs_init();
     init_process_table(runflags, hartid);
     init_pipes();
-    fs_init();
     release(&init_lock);
     scheduler(); // done init'ing, now run the scheduler, forever
 }

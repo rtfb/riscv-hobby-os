@@ -3,6 +3,7 @@ Reading FDT...
 FDT ok
 bootargs: test-script=/home/ls-test.sh
 kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-9223372036854775807
+<proc>
 <home>
 <bin>
 readme.txt
@@ -34,5 +35,8 @@ ls-test.sh
 *fib
 *wait
 *ls
+<0>
+<5>
+sh
 
 qemu-launcher: killing qemu due to timeout
