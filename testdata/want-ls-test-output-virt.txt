@@ -4,6 +4,7 @@ FDT ok
 bootargs: test-script=/home/ls-test.sh
 kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-9223372036854775807
 <home>
+<bin>
 readme.txt
 file
 read.me
@@ -14,5 +15,24 @@ read.me
 smoke-test.sh
 daemon-test.sh
 ls-test.sh
+*sh
+*hello1
+*hello2
+*sysinfo
+*fmt
+*hang
+*ps
+*cat
+*coma
+*pp
+*pp2
+*wc
+*gpio
+*iter
+*testprintf
+*fibd
+*fib
+*wait
+*ls
 
 qemu-launcher: killing qemu due to timeout

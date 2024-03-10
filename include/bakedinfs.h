@@ -1,8 +1,9 @@
 #ifndef _BAKEDINFS_H_
 #define _BAKEDINFS_H_
 
-#include "sys.h"
 #include "fs.h"
+#include "sys.h"
+#include "syscalls.h"
 
 #define BIFS_MAX_FILES 32
 
@@ -15,6 +16,8 @@ typedef struct bifs_directory_s {
     uint32_t flags; // BIFS_*
     char *name;
     struct bifs_directory_s *parent;
+
+    int32_t (*lsdir)(struct bifs_directory_s *dir, dirent_t *dirents, regsize_t size);
 } bifs_directory_t;
 
 typedef struct bifs_file_s {
@@ -36,6 +39,9 @@ int32_t bifs_open(char const *filepath, uint32_t flags, bifs_file_t **ppf);
 int32_t bifs_opendirpath(bifs_directory_t **dir, char const *path, int end);
 bifs_directory_t* bifs_opendir(bifs_directory_t *parent, char const *name, int start, int end);
 int32_t bifs_openfile(bifs_directory_t *parent, char const *name, int start, int end, bifs_file_t **ppf);
+
+int32_t bifs_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size);
+int32_t bin_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size);
 
 // next_slash starts looking at path[pos] and keeps going until it finds a slash
 // symbol ('/'), it then returns its index. If no slash is present, an index of

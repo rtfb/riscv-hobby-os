@@ -1,5 +1,6 @@
 #include "bakedinfs.h"
 #include "errno.h"
+#include "programs.h"
 #include "string.h"
 
 bifs_directory_t *bifs_root;
@@ -11,11 +12,19 @@ void bifs_init() {
     bifs_root->flags = BIFS_READABLE;
     bifs_root->name = "/";
     bifs_root->parent = 0;
+    bifs_root->lsdir = bifs_lsdir;
 
     bifs_directory_t *home = &bifs_all_directories[1];
     home->flags = BIFS_READABLE;
     home->name = "home";
     home->parent = bifs_root;
+    home->lsdir = bifs_lsdir;
+
+    bifs_directory_t *bin = &bifs_all_directories[2];
+    bin->flags = BIFS_READABLE;
+    bin->name = "bin";
+    bin->parent = bifs_root;
+    bin->lsdir = bin_lsdir;
 
     bifs_file_t *f0 = &bifs_all_files[0];
     f0->flags = BIFS_READABLE | BIFS_RAW;
@@ -65,7 +74,8 @@ sysinfo\n";
     lt->name = "ls-test.sh";
     lt->data = "ls\n\
 ls /home\n\
-ls /home/\n";
+ls /home/\n\
+ls /bin\n";
 }
 
 int32_t bifs_opendirpath(bifs_directory_t **dir, char const *path, int end) {
@@ -167,4 +177,53 @@ int32_t bifs_openfile(bifs_directory_t *parent, char const *name, int start, int
         }
     }
     return -ENOENT;
+}
+
+int32_t bifs_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size) {
+    int de_index = 0;
+    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+        if (de_index >= size) {
+            return -ENOBUFS;
+        }
+        bifs_directory_t *d = &bifs_all_directories[i];
+        if (d->parent != dir) {
+            continue;
+        }
+        dirent_t *de = &dirents[de_index];
+        de->flags = DIRENT_DIRECTORY;
+        strncpy(de->name, d->name, MAX_FILENAME_LEN);
+        de_index++;
+    }
+    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+        if (de_index >= size) {
+            return -ENOBUFS;
+        }
+        bifs_file_t *f = &bifs_all_files[i];
+        if (f->parent != dir) {
+            continue;
+        }
+        dirent_t *de = &dirents[de_index];
+        de->flags = 0;
+        strncpy(de->name, f->name, MAX_FILENAME_LEN);
+        de_index++;
+    }
+    return de_index;
+}
+
+int32_t bin_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size) {
+    int de_index = 0;
+    for (int i = 0; i < MAX_USERLAND_PROGS; i++) {
+        if (de_index >= size) {
+            return -ENOBUFS;
+        }
+        user_program_t *p = &userland_programs[i];
+        if (!p->entry_point) {
+            continue;
+        }
+        dirent_t *de = &dirents[de_index];
+        de->flags = DIRENT_EXECUTABLE;
+        strncpy(de->name, p->name, MAX_FILENAME_LEN);
+        de_index++;
+    }
+    return de_index;
 }

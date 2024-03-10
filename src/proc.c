@@ -844,34 +844,10 @@ uint32_t proc_lsdir(char const *dir, dirent_t *dirents, regsize_t size) {
         *proc->perrno = ENOENT;
         return -1;
     }
-    int de_index = 0;
-    for (int i = 0; i < BIFS_MAX_FILES; i++) {
-        if (de_index >= size) {
-            *proc->perrno = ENOBUFS;
-            return -2;
-        }
-        bifs_directory_t *d = &bifs_all_directories[i];
-        if (d->parent != parent) {
-            continue;
-        }
-        dirent_t *de = &dirents[de_index];
-        de->flags = DIRENT_DIRECTORY;
-        strncpy(de->name, d->name, MAX_FILENAME_LEN);
-        de_index++;
+    status = parent->lsdir(parent, dirents, size);
+    if (status < 0) {
+        *proc->perrno = -status;
+        return -1;
     }
-    for (int i = 0; i < BIFS_MAX_FILES; i++) {
-        if (de_index >= size) {
-            *proc->perrno = ENOBUFS;
-            return -2;
-        }
-        bifs_file_t *f = &bifs_all_files[i];
-        if (f->parent != parent) {
-            continue;
-        }
-        dirent_t *de = &dirents[de_index];
-        de->flags = 0;
-        strncpy(de->name, f->name, MAX_FILENAME_LEN);
-        de_index++;
-    }
-    return de_index;
+    return status;
 }
