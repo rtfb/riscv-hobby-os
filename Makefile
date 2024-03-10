@@ -53,12 +53,14 @@ all: $(BINS)
 # boot.S has to go first in the list of dependencies so that the _start
 # function is the very first thing in the .text section. Keeping it in a
 # separate variable to prevent an occasional re-sorting of source files from
-# moving it down the list.
-BOOT = src/boot.S
+# moving it down the list. Let's keep context.S second in order to be compiled
+# somewhere very low in the address space in order to fit in the trampoline
+# page.
+BOOT = src/boot.S \
+	src/context.S
 BASE_DEPS = $(BOOT) \
 	src/bakedinfs.c \
 	src/baremetal-poweroff.S \
-	src/context.S \
 	src/drivers/drivers.c \
 	src/drivers/hd44780/hd44780.c \
 	src/drivers/uart/uart.c \
