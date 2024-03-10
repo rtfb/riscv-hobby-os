@@ -263,6 +263,11 @@ $(OUT)/daemon-test-output-tiny-stack.txt: $(OUT)/os_virt
 	@diff -u testdata/want-daemon-test-output-tiny-stack.txt $@
 	@echo "OK"
 
+$(OUT)/ls-test-output-virt.txt: $(OUT)/os_virt
+	@$(QEMU_LAUNCHER) --bootargs test-script=/home/ls-test.sh --timeout=5s --binary=$< > $@
+	@diff -u testdata/want-ls-test-output-virt.txt $@
+	@echo "OK"
+
 $(OUT)/smoke-test-output-tiny-stack.txt: $(OUT)/os_virt
 	@$(QEMU_LAUNCHER) --bootargs tiny-stack=/home/smoke-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-smoke-test-output-tiny-stack.txt $@

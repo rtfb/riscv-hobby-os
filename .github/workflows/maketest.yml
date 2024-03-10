@@ -39,5 +39,7 @@ jobs:
       run: make out/daemon-test-output-u64.txt
     - name: Run tiny-stack daemon tests
       run: make out/daemon-test-output-tiny-stack.txt
+    - name: Run ls tests
+      run: make out/ls-test-output-virt.txt
     - name: Make all binaries
       run: make all

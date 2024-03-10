@@ -1,0 +1,18 @@
+kinit: cpu 0
+Reading FDT...
+FDT ok
+bootargs: test-script=/home/ls-test.sh
+kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-9223372036854775807
+<home>
+readme.txt
+file
+read.me
+smoke-test.sh
+daemon-test.sh
+ls-test.sh
+read.me
+smoke-test.sh
+daemon-test.sh
+ls-test.sh
+
+qemu-launcher: killing qemu due to timeout

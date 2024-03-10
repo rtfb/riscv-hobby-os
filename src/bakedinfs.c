@@ -58,6 +58,14 @@ fib 1\n\
 wait 1 1\n\
 fib 1\n\
 sysinfo\n";
+
+    bifs_file_t *lt = &bifs_all_files[5];
+    lt->flags = BIFS_READABLE | BIFS_RAW;
+    lt->parent = home;
+    lt->name = "ls-test.sh";
+    lt->data = "ls\n\
+ls /home\n\
+ls /home/\n";
 }
 
 int32_t bifs_opendirpath(bifs_directory_t **dir, char const *path, int end) {
