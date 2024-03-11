@@ -34,6 +34,12 @@ typedef struct file_s {
     void     *fs_file; // a pointer to the underlying FS-level file struct
     int32_t (*read)(struct file_s *f, uint32_t pos, void *buf, uint32_t size);
     int32_t (*write)(struct file_s *f, uint32_t pos, void *buf, uint32_t nbytes);
+
+    // memory allocated for the contents of a temporary file, such as one under
+    // procfs. It's allocated and populated in fs_open() and freed in
+    // fs_free_file(). In between these instances of time, it can serve as the
+    // backing data for bifs_file_t.
+    void *tmpfile_mem;
 } file_t;
 
 typedef struct file_table_s {

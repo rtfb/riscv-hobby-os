@@ -334,6 +334,21 @@ process_t* alloc_process() {
     return 0;
 }
 
+int32_t procfs_stats_data_func(dq_closure_t *c, char *buf, regsize_t bufsz) {
+    process_t *proc = (process_t*)c->data;
+    sprintfer_t sprintfer = (sprintfer_t){
+        .buf = buf,
+        .bufsz = bufsz,
+        .fmt = "ppid: %d\nnscheds: %d\nnpages: %d\n",
+    };
+    uint32_t npages = count_alloced_pages(proc->pid);
+    int32_t parent_pid = -1;
+    if (proc->parent != 0) {
+        parent_pid = proc->parent->pid;
+    }
+    return ksprintf(&sprintfer, parent_pid, proc->nscheds, npages);
+}
+
 // init_proc initializes the given process. Returns 0 on success and error code
 // on failure. Must be called with proc->lock held.
 uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
@@ -414,6 +429,17 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
         procfs_name_file->data = (char*)name;
     }
     proc->procfs_name_file = procfs_name_file;
+    bifs_file_t *procfs_stats_file = bifs_allocate_file();
+    if (!procfs_stats_file) {
+        return ENFILE;
+    }
+    procfs_stats_file->parent = procfs_dir;
+    procfs_stats_file->flags = BIFS_READABLE | BIFS_RAW | BIFS_TMPFILE;
+    procfs_stats_file->name = "stats";
+    procfs_stats_file->dataquery = (dq_closure_t){
+        .func = procfs_stats_data_func,
+        .data = proc,
+    };
 
     acquire(&proc_table.lock);
     proc_table.num_procs++;

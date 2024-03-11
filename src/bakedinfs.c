@@ -11,26 +11,18 @@ bifs_file_t      bifs_all_files[BIFS_MAX_FILES];
 void bifs_init() {
     memset(bifs_all_directories, sizeof(bifs_all_directories), 0);
     memset(bifs_all_files, sizeof(bifs_all_files), 0);
-    bifs_root = &bifs_all_directories[0];
-    bifs_root->flags = BIFS_READABLE;
+    bifs_root = bifs_allocate_dir();
     bifs_root->name = "/";
-    bifs_root->parent = 0;
-    bifs_root->lsdir = bifs_lsdir;
 
-    bifs_directory_t *procfs = &bifs_all_directories[1];
-    procfs->flags = BIFS_READABLE;
+    bifs_directory_t *procfs = bifs_allocate_dir();
     procfs->name = "proc";
     procfs->parent = bifs_root;
-    procfs->lsdir = bifs_lsdir;
 
-    bifs_directory_t *home = &bifs_all_directories[2];
-    home->flags = BIFS_READABLE;
+    bifs_directory_t *home = bifs_allocate_dir();
     home->name = "home";
     home->parent = bifs_root;
-    home->lsdir = bifs_lsdir;
 
-    bifs_directory_t *bin = &bifs_all_directories[3];
-    bin->flags = BIFS_READABLE;
+    bifs_directory_t *bin = bifs_allocate_dir();
     bin->name = "bin";
     bin->parent = bifs_root;
     bin->lsdir = bin_lsdir;
@@ -207,7 +199,7 @@ int32_t bifs_openfile(bifs_directory_t *parent, char const *name, int start, int
         }
         if (!strncmp(f->name, name+start, end-start)) {
             *ppf = f;
-            return 0;
+            return f->flags;
         }
     }
     return -ENOENT;

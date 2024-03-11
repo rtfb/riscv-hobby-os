@@ -54,6 +54,7 @@ void* allocate_page(char const *site, uint32_t pid, uint32_t flags);
 void* kalloc(char const *site, uint32_t pid);
 void release_page(void *ptr);
 uint32_t count_free_pages();
+uint32_t count_alloced_pages(uint32_t pid);
 void copy_page(void* dst, void* src);
 
 #endif // ifndef _PAGEALLOC_H_

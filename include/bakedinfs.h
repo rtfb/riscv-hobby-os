@@ -11,6 +11,16 @@
 #define BIFS_WRITABLE (1 << 1)
 #define BIFS_RAW      (1 << 2) // bifs_file_t.data should be read as is
 #define BIFS_BASE64   (1 << 3) // bifs_file_t.data is base64-encoded and should be decoded as part of reading
+#define BIFS_TMPFILE  (1 << 4) // a file with temporary content, e.g. a file in procfs
+
+// dq_closure_t bundles together a function for querying data for BIFS_TMPFILE
+// with a pointer to the underlying source of truth data source. A canonical
+// example would be for data to point to a process_t and the func to ksprintf()
+// pieces of the process state into buf.
+typedef struct dq_closure_s {
+    int32_t (*func)(struct dq_closure_s *c, char *buf, regsize_t bufsz);
+    void *data;
+} dq_closure_t;
 
 typedef struct bifs_directory_s {
     uint32_t flags; // BIFS_*
@@ -25,6 +35,8 @@ typedef struct bifs_file_s {
     char *name;
     bifs_directory_t *parent;
     char *data;
+
+    dq_closure_t dataquery;
 } bifs_file_t;
 
 extern bifs_directory_t *bifs_root;

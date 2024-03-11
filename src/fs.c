@@ -2,6 +2,7 @@
 #include "drivers/uart/uart.h"
 #include "errno.h"
 #include "fs.h"
+#include "pagealloc.h"
 #include "pipe.h"
 
 file_table_t ftable;
@@ -50,16 +51,40 @@ file_t* fs_alloc_file() {
 
 void fs_free_file(file_t *f) {
     f->refcount--;
-    // if (f->flags & FFLAGS_PIPE && f->refcount < 2) {
     if (f->flags & FFLAGS_PIPE) {
         pipe_close_file(f);
     }
+    if (f->tmpfile_mem) {
+        release_page(f->tmpfile_mem);
+        bifs_file_t *bf = (bifs_file_t*)f->fs_file;
+        bf->data = 0;
+    }
+}
+
+int32_t prep_tmpfile_data(file_t *f) {
+    f->tmpfile_mem = kalloc("fs_open", myproc()->pid);
+    if (!f->tmpfile_mem) {
+        return -ENOMEM;
+    }
+    bifs_file_t *bf = (bifs_file_t*)f->fs_file;
+    if (bf->dataquery.func != 0) {
+        int32_t nwritten = bf->dataquery.func(&bf->dataquery, f->tmpfile_mem, PAGE_SIZE-1);
+        ((char*)f->tmpfile_mem)[nwritten] = 0;
+    }
+    bf->data = f->tmpfile_mem;
+    return 0;
 }
 
 int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {
     int32_t status = bifs_open(filepath, flags, (bifs_file_t**)&f->fs_file);
     if (status < 0) {
         return status;
+    }
+    if (status & BIFS_TMPFILE) {
+        int32_t prepstatus = prep_tmpfile_data(f);
+        if (prepstatus < 0) {
+            return prepstatus;
+        }
     }
     f->read = bifs_read;
     f->write = bifs_write;
