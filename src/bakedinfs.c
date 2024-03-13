@@ -67,6 +67,7 @@ wait 1 3\n\
 fib 1\n\
 wait 1 1\n\
 fib 1\n\
+cat /proc/1/stats\n\
 sysinfo\n";
 
     bifs_file_t *lt = &bifs_all_files[5];

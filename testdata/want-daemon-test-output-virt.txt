@@ -9,6 +9,9 @@ S   1     1      fibd
 R   2     1      ps
 7, 13
 9, 34
+ppid: -1
+nscheds: 7
+npages: 7
 Total RAM: 48
 Free RAM: 17
 Num procs: 3
