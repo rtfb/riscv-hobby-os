@@ -41,6 +41,7 @@ BINS := \
 	$(OUT)/os_sifive_u32 \
 	$(OUT)/os_hifive1_revb \
 	$(OUT)/os_ox64 \
+	$(OUT)/os_star64 \
 	$(OUT)/os_d1 \
 	$(OUT)/os_virt
 
@@ -113,6 +114,10 @@ OS_VIRT_DEPS = $(BASE_DEPS) \
 	src/vm.c
 OS_OX64_DEPS = $(BASE_DEPS) \
 			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
+OS_STAR64_DEPS = $(BASE_DEPS) \
+	src/drivers/uart/uart-star64.c \
+	src/machine/star64/timer.c \
+	src/vm.c
 OS_D1_DEPS = $(BASE_DEPS) \
 			src/machine/d1/timer.c src/drivers/uart/uart-d1.c
 
@@ -204,6 +209,18 @@ $(OUT)/os_ox64.bin: $(OUT)/os_ox64
 	$(RISCV64_OBJCOPY) -O binary $< $@
 
 $(OUT)/os_ox64.s: $(OUT)/os_ox64
+	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
+
+$(OUT)/os_star64: ${OS_STAR64_DEPS}
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
+		-Wl,--defsym,RAM_START=0x80200000 -g \
+		-include include/machine/star64.h \
+		${OS_STAR64_DEPS} -o $@
+
+$(OUT)/os_star64.bin: $(OUT)/os_star64
+	$(RISCV64_OBJCOPY) -O binary $< $@
+
+$(OUT)/os_star64.s: $(OUT)/os_star64
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
 $(OUT)/os_d1: ${OS_D1_DEPS}

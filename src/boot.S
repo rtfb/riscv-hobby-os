@@ -2,6 +2,11 @@
 .equ HALT_ON_EXCEPTION, 1
 .equ RISCV_HEADER_VERSION, 0x2
 
+// if not specified otherwise, the source for quotations is:
+//       The RISC-V Instruction Set Manual
+//       Volume II: Privileged Architecture
+//       Privileged Architecture Version 1.10
+
 .balign 4
 .section .text
 
@@ -33,17 +38,21 @@ _start:
 
 .globl _start_kernel
 _start_kernel:
-                                        // if not specified otherwise, the source for quotations is:
-                                        //       The RISC-V Instruction Set Manual
-                                        //       Volume II: Privileged Architecture
-                                        //       Privileged Architecture Version 1.10
-
-                                        // from: sifive-interrupt-cookbook-v1p2.pdf
-                                        // 2.1.3 Early Boot: Setup mtvec Register
-        csrwi   BOOT_REG_IE, 0          // > It is recommended to disable interrupts globally using mstatus.mie prior to changing mtvec.
-                                        // > For sanity's sake we set up an early trap vector that just does nothing.
+        // from: sifive-interrupt-cookbook-v1p2.pdf
+        // 2.1.3 Early Boot: Setup mtvec Register
+        // > It is recommended to disable interrupts globally using mstatus.mie
+        // > prior to changing mtvec. For sanity's sake we set up an early trap
+        // > vector that just does nothing.
+        //
+        // However, set early_trap_vector only when we boot in M-Mode. When
+        // we're in S-Mode, the bootloader already has some sensible trap
+        // handler that's usually very helpful in diagnosing boot problems when
+        // porting to new machines.
+        csrwi   BOOT_REG_IE, 0
+#if BOOT_MODE_M
         la      t0, early_trap_vector
         csrw    BOOT_REG_TVEC, t0
+#endif
 
 #if BOOT_MODE_M && HAS_S_MODE
         csrwi   mideleg, 0              // disable trap delegation, all interrupts and exceptions will be handled in machine mode

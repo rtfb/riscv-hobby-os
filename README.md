@@ -9,6 +9,7 @@ It runs in qemu, as well as several physical RISC-V SBC boards:
 * [SiFive HiFive1 Rev B][hifive-url]
 * [Ox64][ox64-url]
 * [Nezha D1][d1-url]
+* [Pine64 Star64][star64-url]
 
 Building And Running
 ====================
@@ -65,6 +66,7 @@ Handy RISC-V Quick References:
 [d1-url]: https://d1.docs.aw-ol.com/en/d1_dev/
 [hifive-url]: https://www.sifive.com/boards/hifive1-rev-b
 [ox64-url]: https://wiki.pine64.org/wiki/Ox64
+[star64-url]: https://wiki.pine64.org/wiki/STAR64
 
 [docs-folder]: https://github.com/rtfb/riscv-hobby-os/tree/master/docs
 [docs-gdb]: https://github.com/rtfb/riscv-hobby-os/tree/master/docs/gdb.md

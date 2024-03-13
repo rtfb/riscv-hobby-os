@@ -6,14 +6,15 @@ below.
 
 | Target | Boot Mode | Operation Mode |
 | ------ | --------- | -------------- |
-| qemu sifive_u | M-Mode | M-Mode |
+| qemu sifive_u | M-Mode | S-Mode |
 | qemu sifive_e | M-Mode | M-Mode |
-| qemu sifive_u32 | M-Mode | M-Mode |
+| qemu sifive_u32 | M-Mode | S-Mode |
 | qemu sifive_e32 | M-Mode | M-Mode |
 | qemu virt | M-Mode | S-Mode |
 | hifive1_revb | M-Mode | M-Mode |
-| ox64_u | S-Mode | S-Mode |
-| d1_u | S-Mode | S-Mode |
+| ox64 | S-Mode | S-Mode |
+| d1 | S-Mode | S-Mode |
+| star64 | S-Mode | S-Mode |
 
 ### Boot Mode
 

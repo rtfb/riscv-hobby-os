@@ -9,7 +9,12 @@ void plic_init() {
 }
 
 void plic_enable_intr(int intr_no) {
-    write32(PLIC_ENABLE, 1 << intr_no);
+    uint32_t *addr = (uint32_t*)PLIC_ENABLE;
+    if (intr_no >= 32) {
+        addr++;
+        intr_no -= 32;
+    }
+    write32(addr, 1 << intr_no);
 }
 
 void plic_set_intr_priority(int intr_no, int priority) {
