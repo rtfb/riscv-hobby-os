@@ -35,6 +35,7 @@ ls-test.sh
 *fib
 *wait
 *ls
+*clock
 <0>
 <5>
 sh

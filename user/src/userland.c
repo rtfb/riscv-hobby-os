@@ -558,3 +558,35 @@ int _userland u_main_ls(int argc, char const* argv[]) {
     exit(0);
     return 0;
 }
+
+char clock_fmt[] _user_rodata = "%d";
+char clock_parse_err_fmt[] _user_rodata = "ERROR: parse n seconds '%s': %d\n";
+
+int _userland u_main_clock(int argc, char const* argv[]) {
+    if (argc < 2) {
+        prints("USAGE: clock <N seconds>\n");
+        exit(0);
+        return 0;
+    }
+    int parse_err = 0;
+    int n_secs = uatoi(argv[1], &parse_err);
+    if (parse_err != 0) {
+        printf(clock_parse_err_fmt, argv[1], parse_err);
+        exit(-1);
+    }
+    int i = 0;
+    while (1) {
+        i++;
+        int nwritten = printf("%d", i);
+        if (i == n_secs) {
+            prints("\n");
+            break;
+        }
+        sleep(1000);
+        for (int i = 0; i < nwritten; i++) {
+            prints("\b \b");
+        }
+    }
+    exit(0);
+    return 0;
+}

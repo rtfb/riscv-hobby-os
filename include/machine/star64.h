@@ -11,8 +11,8 @@
 
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0x40200000
 
-// wild guess:
-#define ONE_SECOND 1000000
+// determined experimentally:
+#define ONE_SECOND 4180000
 
 // star64.dts:
 // serial@10000000 {
