@@ -25,16 +25,19 @@ With that done, you should be able to `make all` to build all targets, and then
 Implementation Details
 ======================
 
-The kernel does not yet support virtual memory and thus, the userland processes
-are not isolated from each other. This is because the smallest common
-denominator of supported hardware is an extremely small HiFive microcontroller,
-with only 16kB of RAM and no MMU. This puts severe limitations. We want to
-maintain an ability to run in such small environments, as we intend to use this
-kernel on a small implementation of a RISC-V core on a modestly sized FPGA.
-
 The kernel and userland programs are built into a single binary. So the userland
 programs are actually just functions, located in a separate memory section. The
 section is isolated from the kernel memory, though, via RISC-V PMP mechanism.
+
+On some targets the kernel supports virtual memory, and in such case the
+processes are better isolated. See [`docs/mmu.md`][docs-mmu] for details.
+
+Some other targets do not implement virtual memory. This is because the smallest
+common denominator of supported hardware is an extremely small HiFive
+microcontroller, with only 16kB of RAM and no MMU. This puts severe limitations.
+We want to maintain an ability to run in such small environments, as we intend
+to use this kernel on a small implementation of a RISC-V core on a modestly
+sized FPGA.
 
 Debugging with gdb
 ------------------
@@ -70,3 +73,4 @@ Handy RISC-V Quick References:
 
 [docs-folder]: https://github.com/rtfb/riscv-hobby-os/tree/master/docs
 [docs-gdb]: https://github.com/rtfb/riscv-hobby-os/tree/master/docs/gdb.md
+[docs-mmu]: https://github.com/rtfb/riscv-hobby-os/tree/master/docs/mmu.md
