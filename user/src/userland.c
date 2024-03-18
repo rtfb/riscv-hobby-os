@@ -263,18 +263,30 @@ int _userland u_main_pipe2(int argc, char const *argv[]) {
     return 0;
 }
 
-char wc_charcount_fmt[] _user_rodata = "%d\n";
+char wc_count_fmt[] _user_rodata = "%d\n";
+char wc_open_err_fmt[] _user_rodata = "ERROR: open=-1, errno=%d\n";
 int _userland u_main_wc(int argc, char const *argv[]) {
     uint32_t fd = 0; // stdin
+    int count_lines = 0; // count characters by default
     if (argc > 1) {
-        fd = open(argv[1], 0);
-        if (fd == -1) {
-            prints("ERROR: open=-1\n");
-            exit(-1);
+        if (argv[1][0] == '-' && argv[1][1] == 'l') {
+            count_lines = 1;
+        } else {
+            fd = open(argv[1], 0);
+            goto done_argc;
         }
+        if (argc > 2) {
+            fd = open(argv[2], 0);
+        }
+    }
+done_argc:
+    if (fd == -1) {
+        printf(wc_open_err_fmt, errno);
+        exit(-1);
     }
     char fbuf[64];
     uint32_t charcount = 0;
+    uint32_t linecount = 0;
     while (1) {
         int32_t nread = read(fd, fbuf, 64);
         if (nread == 0) {
@@ -285,11 +297,20 @@ int _userland u_main_wc(int argc, char const *argv[]) {
             exit(-1);
         }
         charcount += nread;
+        for (int i = 0; i < nread; i++) {
+            if (fbuf[i] == '\n') {
+                linecount++;
+            }
+        }
     }
     if (fd != 0) {
         close(fd);
     }
-    printf(wc_charcount_fmt, charcount);
+    if (count_lines) {
+        printf(wc_count_fmt, linecount);
+    } else {
+        printf(wc_count_fmt, charcount);
+    }
     exit(0);
 }
 
