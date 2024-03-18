@@ -55,6 +55,7 @@ hang\n\
 sysinfo\n\
 ps\n\
 cat /readme.txt | wc\n\
+iter 300 | wc\n\
 testprintf\n";
 
     bifs_file_t *dt = &bifs_all_files[4];
