@@ -17,16 +17,13 @@ smoke-test.sh
 daemon-test.sh
 ls-test.sh
 *sh
-*hello1
-*hello2
+*hello
 *sysinfo
 *fmt
 *hang
 *ps
 *cat
 *coma
-*pp
-*pp2
 *wc
 *gpio
 *iter

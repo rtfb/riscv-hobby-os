@@ -11,12 +11,8 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
         .name = "sh",
     },
     (user_program_t){
-        .entry_point = &u_main_hello1,
-        .name = "hello1",
-    },
-    (user_program_t){
-        .entry_point = &u_main_hello2,
-        .name = "hello2",
+        .entry_point = &u_main_hello,
+        .name = "hello",
     },
     (user_program_t){
         .entry_point = &u_main_sysinfo,
@@ -41,14 +37,6 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     (user_program_t){
         .entry_point = &u_main_coma,
         .name = "coma",
-    },
-    (user_program_t){
-        .entry_point = &u_main_pipe,
-        .name = "pp",
-    },
-    (user_program_t){
-        .entry_point = &u_main_pipe2,
-        .name = "pp2",
     },
     (user_program_t){
         .entry_point = &u_main_wc,

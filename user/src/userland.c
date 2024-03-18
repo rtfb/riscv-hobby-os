@@ -8,7 +8,7 @@
 #include "userland.h"
 #include "ustr.h"
 
-int _userland u_main_hello1() {
+int _userland u_main_hello() {
     prints("Hello from hellosayer 1\n");
     void *mem = (void*)pgalloc();
     char *s = (char*)mem;
@@ -19,18 +19,6 @@ int _userland u_main_hello1() {
     s[4] = 0;
     prints(s);
     pgfree(mem);
-    exit(0);
-    return 0;
-}
-
-char dash_h[] _user_rodata = "-h";
-
-int _userland u_main_hello2(int argc, char const* argv[]) {
-    if (argc > 1 && !ustrncmp(argv[1], dash_h, 2)) {
-        prints("A hidden greeting!\n");
-    } else {
-        prints("Very welcome from hellosayer 2\n");
-    }
     exit(0);
     return 0;
 }
@@ -155,111 +143,6 @@ int _userland u_main_cat(int argc, char const *argv[]) {
     }
     close(fd);
     exit(0);
-    return 0;
-}
-
-char pipe_fmt[] _user_rodata = "fd0=0x%x, fd1=0x%x\n";
-
-int _userland u_main_pipe(int argc, char const *argv[]) {
-    char const *prog1 = "cat";
-    char const *argv1[] = {"cat", "/readme.txt", 0};
-    char const *prog2 = "wc";
-    uint32_t pipefd[2];
-
-    if (pipe(pipefd) == -1) {
-        prints("ERROR: pipe=-1\n");
-        exit(-1);
-    }
-
-    uint32_t cpid2 = -1;
-    uint32_t cpid1 = fork();
-    if (cpid1 == -1) {
-        prints("ERROR: fork 1!\n");
-        exit(-1);
-    }
-
-    if (cpid1 == 0) { // child
-        close(pipefd[0]);   // close unused read end
-        close(1);           // close stdout
-        dup(pipefd[1]);     // now replace stdout with the pipe's writing end
-        uint32_t code = execv(prog1, (char const**)argv1);
-        // normally exec doesn't return, but if it did, it's an error:
-        prints("ERROR: execv 1\n");
-        exit(-1);
-    } else { // parent
-        cpid2 = fork();
-        if (cpid2 == -1) {
-            prints("ERROR: fork 2!\n");
-            exit(-1);
-        }
-        if (cpid2 == 0) { // child
-            close(pipefd[1]);   // close unused write end
-            close(0);           // close stdin
-            dup(pipefd[0]);     // now replace stdin with the pipe's reading end
-            uint32_t code = execv(prog2, 0);
-            // normally exec doesn't return, but if it did, it's an error:
-            prints("ERROR: execv 2\n");
-            exit(-1);
-        }
-    }
-    close(pipefd[0]);
-    close(pipefd[1]);
-    wait(0);                // Wait for the first child
-    // wait();              // Wait for the other child.
-                            // TODO: this deadlocks for some reason, investigate
-    exit(0);
-    return 0;
-}
-
-char pipe2_fmt[] _user_rodata = "Usage: %s <string>\n";
-
-// this program is copied (almost) verbatim from 'man pipe2'
-int _userland u_main_pipe2(int argc, char const *argv[]) {
-    uint32_t pipefd[2];
-    uint32_t cpid;
-    char buf;
-
-    if (argc != 2) {
-        printf(pipe2_fmt, argv[0]);
-        exit(-1);
-    }
-
-    if (pipe(pipefd) == -1) {
-        prints("ERROR: pipe=-1\n");
-        exit(-1);
-    }
-
-    cpid = fork();
-    if (cpid == -1) {
-        prints("ERROR: fork=-1\n");
-        exit(-1);
-    }
-
-    if (cpid == 0) {            // Child reads from pipe
-        close(pipefd[1]);       // Close unused write end
-
-        while (1) {
-            int nread = read(pipefd[0], &buf, 1);
-            if (nread <= 0) {
-                // prints("EREAD\n");
-                break;
-            } else {
-                write(1, &buf, 1);
-            }
-        }
-
-        close(pipefd[0]);
-        exit(0);
-    } else {                    // Parent writes argv[1] to pipe
-        close(pipefd[0]);       // Close unused read end
-        for (int i = 0; i < 50; i++) {
-            write(pipefd[1], argv[1], ustrlen(argv[1]));
-            write(pipefd[1], "\n", 1);
-        }
-        close(pipefd[1]);       // Reader will see EOF
-        wait(0);                // Wait for child
-        exit(0);
-    }
     return 0;
 }
 
