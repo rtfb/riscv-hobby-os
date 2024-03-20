@@ -30,6 +30,7 @@ void init_process_table(uint32_t runflags, unsigned int hart_id) {
 // means that something went terribly wrong, or all processes are sleeping. In
 // which case we should simply schedule the next timer tick and do nothing.
 void sleep_scheduler() {
+    unsleep_scheduler = 0;
 #if MIXED_MODE_TIMER
     csr_sip_clear_flags(SIP_SSIP);
 #else
@@ -44,7 +45,7 @@ void sleep_scheduler() {
     set_status_interrupt_enable_and_pending();
     set_interrupt_enable_bits();
 
-    park_hart();
+    soft_park_hart();
 }
 
 void scheduler() {
@@ -614,6 +615,7 @@ void proc_mark_for_wakeup(void *chan) {
 }
 
 void update_proc_by_chan(process_t *proc, void *chan) {
+    unsleep_scheduler = 1;
     if (proc->cond.type == PWAKE_COND_CHAN) {
         proc->state = PROC_STATE_READY;
         proc->chan = 0;

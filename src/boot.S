@@ -312,6 +312,9 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
         // set_global_stack. This can happen if the scheduler had nothing to
         // schedule and the CPU was idling.
         beq     x0, t0, set_global_stack
+
+        // XXX: really? shouldn't sp be set to proc->ctx.sp only when a trap is
+        // a syscall, but not in other cases?
         OP_LOAD sp, 2*REGSZ(t0)  // (*process_t)[0] => lock
                                  // (*process_t)[1] => ctx[0] (RA)
                                  // (*process_t)[2] => ctx[1] (SP)
@@ -488,11 +491,6 @@ interrupt_noop:
 
 interrupt_timer:
         j       interrupt_epilogue
-
-.globl park_hart
-park_hart:
-loop:      wfi                  // parked hart will sleep waiting for interrupt
-           j       loop
 
 //## User payload = code + readonly data for U-mode ############################
 //

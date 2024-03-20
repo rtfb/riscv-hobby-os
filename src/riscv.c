@@ -1,5 +1,8 @@
 #include "asm.h"
 #include "riscv.h"
+#include "timer.h"
+
+int unsleep_scheduler = 0;
 
 void set_status_interrupt_pending() {
     // set mstatus.MPIE (Machine Pending Interrupt Enable) bit to 1:
@@ -277,4 +280,39 @@ void csr_sip_clear_flags(regsize_t flags) {
         :                // no output
         : "r"(flags)     // input in flags
     );
+}
+
+// csr_sip_set_flags sets the requested bits of sip to be set to 1. Effectively,
+// it does an atomic "sip |= flags".
+void csr_sip_set_flags(regsize_t flags) {
+    asm volatile (
+        "csrs sip, %0;"  // set requested bits of sip
+        :                // no output
+        : "r"(flags)     // input in flags
+    );
+}
+
+// hard_park_hart is an infinite loop, it will stop the calling hart forever.
+// The wfi (wait for interrupt) instruction is just a hint to the core that it
+// may downlock itself or otherwise save energy, not that we expect any
+// interrupts to happen on it.
+//
+// It's meant to be called in cases like panic(), or to suspend an unused hart.
+void hard_park_hart() {
+    while (1) {
+        asm volatile ("wfi");
+    }
+}
+
+// soft_park_hart suspends a hart, but with a way out of it. If some conditions
+// set unsleep_scheduler to true, it will immediately cause a timer interrupt,
+// which in turn will let the scheduler do its thing.
+void soft_park_hart() {
+    while (1) {
+        asm volatile ("wfi");
+        if (unsleep_scheduler) {
+            unsleep_scheduler = 0;
+            cause_timer_interrupt_now();
+        }
+    }
 }

@@ -23,3 +23,11 @@ void set_timer_after(uint64_t delta) {
 uint64_t time_get_now() {
     return read64(MTIME);
 }
+
+void cause_timer_interrupt_now() {
+#if HAS_S_MODE
+    csr_sip_set_flags(SIP_SSIP);
+#else
+    set_timer_after(0);
+#endif
+}

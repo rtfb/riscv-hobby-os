@@ -34,5 +34,6 @@ extern void* mtimertrap;
 void init_timer();
 void set_timer_after(uint64_t delta);
 uint64_t time_get_now();
+void cause_timer_interrupt_now();
 
 #endif // ifndef _TIMER_H_

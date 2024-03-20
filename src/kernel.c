@@ -26,7 +26,7 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     if (cpu_id != BOOT_HART_ID) {
         release(&init_lock);
         // TODO: support multi-core
-        park_hart();
+        hard_park_hart();
     }
     plic_init();
     drivers_init();
@@ -145,5 +145,5 @@ void panic(char const *message) {
     uart_prints("panic: ");
     uart_prints(message);
     uart_prints("\n");
-    park_hart();
+    hard_park_hart();
 }

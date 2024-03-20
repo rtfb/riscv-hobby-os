@@ -34,6 +34,7 @@
 
 #if !HAS_S_MODE
     #define REG_IE       STR(mie)
+    #define REG_IP       STR(mip)
     #define REG_TVEC     STR(mtvec)
     #define REG_CAUSE    STR(mcause)
     #define REG_EPC      STR(mepc)
@@ -44,6 +45,7 @@
     #define OP_xRET      STR(mret)
 #else
     #define REG_IE       STR(sie)
+    #define REG_IP       STR(sip)
     #define REG_TVEC     STR(stvec)
     #define REG_CAUSE    STR(scause)
     #define REG_EPC      STR(sepc)

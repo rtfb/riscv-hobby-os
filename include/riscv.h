@@ -95,6 +95,9 @@
 
 #define PAGE_OFFS(addr)   ((regsize_t)addr & (PAGE_SIZE - 1))
 
+// defined in riscv.c
+extern int unsleep_scheduler;
+
 // dedicated M-Mode funcs:
 unsigned int get_hartid();
 void set_mscratch_csr(void* ptr);
@@ -111,9 +114,8 @@ void set_medeleg_csr(regsize_t value);
 void set_mie_csr(regsize_t value);
 
 // dedicated S-Mode funcs:
-void set_sip_csr(regsize_t value);
 void csr_sip_clear_flags(regsize_t flags);
-regsize_t get_sip_csr();
+void csr_sip_set_flags(regsize_t flags);
 void set_stvec_csr(void *ptr);
 void set_sscratch_csr(void* ptr);
 
@@ -130,8 +132,7 @@ void set_status_interrupt_pending();
 void set_status_interrupt_enable_and_pending();
 void clear_status_interrupt_enable();
 void set_interrupt_enable_bits();
-
-// implemented in boot.S
-void park_hart();
+void hard_park_hart();
+void soft_park_hart();
 
 #endif // ifndef _RISCV_H_
