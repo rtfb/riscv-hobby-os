@@ -4,7 +4,7 @@
 #include "kprintf.h"
 
 void kinit(regsize_t hartid, uintptr_t fdt_header_addr);
-void init_trap_vector();
+void init_trap_vector(regsize_t hartid);
 void kernel_timer_tick(regsize_t sp);
 void set_timer();
 void disable_interrupts();

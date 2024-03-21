@@ -36,7 +36,7 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());
-    init_trap_vector();
+    init_trap_vector(hartid);
     void* paged_mem_end = init_pmp();
     init_timer(); // must go after init_trap_vector because it might rewrite mtvec/mscratch
 #if BOOT_MODE_M && HAS_S_MODE
@@ -84,7 +84,8 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
 //
 // Trap vector mode is encoded in 2 bits: Direct = 0b00, Vectored = 0b01
 // and is stored in 0:1 bits of mtvec CSR (mtvec.mode)
-void init_trap_vector() {
+void init_trap_vector(regsize_t hartid) {
+    trap_frame.regs[REG_TP] = hartid;
 #if HAS_S_MODE
     set_sscratch_csr(&trap_frame);
     set_stvec_csr(&trap_vector);

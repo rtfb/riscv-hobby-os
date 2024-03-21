@@ -13,6 +13,7 @@
 // REG_* constants are indexes into trap_frame_t.regs and context_t.regs. (Add here as needed)
 #define REG_RA 0
 #define REG_SP 1
+#define REG_TP 3
 #define REG_FP 7
 #define REG_A0 9
 #define REG_A1 10
@@ -67,7 +68,7 @@ typedef struct pwake_cond_s {
 } pwake_cond_t;
 
 typedef struct trap_frame_s {
-    regsize_t regs[31]; // all registers except r0
+    regsize_t regs[31]; // all registers except x0
     regsize_t pc;
 } trap_frame_t;
 
@@ -150,8 +151,8 @@ extern cpu_t cpu;
 // contain everything the userland needs to have. In case of a fresh process, it
 // needs to have at least regs[REG_SP] populated.
 //
-// In between the traps mscratch will point here so that we can save user
-// registers without trashing any.
+// In between the traps mscratch/sscratch will point here so that we can save
+// user registers without trashing any.
 extern trap_frame_t trap_frame;
 
 // defined in context.s

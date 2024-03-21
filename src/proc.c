@@ -389,6 +389,7 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
         + user_stack_size   // stack size to get to the end
         - sizeof(uintptr_t) // compensate for perrno
     );
+    proc->trap.regs[REG_TP] = trap_frame.regs[REG_TP];
     proc->state = PROC_STATE_READY;
     memset(&proc->files, sizeof(proc->files), 0);
     proc->files[FD_STDIN] = &stdin;

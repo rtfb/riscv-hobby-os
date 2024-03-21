@@ -323,11 +323,7 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
 set_global_stack:
         // set the same stack location as we do during the boot time.
         la      t0, stack_top_addr         // set it at stack_top_addr for hart0,
-
-        // XXX: change that when SMP gets implemented
-        // csrr    t1, mhartid             // at stack_top_addr-512 for hart1, etc.
-        mv      t1, zero
-
+        mv      t1, tp                     // hartid is preserved in tp, so now t1=mhartid
         li      t2, 512
         mul     t1, t1, t2
         sub     t0, t0, t1
