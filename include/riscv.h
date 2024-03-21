@@ -99,7 +99,6 @@
 extern int unsleep_scheduler;
 
 // dedicated M-Mode funcs:
-unsigned int get_hartid();
 void set_mscratch_csr(void* ptr);
 void set_mtvec_csr(void* ptr);
 void set_pmpaddr0(void* addr);
@@ -134,5 +133,6 @@ void clear_status_interrupt_enable();
 void set_interrupt_enable_bits();
 void hard_park_hart();
 void soft_park_hart();
+unsigned int get_tp();
 
 #endif // ifndef _RISCV_H_

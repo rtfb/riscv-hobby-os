@@ -1,3 +1,4 @@
+#include "cpu.h"
 #include "drivers/drivers.h"
 #include "drivers/uart/uart.h"
 #include "fdt.h"
@@ -28,6 +29,7 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
         // TODO: support multi-core
         hard_park_hart();
     }
+    init_cpus();
     plic_init();
     drivers_init();
 #ifdef CONFIG_LCD_ENABLED
@@ -58,7 +60,7 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
         do_page_report(paged_mem_end);
     }
     fs_init();
-    init_process_table(runflags, hartid);
+    init_process_table(runflags);
     init_pipes();
     release(&init_lock);
     scheduler(); // done init'ing, now run the scheduler, forever
@@ -109,9 +111,9 @@ void kernel_timer_tick(regsize_t sp) {
     sched();
     enable_interrupts();
     regsize_t satp = 0;
-    if (cpu.proc != 0) {
-        patch_proc_sp(cpu.proc, sp);
-        satp = cpu.proc->usatp;
+    if (thiscpu()->proc != 0) {
+        patch_proc_sp(thiscpu()->proc, sp);
+        satp = thiscpu()->proc->usatp;
     }
     ret_to_user(satp);
 }
@@ -122,8 +124,8 @@ void kernel_plic_handler() {
     plic_dispatch_interrupts();
     enable_interrupts();
     regsize_t satp = 0;
-    if (cpu.proc != 0) {
-        satp = cpu.proc->usatp;
+    if (thiscpu()->proc != 0) {
+        satp = thiscpu()->proc->usatp;
     }
     ret_to_user(satp);
 }

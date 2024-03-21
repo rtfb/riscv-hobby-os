@@ -62,6 +62,7 @@ BOOT = src/boot.S \
 BASE_DEPS = $(BOOT) \
 	src/bakedinfs.c \
 	src/baremetal-poweroff.S \
+	src/cpu.c \
 	src/drivers/drivers.c \
 	src/drivers/hd44780/hd44780.c \
 	src/drivers/uart/uart.c \

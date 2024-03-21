@@ -13,17 +13,13 @@
 
 proc_table_t proc_table;
 trap_frame_t trap_frame;
-cpu_t cpu;
 
-void init_process_table(uint32_t runflags, unsigned int hart_id) {
-    cpu.proc = 0;
+void init_process_table(uint32_t runflags) {
     proc_table.pid_counter = 0;
     for (int i = 0; i < MAX_PROCS; i++) {
         proc_table.procs[i].state = PROC_STATE_AVAILABLE;
     }
     init_test_processes(runflags);
-    memset(&cpu.context.regs, sizeof(cpu.context.regs), 0);
-    cpu.context.regs[REG_SP] = (regsize_t)(&stack_top_addr - hart_id*PAGE_SIZE);
 }
 
 // sleep_scheduler is called when there's nothing to schedule; this either
@@ -66,7 +62,7 @@ void scheduler() {
             }
             if (p->state == PROC_STATE_READY) {
                 p->state = PROC_STATE_RUNNING;
-                cpu.proc = p;
+                thiscpu()->proc = p;
                 p->nscheds++;
                 proc_mark_for_wakeup(p);
                 // make sure ret_to_user() returns to p's userland, not to
@@ -74,12 +70,12 @@ void scheduler() {
                 copy_trap_frame(&trap_frame, &p->trap);
                 // switch context into p. This will not return until p itself
                 // does not call swtch():
-                swtch(&cpu.context, &p->ctx);
+                swtch(&thiscpu()->context, &p->ctx);
                 i_after_wakeup = i;
                 new_loop = 0;
                 // the process has yielded the cpu, keep looking for something
                 // to run
-                cpu.proc = 0;
+                thiscpu()->proc = 0;
             }
             release(&p->lock);
         }
@@ -321,7 +317,7 @@ process_t* alloc_process() {
     acquire(&proc_table.lock);
     for (int i = 0; i < MAX_PROCS; i++) {
         process_t *proc = &proc_table.procs[i];
-        if (proc == cpu.proc) {
+        if (proc == thiscpu()->proc) {
             continue;
         }
         acquire(&proc->lock);
@@ -396,8 +392,8 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->files[FD_STDOUT] = &stdout;
     proc->files[FD_STDERR] = &stderr;
     memset(&proc->ctx.regs, sizeof(proc->ctx.regs), 0);
-    proc->ctx.regs[REG_SP] = (regsize_t)ksp + PAGE_SIZE;
     proc->ctx.regs[REG_RA] = (regsize_t)forkret;
+    proc->ctx.regs[REG_SP] = (regsize_t)ksp + PAGE_SIZE;
     proc->nscheds = 0;
     proc->cond = (pwake_cond_t){
         .type = PWAKE_COND_CHAN,
@@ -449,8 +445,13 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     return 0;
 }
 
+cpu_t *thiscpu() {
+    int cpu_id = get_tp();
+    return &cpus[cpu_id];
+}
+
 process_t* current_proc() {
-    return cpu.proc;
+    return thiscpu()->proc;
 }
 
 process_t* myproc() {
@@ -508,7 +509,7 @@ void proc_exit() {
     acquire(&proc_table.lock);
     proc_table.num_procs--;
     release(&proc_table.lock);
-    swtch(&proc->ctx, &cpu.context);
+    swtch(&proc->ctx, &thiscpu()->context);
 }
 
 // check_exited_children iterates over process table looking for zombie
@@ -535,7 +536,7 @@ int32_t check_exited_children(process_t *proc) {
 int32_t psleep(process_t *proc) {
     proc->state = PROC_STATE_SLEEPING;
     copy_trap_frame(&proc->trap, &trap_frame); // save trap context before sleep
-    swtch(&proc->ctx, &cpu.context);
+    swtch(&proc->ctx, &thiscpu()->context);
     return check_exited_children(proc);
 }
 
@@ -546,7 +547,7 @@ void sched() {
         return; // this is just for clarity: scheduler() never returns
     }
     proc->state = PROC_STATE_READY;
-    swtch(&proc->ctx, &cpu.context);
+    swtch(&proc->ctx, &thiscpu()->context);
 }
 
 int32_t proc_wait(wait_cond_t *cond) {
