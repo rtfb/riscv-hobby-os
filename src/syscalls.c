@@ -129,8 +129,7 @@ uint32_t sys_execv() {
 }
 
 uint32_t sys_getpid() {
-    uint32_t pid = cpu.proc->pid;
-    return pid;
+    return myproc()->pid;
 }
 
 uint32_t sys_dup() {

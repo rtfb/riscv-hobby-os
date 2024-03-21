@@ -2,6 +2,7 @@
 #define _PROC_H_
 
 #include "bakedinfs.h"
+#include "cpu.h"
 #include "fs.h"
 #include "riscv.h"
 #include "spinlock.h"
@@ -9,17 +10,6 @@
 #include "sys.h"
 
 #define MAX_PROCS 8
-
-// REG_* constants are indexes into trap_frame_t.regs and context_t.regs. (Add here as needed)
-#define REG_RA 0
-#define REG_SP 1
-#define REG_TP 3
-#define REG_FP 7
-#define REG_A0 9
-#define REG_A1 10
-#define REG_A2 11
-#define REG_A3 12
-#define REG_A7 16
 
 // PROC_STATE_AVAILABLE signifies an unoccupied slot in the process table, it's
 // available for use by a new process.
@@ -71,10 +61,6 @@ typedef struct trap_frame_s {
     regsize_t regs[31]; // all registers except x0
     regsize_t pc;
 } trap_frame_t;
-
-typedef struct context_s {
-    regsize_t regs[14]; // ra, sp, s0..s11
-} context_t;
 
 typedef struct process_s {
     spinlock lock;
@@ -128,19 +114,8 @@ typedef struct proc_table_s {
     uint32_t pid_counter;
 } proc_table_t;
 
-typedef struct cpu_s {
-    process_t *proc;       // the process running on this cpu, or null
-    context_t context;     // swtch() here to enter scheduler()
-} cpu_t;
-
 // defined in proc.c
 extern proc_table_t proc_table;
-
-// we're still single-core, so put it here. Later this needs to become an array
-// of one cpu_t per hart
-//
-// defined in proc.c
-extern cpu_t cpu;
 
 // trap_frame is the piece of memory to hold all user registers when we enter
 // the trap. When the scheduler picks the new process to run, it will save
@@ -163,7 +138,7 @@ void swtch(context_t *old, context_t *new);
 // would do, but a poor man's version until we can do better.
 void init_test_processes(uint32_t runflags);
 
-void init_process_table(uint32_t runflags, unsigned int hart_id);
+void init_process_table(uint32_t runflags);
 void scheduler();
 void sched();
 void forkret();

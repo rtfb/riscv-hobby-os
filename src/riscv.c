@@ -45,8 +45,13 @@ void set_interrupt_enable_bits() {
     set_ie_csr(mie);
 }
 
-unsigned int get_hartid() {
-    return 0; // XXX: change that when SMP gets implemented
+unsigned int get_tp() {
+    register unsigned int a0 asm ("a0");
+    asm volatile (
+        "mv a0, tp"
+        : "=r"(a0)   // output in a0
+    );
+    return a0;
 }
 
 void* shift_right_addr(void* addr, int bits) {

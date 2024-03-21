@@ -66,6 +66,7 @@ _start_kernel:
 #if BOOT_MODE_M
         csrr    a0, mhartid             // set a0 to mhartid to be compatible with boot in S-mode
 #endif
+        mv      tp, a0                  // store hartid in tp
                                         // setup stack pointer:
         la      t0, stack_top_addr      // set it at stack_top_addr for hart0,
         mv      t1, a0                  // at stack_top_addr-512 for hart1, etc.
@@ -306,8 +307,12 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
         OP_STOR t6, 31*REGSZ(t0)
 
         // Restore sp from cpu.proc->ctx[REG_SP].
-        la      t0, cpu
-        OP_LOAD t0, 0*REGSZ(t0)  // t0 = cpu.proc
+        la      t0, cpus
+        mv      t1, tp                     // hartid is preserved in tp, so now t1=mhartid
+        li      t2, 15*REGSZ
+        mul     t2, t2, t1
+        add     t0, t0, t2
+        OP_LOAD t0, (t0)  // t0 = thiscpu().proc
         // cpu.proc may be NULL, so we check for that and if so, jump to
         // set_global_stack. This can happen if the scheduler had nothing to
         // schedule and the CPU was idling.

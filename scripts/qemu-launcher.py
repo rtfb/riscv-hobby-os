@@ -105,15 +105,13 @@ def pipe_bytes(r, w):
 # https://wiki.qemu.org/Documentation/Platforms/RISCV#Attaching_GDB
 def write_gdb_files(binary, machine, is_32bit):
     is_multicore = machine == 'sifive_u'
-    uses_mmu = machine == 'virt'
+    uses_mmu = machine in ('virt', 'sifive_u')
     with open(DEBUG_SESSION_FILE, 'w') as f:
         f.write(binary)
     with open(GDBINIT_FILE, 'w') as f:
         if is_32bit:
             f.write('set arch riscv:rv32\n')
         f.write('target extended-remote localhost:1234\n')
-        if uses_mmu:
-            f.write(f'add-symbol-file {binary} -o 0xffffffff80000000\n')
         f.write('set disassemble-next-line auto\n')
         if is_multicore:
             f.write(f'add-inferior -exec {binary}\n')
@@ -121,6 +119,9 @@ def write_gdb_files(binary, machine, is_32bit):
             f.write('attach 2\n')
             f.write('set schedule-multiple\n')
             # f.write('set scheduler-locking on\n')
+        if uses_mmu:
+            f.write(f'add-symbol-file {binary} -o 0xffffffff80000000\n')
+        if is_multicore:
             f.write('thread 1.1\n')
 
 

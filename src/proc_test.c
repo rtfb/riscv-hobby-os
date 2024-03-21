@@ -112,7 +112,7 @@ void assign_init_program(char const* prog, char const *test_script) {
     if (status != 0) {
         panic("init p0 process");
     }
-    cpu.proc = p0;
+    thiscpu()->proc = p0;
 }
 
 user_program_t* find_user_program(char const *name) {
