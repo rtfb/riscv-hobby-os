@@ -20,12 +20,8 @@ const userland_programs = [_]c.user_program_t{
         .name = "sh",
     },
     c.user_program_t{
-        .entry_point = fp(&c.u_main_hello1),
-        .name = "hello1",
-    },
-    c.user_program_t{
-        .entry_point = fp(&c.u_main_hello2),
-        .name = "hello2",
+        .entry_point = fp(&c.u_main_hello),
+        .name = "hello",
     },
     c.user_program_t{
         .entry_point = fp(&c.u_main_sysinfo),
@@ -50,14 +46,6 @@ const userland_programs = [_]c.user_program_t{
     c.user_program_t{
         .entry_point = fp(&c.u_main_coma),
         .name = "coma",
-    },
-    c.user_program_t{
-        .entry_point = fp(&c.u_main_pipe),
-        .name = "pp",
-    },
-    c.user_program_t{
-        .entry_point = fp(&c.u_main_pipe2),
-        .name = "pp2",
     },
     c.user_program_t{
         .entry_point = fp(&c.u_main_wc),
@@ -87,6 +75,14 @@ const userland_programs = [_]c.user_program_t{
         .entry_point = fp(&c.u_main_wait),
         .name = "wait",
     },
+    c.user_program_t{
+        .entry_point = fp(&c.u_main_ls),
+        .name = "ls",
+    },
+    c.user_program_t{
+        .entry_point = fp(&c.u_main_clock),
+        .name = "clock",
+    },
 };
 
 comptime {
@@ -101,6 +97,15 @@ pub export fn find_user_program(name: [*]const u8) callconv(.C) ?*const c.user_p
         }
     }
     return null;
+}
+
+pub export fn get_user_program(index: usize) callconv(.C) ?*const c.user_program_t {
+    _ = index;
+    return null;
+    // if (index >= userland_programs.len) {
+    //     return null;
+    // }
+    // return &userland_programs[index];
 }
 
 pub export fn init_test_processes(runflags: u32) void {

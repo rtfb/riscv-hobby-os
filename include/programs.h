@@ -10,6 +10,7 @@ typedef struct user_program_s {
 
 // defined in proc_test.c:
 user_program_t* find_user_program(char const *name);
+user_program_t* get_user_program(int32_t index);
 
 // defined in userland.c:
 extern int u_main_shell();

@@ -49,12 +49,6 @@ char* strncpy(char *dest, char const *src, unsigned int num) {
     return orig_dest;
 }
 
-int kstrlen(char const *s) {
-    unsigned int i = 0;
-    while (*s++) i++;
-    return i;
-}
-
 // itoa() converts a given integer num to its string representation. Returns
 // the length of the string if successful, zero otherwise.
 //

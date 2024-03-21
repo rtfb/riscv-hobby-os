@@ -244,8 +244,8 @@ int32_t bin_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size) {
         if (de_index >= size) {
             return -ENOBUFS;
         }
-        user_program_t *p = &userland_programs[i];
-        if (!p->entry_point) {
+        user_program_t *p = get_user_program(i);
+        if (!p || !p->entry_point) {
             continue;
         }
         dirent_t *de = &dirents[de_index];
