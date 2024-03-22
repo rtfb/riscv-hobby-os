@@ -100,8 +100,7 @@ OS_SIFIVE_U_DEPS = $(BASE_DEPS) \
 	src/vm.c
 OS_SIFIVE_U32_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-generic.c \
-	src/timer.c \
-	src/vm.c
+	src/timer.c
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
 OS_SIFIVE_E_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
 TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
