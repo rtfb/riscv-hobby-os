@@ -23,6 +23,10 @@
 
 #define NUM_HARTS   1
 
+#define PLIC_BASE                   0x10000000
+#define PLIC_NUM_INTR_SOURCES       256
+#define PLIC_MAX_PRIORITY           31
+
 #include "machine/plic-d1.h"
 
 #endif // ifndef _D1_H_

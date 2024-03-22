@@ -33,6 +33,10 @@
 
 #define NUM_HARTS   1
 
+#define PLIC_BASE                   0x0c000000
+#define PLIC_NUM_INTR_SOURCES       53
+#define PLIC_MAX_PRIORITY           7
+
 #include "machine/plic-qemu-virt.h"
 
 #endif // ifndef _QEMU_VIRT_H_
