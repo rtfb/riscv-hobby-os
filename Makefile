@@ -112,10 +112,11 @@ OS_VIRT_DEPS = $(BASE_DEPS) \
 	src/machine/qemu/timer.c \
 	src/vm.c
 OS_OX64_DEPS = $(BASE_DEPS) \
-			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
+	src/drivers/uart/uart-ox64.c \
+	src/timer-sbi.c
 OS_STAR64_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-star64.c \
-	src/machine/star64/timer.c \
+	src/timer-sbi.c \
 	src/vm.c
 OS_D1_DEPS = $(BASE_DEPS) \
 			src/machine/d1/timer.c src/drivers/uart/uart-d1.c
