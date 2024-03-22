@@ -2,7 +2,7 @@
 #include "sbi.h"
 #include "timer.h"
 
-void init_timer() {
+void machine_init_timer() {
     // nothing to be done on this machine
 }
 
@@ -18,8 +18,4 @@ uint64_t time_get_now() {
 void set_timer_after(uint64_t delta) {
     uint64_t now = time_get_now();
     sbi_ecall(SBI_EXT_TIME, SBI_EXT_TIME_SET_TIMER, now+delta, 0, 0, 0, 0, 0);
-}
-
-void cause_timer_interrupt_now() {
-    csr_sip_set_flags(SIP_SSIP);
 }

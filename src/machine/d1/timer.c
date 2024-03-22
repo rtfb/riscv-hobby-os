@@ -5,7 +5,7 @@
 #define STIMECMP_LO   0xd000
 #define STIMECMP_HI   0xd004
 
-void init_timer() {
+void machine_init_timer() {
     // nothing to be done on this machine
 }
 
@@ -27,8 +27,4 @@ void set_timer_after(uint64_t delta) {
     uint32_t future_hi = future >> 32;
     write32(CLINT0_BASE_ADDRESS + STIMECMP_LO, future_lo);
     write32(CLINT0_BASE_ADDRESS + STIMECMP_HI, future_hi);
-}
-
-void cause_timer_interrupt_now() {
-    csr_sip_set_flags(SIP_SSIP);
 }

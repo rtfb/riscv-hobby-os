@@ -84,6 +84,7 @@ BASE_DEPS = $(BOOT) \
 	src/spinlock.c \
 	src/string.c \
 	src/syscalls.c \
+	src/timer.c \
 	src/vm-stub.c \
 	user/src/errno.c \
 	user/src/shell.c \
@@ -96,20 +97,24 @@ BASE_DEPS = $(BOOT) \
 TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 OS_SIFIVE_U_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-generic.c \
-	src/timer.c \
+	src/machine/qemu/timer.c \
 	src/vm.c
 OS_SIFIVE_U32_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-generic.c \
-	src/timer.c
+	src/machine/qemu/timer.c
 TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
-OS_SIFIVE_E_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_SIFIVE_E_DEPS = $(BASE_DEPS) \
+	src/drivers/uart/uart-generic.c \
+	src/machine/qemu/timer.c
 TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
-OS_SIFIVE_E32_DEPS = $(BASE_DEPS) src/timer.c src/drivers/uart/uart-generic.c
+OS_SIFIVE_E32_DEPS = $(BASE_DEPS) \
+	src/drivers/uart/uart-generic.c \
+	src/machine/qemu/timer.c
 TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
 TEST_VIRT_DEPS = $(TEST_DEPS)
 OS_VIRT_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-ns16550a.c \
-	src/timer.c \
+	src/machine/qemu/timer.c \
 	src/vm.c
 OS_OX64_DEPS = $(BASE_DEPS) \
 			src/machine/ox64/timer.c src/drivers/uart/uart-ox64.c
