@@ -136,9 +136,12 @@ void disable_interrupts() {
 void enable_interrupts() {
     set_status_interrupt_pending();
     set_interrupt_enable_bits();
-#if MIXED_MODE_TIMER
+    // clear the SSIP bit: it won't hurt if it wasn't set, but it could've been
+    // set in two ways:
+    // 1. When we run with MIXED_MODE_TIMER, that's the only way to do timer
+    // 2. Otherwise, the SSIP bit could've been set by
+    //    cause_timer_interrupt_now() to unsleep the scheduler
     csr_sip_clear_flags(SIP_SSIP);
-#endif
 }
 
 void panic(char const *message) {
