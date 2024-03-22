@@ -115,11 +115,12 @@ OS_OX64_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-ox64.c \
 	src/timer-sbi.c
 OS_STAR64_DEPS = $(BASE_DEPS) \
-	src/drivers/uart/uart-star64.c \
+	src/drivers/uart/uart-dw-apb.c \
 	src/timer-sbi.c \
 	src/vm.c
 OS_D1_DEPS = $(BASE_DEPS) \
-			src/machine/d1/timer.c src/drivers/uart/uart-d1.c
+	src/drivers/uart/uart-dw-apb.c \
+	src/machine/d1/timer.c
 
 .PHONY: run-u
 run-u: $(OUT)/os_sifive_u

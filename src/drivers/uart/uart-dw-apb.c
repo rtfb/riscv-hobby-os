@@ -1,11 +1,15 @@
+/*
+ * This is the driver for UART implementation DW_apb_uart[1]. It is not clearly
+ * documented in the SoC documents, but experiments show that the Nezha D1 and
+ * the Pine64 Star64 boards use this implementation (or something compatible).
+ *
+ * [1]: https://linux-sunxi.org/images/d/d2/Dw_apb_uart_db.pdf
+ */
 #include "mmreg.h"
 #include "proc.h"
 #include "plic.h"
 #include "drivers/uart/uart.h"
-#include "drivers/uart/uart-d1.h"
-
-// This is a verbatim copy of uart-d1.c.
-// TODO: unify
+#include "drivers/uart/uart-dw-apb.h"
 
 #define UART0 (UART_BASE + 0 * 0x4000)
 
