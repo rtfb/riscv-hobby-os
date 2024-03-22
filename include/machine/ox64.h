@@ -39,6 +39,4 @@
 #define PLIC_NUM_INTR_SOURCES       21
 #define PLIC_MAX_PRIORITY           7
 
-#include "machine/plic-ox64.h"
-
 #endif // ifndef _OX64_H_

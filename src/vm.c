@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "mem.h"
+#include "plic.h"
 #include "proc.h"
 #include "riscv.h"
 #include "timer.h"

@@ -35,6 +35,4 @@
 #define PLIC_NUM_INTR_SOURCES       53
 #define PLIC_MAX_PRIORITY           7
 
-#include "machine/plic-common.h"
-
 #endif // ifndef _QEMU_E_H_

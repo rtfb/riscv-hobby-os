@@ -27,6 +27,4 @@
 #define PLIC_NUM_INTR_SOURCES       256
 #define PLIC_MAX_PRIORITY           31
 
-#include "machine/plic-d1.h"
-
 #endif // ifndef _D1_H_
