@@ -94,7 +94,6 @@ BASE_DEPS = $(BOOT) \
 	user/src/ustr.c \
 	user/src/usyscalls.S
 
-TEST_SIFIVE_U_DEPS = $(TEST_DEPS)
 OS_SIFIVE_U_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-generic.c \
 	src/machine/qemu/timer.c \
@@ -102,16 +101,12 @@ OS_SIFIVE_U_DEPS = $(BASE_DEPS) \
 OS_SIFIVE_U32_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-generic.c \
 	src/machine/qemu/timer.c
-TEST_SIFIVE_E_DEPS = $(TEST_DEPS)
 OS_SIFIVE_E_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-generic.c \
 	src/machine/qemu/timer.c
-TEST_SIFIVE_E32_DEPS = $(TEST_DEPS)
 OS_SIFIVE_E32_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-generic.c \
 	src/machine/qemu/timer.c
-TEST_SIFIVE_U32_DEPS = $(TEST_DEPS)
-TEST_VIRT_DEPS = $(TEST_DEPS)
 OS_VIRT_DEPS = $(BASE_DEPS) \
 	src/drivers/uart/uart-ns16550a.c \
 	src/machine/qemu/timer.c \
