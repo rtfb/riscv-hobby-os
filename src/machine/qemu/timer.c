@@ -7,8 +7,10 @@ timer_trap_scratch_t timer_trap;
 void machine_init_timer() {
     timer_trap.mtimercmp = (void*)MTIMECMP_BASE;
     timer_trap.interval = KERNEL_SCHEDULER_TICK_TIME;
+#if BOOT_MODE_M && HAS_S_MODE
     set_mscratch_csr(&timer_trap);
     set_mtvec_csr(&mtimertrap);
+#endif
     set_timer_after(KERNEL_SCHEDULER_TICK_TIME);
 }
 
