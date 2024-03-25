@@ -6,6 +6,7 @@
 
 void gpio_enable_pin_out(int pin) {
     uint32_t out_en = read(GPIO_PIN_OUT_EN);
+    kprintf("gpio_enable_pin_out: out_en=%p\n", out_en);
     out_en |= (1 << pin);
     write(GPIO_PIN_OUT_EN, out_en);
 
@@ -26,6 +27,7 @@ void gpio_disable_pin_out(int pin) {
 
 void gpio_set_pin(int pin, int value) {
     uint32_t val_bits = read(GPIO_PIN_OUT_VAL);
+    kprintf("gpio_set_pin: val_bits=%p\n", val_bits);
     if (value) {
         val_bits |= (1 << pin);
     } else {
@@ -44,12 +46,12 @@ uint32_t gpio_do_syscall(uint32_t pin_num, uint32_t enable_disable, uint32_t val
     if (pin_num == GPIO_PIN_0 || pin_num == GPIO_PIN_1) {
         return GPIO_ERR_0_1;
     }
-    if (pin_num == GPIO_PIN_12) {
-        return GPIO_ERR_12;
-    }
-    if (pin_num == GPIO_PIN_16) {
-        return GPIO_ERR_16;
-    }
+    // if (pin_num == GPIO_PIN_12) {
+    //     return GPIO_ERR_12;
+    // }
+    // if (pin_num == GPIO_PIN_16) {
+    //     return GPIO_ERR_16;
+    // }
     switch (enable_disable) {
         case 0:
             gpio_disable_pin_out(pin_num);

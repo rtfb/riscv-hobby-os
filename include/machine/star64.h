@@ -23,6 +23,7 @@
 // star64.dts:
 // reg = <0x00000000 0x13040000 0x00000000 0x00010000>;
 #define GPIO_BASE 0x13040000
+// #define GPIO_BASE 0x10060000
 
 // star64.dts:
 // clint@2000000 {

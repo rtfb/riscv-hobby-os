@@ -7,8 +7,8 @@
 // pins internal to the FE310 chip, based on HiFive1 RevB Schematics[1]. In
 // GPIO_PIN_x, the x corresponds to the label next to a pin on the board, and
 // the value corresponds to a GPIO number as described in FE310-G002 Manual[2],
-// Capter 17. For example GPIO_PIN_0 (the corner pin on the board) is connected
-// to GPIO number 16.
+// Chapter 17. For example GPIO_PIN_0 (the corner pin on the board) is
+// connected to GPIO number 16.
 //
 // Note that GPIO_PIN_14 is not connected at all.
 //
@@ -23,19 +23,27 @@
 #define GPIO_PIN_4      20
 #define GPIO_PIN_5      21
 #define GPIO_PIN_6      22
-#define GPIO_PIN_7      23
+#define GPIO_PIN_7      7
 #define GPIO_PIN_8      0
 #define GPIO_PIN_9      1
 #define GPIO_PIN_10     2
-#define GPIO_PIN_11     3
-#define GPIO_PIN_12     4   // XXX: doesn't work
-#define GPIO_PIN_13     5
+#define GPIO_PIN_11     0
+#define GPIO_PIN_12     1   // XXX: doesn't work
+#define GPIO_PIN_13     2
 #undef GPIO_PIN_14   // not connected. Make sure it won't compile if we ever use it by mistake
-#define GPIO_PIN_15     9
-#define GPIO_PIN_16     10  // XXX: doesn't work
+#define GPIO_PIN_15     3
+#define GPIO_PIN_16     4
 #define GPIO_PIN_17     11
-#define GPIO_PIN_18     12
+#define GPIO_PIN_18     5
 #define GPIO_PIN_19     13
+
+#define GPIO_PIN_22     6
+
+#define GPIO_PIN_35     24
+#define GPIO_PIN_36     27
+#define GPIO_PIN_37     25
+#define GPIO_PIN_38     28
+#define GPIO_PIN_40     29
 
 #define GPIO_PIN_INPUT_VAL  0x00
 #define GPIO_PIN_INPUT_EN   0x04

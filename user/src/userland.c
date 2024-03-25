@@ -226,6 +226,15 @@ int _userland map_gpio_pin_num(int num) {
         case 17: return GPIO_PIN_17;
         case 18: return GPIO_PIN_18;
         case 19: return GPIO_PIN_19;
+
+        case 22: return GPIO_PIN_22;
+
+        case 35: return GPIO_PIN_35;
+        case 36: return GPIO_PIN_36;
+        case 37: return GPIO_PIN_37;
+        case 38: return GPIO_PIN_38;
+        // case 39: return GPIO_PIN_39;
+        case 40: return GPIO_PIN_40;
         default:
                 return -1;
     };

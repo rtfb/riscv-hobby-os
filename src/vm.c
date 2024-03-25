@@ -48,6 +48,7 @@ void* make_kernel_page_table(page_t *pages, int num_pages) {
     map_page_id(pagetable, (void*)MTIMECMP_BASE, PERM_KDATA, -1);
     map_page_id(pagetable, (void*)PLIC_THRESHOLD, PERM_KDATA, -1);
     map_page_id(pagetable, (void*)UART_BASE, PERM_KDATA, -1);
+    map_page_id(pagetable, (void*)GPIO_BASE, PERM_KDATA, -1);
 
     return pagetable;
 }
