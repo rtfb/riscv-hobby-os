@@ -41,5 +41,11 @@ jobs:
       run: make out/daemon-test-output-tiny-stack.txt
     - name: Run ls tests
       run: make out/ls-test-output-virt.txt
+    - name: Run u32 leaky tests
+      run: make out/leaky-test-output-u32.txt
+    - name: Run u64 leaky tests
+      run: make out/leaky-test-output-u64.txt
+    - name: Run virt leaky tests
+      run: make out/leaky-test-output-virt.txt
     - name: Make all binaries
       run: make all

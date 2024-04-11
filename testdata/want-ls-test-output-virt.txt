@@ -12,10 +12,12 @@ read.me
 smoke-test.sh
 daemon-test.sh
 ls-test.sh
+leaky-test.sh
 read.me
 smoke-test.sh
 daemon-test.sh
 ls-test.sh
+leaky-test.sh
 *sh
 *hello
 *sysinfo

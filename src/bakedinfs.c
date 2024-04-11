@@ -49,9 +49,7 @@ void bifs_init() {
     st->flags = BIFS_READABLE | BIFS_RAW;
     st->parent = home;
     st->name = "smoke-test.sh";
-    st->data = "sysinfo\n\
-fmt\n\
-hang\n\
+    st->data = "fmt\n\
 sysinfo\n\
 ps\n\
 cat /readme.txt | wc\n\
@@ -81,6 +79,15 @@ ls /home/\n\
 ls /bin\n\
 ls /proc\n\
 cat -n /proc/0/name";
+
+    bifs_file_t *lkt = &bifs_all_files[6];
+    lkt->flags = BIFS_READABLE | BIFS_RAW;
+    lkt->parent = home;
+    lkt->name = "leaky-test.sh";
+    lkt->data = "sysinfo\n\
+hang\n\
+sysinfo\n\
+ps";
 }
 
 bifs_directory_t* bifs_allocate_dir() {
