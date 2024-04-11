@@ -194,7 +194,10 @@ int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes) {
             release(&pipe->lock);
             return -ENOBUFS;
         }
-        int32_t wr = pipe_do_write(pipe, buf+nwritten, nbytes - nwritten);
+        int32_t wr = 0;
+        if (available > 0) {
+            wr = pipe_do_write(pipe, buf+nwritten, nbytes - nwritten);
+        }
         if (wr > 0) {
             // if at least one byte was written, let the reading end know that
             // it can wake up and try reading
