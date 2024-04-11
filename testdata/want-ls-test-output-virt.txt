@@ -39,5 +39,6 @@ leaky-test.sh
 <0>
 <5>
 sh
+QUIT_QEMU
 
-qemu-launcher: killing qemu due to timeout
+qemu-launcher: killing qemu due to quit sequence

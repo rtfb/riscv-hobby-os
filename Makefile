@@ -262,17 +262,17 @@ $(OUT)/os_d1.s: $(OUT)/os_d1
 	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
 
 $(OUT)/test-output-u64.txt: $(OUT)/os_sifive_u
-	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=1s --binary=$< > $@
 	@diff -u testdata/want-output-u64.txt $@
 	@echo "OK"
 
 $(OUT)/test-output-u32.txt: $(OUT)/os_sifive_u32
-	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=1s --binary=$< > $@
 	@diff -u testdata/want-output-u32.txt $@
 	@echo "OK"
 
 $(OUT)/test-output-virt.txt: $(OUT)/os_virt
-	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=5s --binary=$< > $@
+	@$(QEMU_LAUNCHER) --bootargs dry-run --timeout=1s --binary=$< > $@
 	@diff -u testdata/want-output-virt.txt $@
 	@echo "OK"
 

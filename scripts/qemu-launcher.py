@@ -95,10 +95,20 @@ def make_signal_handler(process):
     return signal_handler
 
 
+quit_seq_buffer = ''
+
+
 def pipe_bytes(r, w):
+    global quit_seq_buffer
     for c in iter(lambda: r.read(1), b''):
         w.buffer.write(c)
+        quit_seq_buffer += c.decode('utf-8')
+        if len(quit_seq_buffer) > 16:
+            quit_seq_buffer = quit_seq_buffer[-16:]
         w.flush()
+        if quit_seq_buffer.endswith('QUIT_QEMU'):
+            return True
+    return False
 
 
 # Contents of .gdbinit are taken from here:
@@ -231,12 +241,16 @@ def run(args):
         signal.signal(signal.SIGINT, make_signal_handler(p))
         start = datetime.now()
         while p.poll() is None:
-            pipe_bytes(reader, sys.stdout)
+            quit_seq_found = pipe_bytes(reader, sys.stdout)
             if timeout is not None:
                 if start + timeout < datetime.now():
                     print('\nqemu-launcher: killing qemu due to timeout')
                     kill_qemu_container()
                     break
+            if quit_seq_found:
+                print('\nqemu-launcher: killing qemu due to quit sequence')
+                kill_qemu_container()
+                break
             time.sleep(0.001)  # yield CPU
         # write the remainder:
         pipe_bytes(reader, sys.stdout)

@@ -15,5 +15,6 @@ npages: 7
 Total RAM: 48
 Free RAM: 17
 Num procs: 3
+QUIT_QEMU
 
-qemu-launcher: killing qemu due to timeout
+qemu-launcher: killing qemu due to quit sequence

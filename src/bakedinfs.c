@@ -54,7 +54,8 @@ sysinfo\n\
 ps\n\
 cat /readme.txt | wc\n\
 iter 300 | wc\n\
-testprintf\n";
+testprintf\n\
+echo QUIT_QEMU";
 
     bifs_file_t *dt = &bifs_all_files[4];
     dt->flags = BIFS_READABLE | BIFS_RAW;
@@ -67,7 +68,8 @@ fib 1\n\
 wait 1 1\n\
 fib 1\n\
 cat /proc/1/stats\n\
-sysinfo\n";
+sysinfo\n\
+echo QUIT_QEMU";
 
     bifs_file_t *lt = &bifs_all_files[5];
     lt->flags = BIFS_READABLE | BIFS_RAW;
@@ -78,7 +80,8 @@ ls /home\n\
 ls /home/\n\
 ls /bin\n\
 ls /proc\n\
-cat -n /proc/0/name";
+cat -n /proc/0/name\n\
+echo QUIT_QEMU";
 
     bifs_file_t *lkt = &bifs_all_files[6];
     lkt->flags = BIFS_READABLE | BIFS_RAW;
@@ -87,7 +90,8 @@ cat -n /proc/0/name";
     lkt->data = "sysinfo\n\
 hang\n\
 sysinfo\n\
-ps";
+ps\n\
+echo QUIT_QEMU";
 }
 
 bifs_directory_t* bifs_allocate_dir() {

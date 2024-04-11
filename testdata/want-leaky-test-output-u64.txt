@@ -14,5 +14,6 @@ ST  PID   NSCH   NAME
 S   0     4      sh
 S   2     1      hang
 R   4     1      ps
+QUIT_QEMU
 
-qemu-launcher: killing qemu due to timeout
+qemu-launcher: killing qemu due to quit sequence
