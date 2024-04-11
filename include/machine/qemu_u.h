@@ -9,7 +9,11 @@
 // we don't support Sv32, so exclude 32-bit sifive_u
 #define CONFIG_MMU      (__riscv_xlen != 32)
 
+#if CONFIG_MMU
 #define PAGE_SIZE       4096 // bytes
+#else
+#define PAGE_SIZE       512  // bytes
+#endif
 
 // Irrelevant on qemu.
 #define LINUX_IMAGE_HEADER_TEXT_OFFSET   0
