@@ -494,3 +494,61 @@ int _userland u_main_clock(int argc, char const* argv[]) {
     exit(0);
     return 0;
 }
+
+// Repeat a given string of text in the output:
+//      echo [-n] STRING
+// if -n is given, suppress the trailing newline.
+// If no arguments are given (or only -n is given), echo stdin.
+int _userland u_main_echo(int argc, char const* argv[]) {
+    int append_newline = 1;
+    int args_index = 1;
+    if (argc > 1 && argv[1][0] == '-' && argv[1][1] == 'n') {
+        append_newline = 0;
+        args_index++;
+    }
+    int32_t nwrit = 0;
+    if (args_index < argc) {
+        // echo what's in argv
+        for (int i = args_index; i < argc; i++) {
+            if (i > args_index) {
+                nwrit = write(1, " ", 1);
+                if (nwrit == -1) {
+                    prints("ERROR: write=-1\n");
+                    exit(-2);
+                }
+            }
+            nwrit = write(1, argv[i], ustrlen(argv[i]));
+            if (nwrit == -1) {
+                prints("ERROR: write=-1\n");
+                exit(-3);
+            }
+        }
+        if (append_newline) {
+            prints("\n");
+        }
+        exit(0);
+        return 0;
+    }
+    // otherwise, echo what's on stdin
+    char fbuf[64];
+    while (1) {
+        int32_t nread = read(0, fbuf, 64);
+        if (nread == -1) {
+            prints("ERROR: read=-1\n");
+            exit(-1);
+        }
+        if (nread == 0) {
+            break;
+        }
+        nwrit = write(1, fbuf, nread);
+        if (nwrit == -1) {
+            prints("ERROR: write=-1\n");
+            exit(-1);
+        }
+    }
+    if (append_newline) {
+        prints("\n");
+    }
+    exit(0);
+    return 0;
+}

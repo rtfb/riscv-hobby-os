@@ -35,6 +35,7 @@ leaky-test.sh
 *wait
 *ls
 *clock
+*echo
 <0>
 <5>
 sh

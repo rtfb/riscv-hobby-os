@@ -74,6 +74,10 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
         .entry_point = &u_main_clock,
         .name = "clock",
     },
+    (user_program_t){
+        .entry_point = &u_main_echo,
+        .name = "echo",
+    },
     // keep this last, it's a sentinel:
     (user_program_t){
         .entry_point = 0,
