@@ -38,6 +38,8 @@ BINS := \
 	$(OUT)/os_sifive_u \
 	$(OUT)/os_sifive_e \
 	$(OUT)/os_sifive_e32 \
+	$(OUT)/os_test_sifive_e \
+	$(OUT)/os_test_sifive_e32 \
 	$(OUT)/os_sifive_u32 \
 	$(OUT)/os_hifive1_revb \
 	$(OUT)/os_ox64 \
@@ -135,6 +137,10 @@ run-e: $(OUT)/os_sifive_e
 run-e32: $(OUT)/os_sifive_e32
 	$(QEMU_LAUNCHER) --binary=$<
 
+.PHONY: run-e32t
+run-e32t: $(OUT)/os_test_sifive_e32
+	$(QEMU_LAUNCHER) --binary=$<
+
 .PHONY: run-u32
 run-u32: $(OUT)/os_sifive_u32
 	$(QEMU_LAUNCHER) --binary=$<
@@ -187,6 +193,23 @@ $(OUT)/os_sifive_e32: ${OS_SIFIVE_E32_DEPS}
 		-g -Wl,--defsym,RAM_SIZE=0x4000 \
 		-include include/machine/qemu_e.h \
 		${OS_SIFIVE_E32_DEPS} -o $@
+
+$(OUT)/os_test_sifive_e32: ${OS_SIFIVE_E32_DEPS}
+	$(RISCV64_GCC) -march=rv32g -mabi=ilp32 $(GCC_FLAGS) \
+		-Wl,--defsym,ROM_START=0x20400000 \
+		-Wa,--defsym,XLEN=32 \
+		-g -Wl,--defsym,RAM_SIZE=0x4000 \
+		-DHARDCODED_TEST=0x1001 \
+		-include include/machine/qemu_e.h \
+		${OS_SIFIVE_E32_DEPS} -o $@
+
+$(OUT)/os_test_sifive_e: ${OS_SIFIVE_E_DEPS}
+	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
+		-Wl,--defsym,ROM_START=0x20400000 -g \
+		-Wl,--defsym,RAM_SIZE=0x4000 \
+		-DHARDCODED_TEST=0x1001 \
+		-include include/machine/qemu_e.h \
+		${OS_SIFIVE_E_DEPS} -o $@
 
 $(OUT)/os_virt: ${OS_VIRT_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
@@ -306,6 +329,10 @@ $(OUT)/leaky-test-output-u32.txt: $(OUT)/os_sifive_u32
 $(OUT)/leaky-test-output-virt.txt: $(OUT)/os_virt
 	@$(QEMU_LAUNCHER) --bootargs test-script=/home/leaky-test.sh --timeout=5s --binary=$< > $@
 	@diff -u testdata/want-leaky-test-output-virt.txt $@
+
+$(OUT)/smoke-test-output-e32.txt: $(OUT)/os_test_sifive_e32
+	@$(QEMU_LAUNCHER) --timeout=5s --binary=$< > $@
+	@diff -u testdata/want-smoke-test-output-e32.txt $@
 	@echo "OK"
 
 $(OUT):

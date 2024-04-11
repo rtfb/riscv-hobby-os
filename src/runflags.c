@@ -9,6 +9,9 @@ uint32_t parse_runflags() {
         return RUNFLAGS_DRY_RUN;
     }
     char const *bootargs = fdt_get_bootargs();
+#ifdef HARDCODED_TEST
+    bootargs = "test-script=/home/smoke-test.sh";
+#endif
     int end_of_prefix = 0;
     if (has_prefix(bootargs, "test-script", &end_of_prefix)) {
         test_script = bootargs + end_of_prefix + 1;

@@ -31,6 +31,8 @@ jobs:
       run: make out/smoke-test-output-u64.txt
     - name: Run u32 smoke tests
       run: make out/smoke-test-output-u32.txt
+    - name: Run e32 smoke tests
+      run: make out/smoke-test-output-e32.txt
     - name: Run tiny-stack smoke tests
       run: make out/smoke-test-output-tiny-stack.txt
     - name: Run daemon tests
