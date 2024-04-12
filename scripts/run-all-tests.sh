@@ -6,6 +6,7 @@ make out/smoke-test-output-u64.txt
 make out/smoke-test-output-virt.txt
 make out/smoke-test-output-tiny-stack.txt
 make out/smoke-test-output-e32.txt
+make out/smoke-test-output-e64.txt
 make out/daemon-test-output-virt.txt
 make out/daemon-test-output-u64.txt
 make out/daemon-test-output-tiny-stack.txt

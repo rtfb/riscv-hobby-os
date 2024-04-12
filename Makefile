@@ -335,6 +335,11 @@ $(OUT)/smoke-test-output-e32.txt: $(OUT)/os_test_sifive_e32
 	@diff -u testdata/want-smoke-test-output-e32.txt $@
 	@echo "OK"
 
+$(OUT)/smoke-test-output-e64.txt: $(OUT)/os_test_sifive_e
+	@$(QEMU_LAUNCHER) --timeout=5s --binary=$< > $@
+	@diff -u testdata/want-smoke-test-output-e64.txt $@
+	@echo "OK"
+
 $(OUT):
 	mkdir -p $(OUT)
 
