@@ -338,29 +338,11 @@ $(OUT)/smoke-test-output-e32.txt: $(OUT)/os_test_sifive_e32
 $(OUT):
 	mkdir -p $(OUT)
 
-$(OUT)/os_sifive_u.s: $(OUT)/os_sifive_u
+$(OUT)/%.s: $(OUT)/%
 	$(RISCV64_OBJDUMP) -D $< > $@
-
-$(OUT)/os_sifive_u32.s: $(OUT)/os_sifive_u32
-	$(RISCV64_OBJDUMP) -D $< > $@
-
-$(OUT)/os_sifive_u.rodata: $(OUT)/os_sifive_u
-	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
-
-$(OUT)/os_sifive_e32.s: $(OUT)/os_sifive_e32
-	$(RISCV64_OBJDUMP) -D $< > $@
-
-$(OUT)/os_sifive_e32.rodata: $(OUT)/os_sifive_e32
-	$(RISCV64_OBJDUMP) -s -j .rodata $< > $@
 
 $(OUT)/os_hifive1_revb.hex: $(OUT)/os_hifive1_revb
 	$(RISCV64_OBJCOPY) -O ihex $< $@
-
-$(OUT)/os_hifive1_revb.s: $(OUT)/os_hifive1_revb
-	$(RISCV64_OBJDUMP) --source --all-headers --demangle --line-numbers --wide -D $< > $@
-
-$(OUT)/os_virt.s: $(OUT)/os_virt
-	$(RISCV64_OBJDUMP) -D $< > $@
 
 # This target assumes a Segger J-Link software is installed on the system. Get it at
 # https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
