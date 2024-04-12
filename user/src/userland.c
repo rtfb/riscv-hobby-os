@@ -127,16 +127,22 @@ int _userland u_main_cat(int argc, char const *argv[]) {
         exit(-1);
     }
     char fbuf[64];
-    int32_t nread = read(fd, fbuf, 64);
-    if (nread == -1) {
-        prints("ERROR: read=-1\n");
-        exit(-1);
-    }
-    fbuf[nread] = 0;
-    int32_t nwrit = write(1, fbuf, nread);
-    if (nwrit == -1) {
-        prints("ERROR: write=-1\n");
-        exit(-1);
+    int32_t nread = 0;
+    int32_t nwrit = 0;
+    while (1) {
+        nread = read(fd, fbuf, 64);
+        if (nread == -1) {
+            prints("ERROR: read=-1\n");
+            exit(-1);
+        }
+        if (nread == 0) {
+            break;
+        }
+        nwrit = write(1, fbuf, nread);
+        if (nwrit == -1) {
+            prints("ERROR: write=-1\n");
+            exit(-1);
+        }
     }
     if (append_newline) {
         prints("\n");
