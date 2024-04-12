@@ -41,7 +41,6 @@ typedef struct pipe_s {
 typedef struct pipes_s {
     spinlock lock;
     pipe_t all[MAX_PIPES];
-    void *buf_page;
 } pipes_t;
 
 // defined in pipe.c
@@ -53,7 +52,7 @@ extern pipes_t pipes;
 int32_t pipe_open(uint32_t pipefd[2]);
 int32_t pipe_close_file(file_t *file);
 void init_pipes();
-pipe_t* alloc_pipe();
+pipe_t* alloc_pipe(uint32_t pid);
 void free_pipe(pipe_t *pipe);
 int32_t pipe_read(file_t *f, uint32_t pos, void *buf, uint32_t size);
 int32_t pipe_write(file_t *f, uint32_t pos, void *buf, uint32_t nbytes);

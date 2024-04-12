@@ -13,7 +13,7 @@ ppid: -1
 nscheds: 7
 npages: 7
 Total RAM: 48
-Free RAM: 17
+Free RAM: 18
 Num procs: 3
 QUIT_QEMU
 

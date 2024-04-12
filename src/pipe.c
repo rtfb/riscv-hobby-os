@@ -10,25 +10,25 @@ pipes_t pipes;
 
 void init_pipes() {
     pipes.lock = 0;
-    pipes.buf_page = kalloc("init_pipes", -1);
-    if (!pipes.buf_page) {
-        panic("init pipes alloc");
-        return;
-    }
     for (int i = 0; i < MAX_PIPES; i++) {
         pipe_t *p = &pipes.all[i];
         p->flags = 0;
-        p->buf = pipes.buf_page + PIPE_BUF_SIZE * i;
+        p->buf = 0;
     }
 }
 
-pipe_t* alloc_pipe() {
+pipe_t* alloc_pipe(uint32_t pid) {
+    void *pipe_buf = kalloc("pipe_buf", pid);
+    if (!pipe_buf) {
+        return 0;
+    }
     acquire(&pipes.lock);
     for (int i = 0; i < MAX_PIPES; i++) {
         pipe_t *pp = &pipes.all[i];
         if (!pp->flags) {
             pp->flags |= PIPE_FLAG_ALLOCATED;
             acquire(&pp->lock);
+            pp->buf = pipe_buf;
             release(&pipes.lock);
             return pp;
         }
@@ -39,12 +39,13 @@ pipe_t* alloc_pipe() {
 
 // free_pipe marks a pipe object as unoccupied. pipe->lock must be held.
 void free_pipe(pipe_t *pipe) {
+    release_page(pipe->buf);
     pipe->flags = 0;
 }
 
 int32_t pipe_open(uint32_t pipefd[2]) {
     process_t* proc = myproc();
-    pipe_t *pipe = alloc_pipe(); // acquires pipe->lock
+    pipe_t *pipe = alloc_pipe(proc->pid); // acquires pipe->lock
     if (!pipe) {
         *proc->perrno = ENOMEM;
         return -1;

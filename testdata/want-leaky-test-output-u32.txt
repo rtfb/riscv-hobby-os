@@ -4,11 +4,11 @@ FDT ok
 bootargs: test-script=/home/leaky-test.sh
 kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-2147483647
 Total RAM: 32
-Free RAM: 25
+Free RAM: 26
 Num procs: 2
 I will hang now, bye
 Total RAM: 32
-Free RAM: 23
+Free RAM: 24
 Num procs: 3
 ST  PID   NSCH   NAME
 S   0     4      sh
