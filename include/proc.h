@@ -9,7 +9,9 @@
 #include "syscalls.h"
 #include "sys.h"
 
+#ifndef MAX_PROCS
 #define MAX_PROCS 8
+#endif
 
 // PROC_STATE_AVAILABLE signifies an unoccupied slot in the process table, it's
 // available for use by a new process.

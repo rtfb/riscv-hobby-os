@@ -35,4 +35,6 @@
 #define PLIC_NUM_INTR_SOURCES       53
 #define PLIC_MAX_PRIORITY           7
 
+#define MAX_PROCS   4
+
 #endif // ifndef _QEMU_E_H_

@@ -5,8 +5,8 @@ bootargs:
 kprintf test: str=foo, ptr=0xabcdf10a, pos int=1337, neg int=-2147483647
 formatted string: num=387, zero=0, char=X, hex=0xaddbeef, str=foo
 only groks 7 args: 11 12 13 14 15 16 17 %d %d
-Total RAM: 11
-Free RAM: 4
+Total RAM: 14
+Free RAM: 7
 Num procs: 2
 ST  PID   NSCH   NAME
 S   0     3      sh
