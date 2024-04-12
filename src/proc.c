@@ -407,7 +407,7 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     *proc->magic = PROC_MAGIC_STACK_SENTINEL;
 
     int status = itoa(proc->piddir, MAX_FILENAME_LEN, proc->pid);
-    if (status == 0) {
+    if (status < 0) {
         return ENOBUFS;
     }
     bifs_directory_t *procfs_dir = bifs_mkdir("/proc", proc->piddir);
