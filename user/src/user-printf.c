@@ -38,6 +38,7 @@ int32_t _userland printfvecbuf(char const* fmt, regsize_t* args, int nargs, char
 int32_t _userland printfvec(char const* fmt, regsize_t* args) {
     char* buf = (char*)pgalloc();
     if (!buf) {
+        prints("OOM\n");
         return -1;
     }
     int32_t buf_written = printfvecbuf(fmt, args, 7, buf, PAGE_SIZE-1);
