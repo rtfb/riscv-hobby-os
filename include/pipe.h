@@ -44,6 +44,9 @@ typedef struct pipes_s {
     void *buf_page;
 } pipes_t;
 
+// defined in pipe.c
+extern pipes_t pipes;
+
 // pipe_open allocates a pipe_t and two file descriptors. Both fds will point
 // to the same pipe, pipefd[0] being the reading end of the pipe and pipefd[1]
 // the writing end.
