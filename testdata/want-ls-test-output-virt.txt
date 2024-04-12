@@ -38,6 +38,7 @@ leaky-test.sh
 *echo
 <0>
 <5>
+sysmem
 sh
 QUIT_QEMU
 

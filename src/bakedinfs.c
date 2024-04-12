@@ -1,12 +1,69 @@
 #include "bakedinfs.h"
 #include "errno.h"
+#include "fdt.h"
+#include "kprintf.h"
 #include "mem.h"
+#include "pagealloc.h"
+#include "pipe.h"
+#include "proc.h"
 #include "programs.h"
 #include "string.h"
 
 bifs_directory_t *bifs_root;
 bifs_directory_t bifs_all_directories[BIFS_MAX_DIRS];
 bifs_file_t      bifs_all_files[BIFS_MAX_FILES];
+
+#define PROCFS_ITOA_BUF_LEN 8
+#define PROCFS_STRNCPY(str)                             \
+    strncpy(buf, str, ARRAY_LENGTH(str));               \
+    buf += ARRAY_LENGTH(str)
+
+#define PROCFS_ITOA(num) \
+    len = itoa(itoa_buf, PROCFS_ITOA_BUF_LEN, (num));   \
+    if (len < 0) {                                      \
+        return -ENOBUFS;                                \
+    }                                                   \
+    strncpy(buf - 1, itoa_buf, len);                    \
+    buf += len - 2;                                     \
+    *buf = '\n';                                        \
+    buf++
+
+// defined in kernel.ld:
+extern void* bss_start;
+extern void* bss_end;
+
+int32_t procfs_sysmem_data_func(dq_closure_t *c, char *buf, regsize_t bufsz) {
+    char *orig_buf = buf;
+    char itoa_buf[PROCFS_ITOA_BUF_LEN];
+    int len = 0;
+    PROCFS_STRNCPY("sizeof(bifs_all_directories)=");
+    PROCFS_ITOA(sizeof(bifs_all_directories));
+    PROCFS_STRNCPY("sizeof(bifs_all_files)=");
+    PROCFS_ITOA(sizeof(bifs_all_files));
+    PROCFS_STRNCPY("sizeof(proc_table)=");
+    PROCFS_ITOA(sizeof(proc_table));
+    PROCFS_STRNCPY("sizeof(ftable)=");
+    PROCFS_ITOA(sizeof(ftable));
+    PROCFS_STRNCPY("sizeof(paged_memory)=");
+    PROCFS_ITOA(sizeof(paged_memory));
+    PROCFS_STRNCPY("sizeof(pipes)=");
+    PROCFS_ITOA(sizeof(pipes));
+    PROCFS_STRNCPY("sizeof(trap_frame)=");
+    PROCFS_ITOA(sizeof(trap_frame));
+
+    PROCFS_STRNCPY("total bss=");
+    PROCFS_ITOA(sizeof(bifs_all_directories)
+            + sizeof(bifs_all_files)
+            + sizeof(proc_table)
+            + sizeof(bootargs)
+            + sizeof(ftable)
+            + sizeof(paged_memory)
+            + sizeof(pipes)
+            + sizeof(trap_frame));
+    PROCFS_STRNCPY("actual bss size=");
+    PROCFS_ITOA((&bss_end - &bss_start) * sizeof(regsize_t));
+    return buf - orig_buf;
+}
 
 void bifs_init() {
     memset(bifs_all_directories, sizeof(bifs_all_directories), 0);
@@ -92,6 +149,16 @@ hang\n\
 sysinfo\n\
 ps\n\
 echo QUIT_QEMU";
+
+    bifs_file_t *sysmem = &bifs_all_files[7];
+    sysmem->flags = BIFS_READABLE | BIFS_RAW | BIFS_TMPFILE;
+    sysmem->parent = procfs;
+    sysmem->name = "sysmem";
+    sysmem->data = 0;
+    sysmem->dataquery = (dq_closure_t){
+        .func = procfs_sysmem_data_func,
+        .data = 0,
+    };
 }
 
 bifs_directory_t* bifs_allocate_dir() {
