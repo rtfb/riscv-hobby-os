@@ -56,6 +56,7 @@ void fs_free_file(file_t *f) {
     }
     if (f->tmpfile_mem) {
         release_page(f->tmpfile_mem);
+        f->tmpfile_mem = 0;
         bifs_file_t *bf = (bifs_file_t*)f->fs_file;
         bf->data = 0;
     }
