@@ -11,6 +11,8 @@
 #define NODE_CHOSEN "chosen"
 #define PROP_BOOTARGS "bootargs"
 
+char bootargs[128];
+
 uint32_t bswap(uint32_t x) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     uint32_t y = (x & 0x00ff00ff) << 8 | (x & 0xff00ff00) >> 8;
@@ -27,8 +29,6 @@ uint32_t* upalign4(void *x) {
     addr = (addr + 3) & (-4);
     return (uint32_t*)addr;
 }
-
-char bootargs[128];
 
 char const* fdt_get_bootargs() {
     return bootargs;

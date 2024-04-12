@@ -28,6 +28,9 @@ typedef struct fdt_header_s {
     uint32_t size_dt_struct;
 } fdt_header;
 
+// defined in fdt.c
+extern char bootargs[128];
+
 void fdt_init(uintptr_t header_addr);
 char const* fdt_get_bootargs();
 
