@@ -6,6 +6,7 @@
 #include "syscalls.h"
 
 #define BIFS_MAX_FILES 32
+#define BIFS_MAX_DIRS  8
 
 #define BIFS_READABLE (1 << 0)
 #define BIFS_WRITABLE (1 << 1)
@@ -40,7 +41,7 @@ typedef struct bifs_file_s {
 } bifs_file_t;
 
 extern bifs_directory_t *bifs_root;
-extern bifs_directory_t bifs_all_directories[BIFS_MAX_FILES];
+extern bifs_directory_t bifs_all_directories[BIFS_MAX_DIRS];
 extern bifs_file_t      bifs_all_files[BIFS_MAX_FILES];
 
 void bifs_init();

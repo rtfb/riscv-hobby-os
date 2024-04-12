@@ -5,7 +5,7 @@
 #include "string.h"
 
 bifs_directory_t *bifs_root;
-bifs_directory_t bifs_all_directories[BIFS_MAX_FILES];
+bifs_directory_t bifs_all_directories[BIFS_MAX_DIRS];
 bifs_file_t      bifs_all_files[BIFS_MAX_FILES];
 
 void bifs_init() {
@@ -95,7 +95,7 @@ echo QUIT_QEMU";
 }
 
 bifs_directory_t* bifs_allocate_dir() {
-    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+    for (int i = 0; i < BIFS_MAX_DIRS; i++) {
         bifs_directory_t *d = &bifs_all_directories[i];
         if (d->flags == 0) {
             d->flags = BIFS_READABLE;
@@ -189,7 +189,7 @@ bifs_directory_t* bifs_opendir(bifs_directory_t *parent, char const *name, int s
     if (parent == 0) {
         parent = &bifs_all_directories[0]; // assume root
     }
-    for (int i = 1; i < BIFS_MAX_FILES; i++) {
+    for (int i = 1; i < BIFS_MAX_DIRS; i++) {
         bifs_directory_t *d = &bifs_all_directories[i];
         if (d->parent != parent) {
             continue;
@@ -220,7 +220,7 @@ int32_t bifs_openfile(bifs_directory_t *parent, char const *name, int start, int
 
 int32_t bifs_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size) {
     int de_index = 0;
-    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+    for (int i = 0; i < BIFS_MAX_DIRS; i++) {
         if (de_index >= size) {
             return -ENOBUFS;
         }
