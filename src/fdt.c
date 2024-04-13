@@ -11,7 +11,9 @@
 #define NODE_CHOSEN "chosen"
 #define PROP_BOOTARGS "bootargs"
 
+#if HAS_BOOTARGS
 char bootargs[128];
+#endif
 
 uint32_t bswap(uint32_t x) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -23,7 +25,7 @@ uint32_t bswap(uint32_t x) {
 #endif
 }
 
-// reallign a pointer to the nearest greater multiple of 4
+// realign a pointer to the nearest greater multiple of 4
 uint32_t* upalign4(void *x) {
     uintptr_t addr = (uintptr_t)x;
     addr = (addr + 3) & (-4);
@@ -31,7 +33,11 @@ uint32_t* upalign4(void *x) {
 }
 
 char const* fdt_get_bootargs() {
+#if HAS_BOOTARGS
     return bootargs;
+#else
+    return "";
+#endif
 }
 
 void fdt_parse(uint32_t *tree, char const *strings) {
@@ -50,7 +56,9 @@ void fdt_parse(uint32_t *tree, char const *strings) {
                     if (found_chosen) {
                         if (strncmp(strings+name_offset, PROP_BOOTARGS, ARRAY_LENGTH(PROP_BOOTARGS)) == 0) {
                             char const *arg = (char const*)tree;
+#if HAS_BOOTARGS
                             strncpy(bootargs, arg, ARRAY_LENGTH(bootargs));
+#endif
                             return;
                         }
                     }

@@ -5,6 +5,7 @@
 
 #define BOOT_MODE_M     1
 #define HAS_S_MODE      1
+#define HAS_BOOTARGS    1
 
 // we don't support Sv32, so exclude 32-bit sifive_u
 #define CONFIG_MMU      (__riscv_xlen != 32)

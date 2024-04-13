@@ -7,6 +7,7 @@
 
 #define BOOT_MODE_M     1
 #define HAS_S_MODE      0
+#define HAS_BOOTARGS    0
 
 #define PAGE_SIZE       512 // bytes
 

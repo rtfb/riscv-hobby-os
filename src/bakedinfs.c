@@ -55,7 +55,9 @@ int32_t procfs_sysmem_data_func(dq_closure_t *c, char *buf, regsize_t bufsz) {
     PROCFS_ITOA(sizeof(bifs_all_directories)
             + sizeof(bifs_all_files)
             + sizeof(proc_table)
+#if HAS_BOOTARGS
             + sizeof(bootargs)
+#endif
             + sizeof(ftable)
             + sizeof(paged_memory)
             + sizeof(pipes)
