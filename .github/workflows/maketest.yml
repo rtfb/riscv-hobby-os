@@ -19,37 +19,7 @@ jobs:
       run: riscv64-linux-gnu-gcc --version
     - name: Build qemu-image
       run: make build-qemu-image
-    - name: Run virt dry-run tests
-      run: make out/test-output-virt.txt
-    - name: Run u64 dry-run tests
-      run: make out/test-output-u64.txt
-    - name: Run u32 dry-run tests
-      run: make out/test-output-u32.txt
-    - name: Run virt smoke tests
-      run: make out/smoke-test-output-virt.txt
-    - name: Run u64 smoke tests
-      run: make out/smoke-test-output-u64.txt
-    - name: Run u32 smoke tests
-      run: make out/smoke-test-output-u32.txt
-    - name: Run e32 smoke tests
-      run: make out/smoke-test-output-e32.txt
-    - name: Run e64 smoke tests
-      run: make out/smoke-test-output-e64.txt
-    - name: Run tiny-stack smoke tests
-      run: make out/smoke-test-output-tiny-stack.txt
-    - name: Run daemon tests
-      run: make out/daemon-test-output-virt.txt
-    - name: Run u64 daemon tests
-      run: make out/daemon-test-output-u64.txt
-    - name: Run tiny-stack daemon tests
-      run: make out/daemon-test-output-tiny-stack.txt
-    - name: Run ls tests
-      run: make out/ls-test-output-virt.txt
-    - name: Run u32 leaky tests
-      run: make out/leaky-test-output-u32.txt
-    - name: Run u64 leaky tests
-      run: make out/leaky-test-output-u64.txt
-    - name: Run virt leaky tests
-      run: make out/leaky-test-output-virt.txt
     - name: Make all binaries
       run: make all
+    - name: Run all tests
+      run: ./scripts/run-all-tests.sh
