@@ -1,5 +1,7 @@
 # RISC-V Hobby OS
 
+[![CI][ci-badge]](https://github.com/rtfb/riscv-hobby-os/actions/workflows/maketest.yml)
+
 This is a small hobbyist kernel for RISC-V. It doesn't try to be compatible with
 anything, but happens to go along the old Unix ways. It does preemptive
 multitasking, implements fork+exec system calls, and a bunch of others needed
@@ -65,6 +67,7 @@ Handy RISC-V Quick References:
 * [SiFive U (SiFive Freedom U540-C000 SoC) Hardware Manual][sifive-u]
 * [SiFive E (SiFive Freedom U310-G002 SoC) Hardware Manual][sifive-e]
 
+[ci-badge]: https://github.com/rtfb/riscv-hobby-os/actions/workflows/maketest.yml/badge.svg
 [riscv-asm-sheet]: https://github.com/jameslzhu/riscv-card/blob/master/riscv-card.pdf
 [riscv-asm-man]: https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md
 [sifive-u]: https://static.dev.sifive.com/FU540-C000-v1.0.pdf
