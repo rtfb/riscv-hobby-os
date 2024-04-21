@@ -1,11 +1,7 @@
 // Entry points for all the syscalls here
 
-#include "gpio.h"
-#include "pagealloc.h"
-#include "pipe.h"
 #include "proc.h"
 #include "syscalls.h"
-#include "vm.h"
 
 // for fun let's pretend syscall table is kinda like 32bit Linux on x86,
 // /usr/include/asm/unistd_32.h: __NR_restart_syscall 0, __NR_exit 1, _NR_fork 2, __NR_read 3, __NR_write 4
@@ -39,12 +35,12 @@ void *syscall_vector[] _text = {
 };
 int syscall_vector_len _text = SYS_NR_lsdir;
 
-void sys_restart() {
-    poweroff();
+regsize_t sys_restart() {
+    return proc_restart();
 }
 
-void sys_exit() {
-    proc_exit();
+regsize_t sys_exit() {
+    return proc_exit();
 }
 
 uint32_t sys_fork() {
@@ -88,7 +84,7 @@ uint32_t sys_execv() {
 }
 
 uint32_t sys_getpid() {
-    return myproc()->pid;
+    return proc_getpid();
 }
 
 uint32_t sys_dup() {
@@ -98,25 +94,11 @@ uint32_t sys_dup() {
 
 uint32_t sys_pipe() {
     uint32_t *fds = (uint32_t*)trap_frame.regs[REG_A0];
-    return pipe_open(fds);
+    return proc_pipe(fds);
 }
 
-// TODO: move implementation to proc layer
 uint32_t sys_sysinfo() {
-    sysinfo_t* info = (sysinfo_t*)trap_frame.regs[REG_A0];
-    process_t *proc = myproc();
-    info = va2pa(proc->upagetable, info);
-    acquire(&proc_table.lock);
-    info->procs = proc_table.num_procs;
-    release(&proc_table.lock);
-
-    acquire(&paged_memory.lock);
-    info->totalram = paged_memory.num_pages;
-    info->freeram = count_free_pages();
-    info->unclaimed_start = paged_memory.unclaimed_start;
-    info->unclaimed_end = paged_memory.unclaimed_end;
-    release(&paged_memory.lock);
-    return 0;
+    return proc_sysinfo();
 }
 
 uint32_t sys_sleep() {
@@ -137,20 +119,19 @@ uint32_t sys_pinfo() {
 }
 
 regsize_t sys_pgalloc() {
-    return (regsize_t)proc_pgalloc();
+    return proc_pgalloc();
 }
 
 regsize_t sys_pgfree() {
     void *page = (void*)trap_frame.regs[REG_A0];
-    proc_pgfree(page);
-    return 0;
+    return proc_pgfree(page);
 }
 
 uint32_t sys_gpio() {
     uint32_t pin_num = (uint32_t)trap_frame.regs[REG_A0];
     uint32_t enable = (uint32_t)trap_frame.regs[REG_A1];
     uint32_t value = (uint32_t)trap_frame.regs[REG_A2];
-    return gpio_do_syscall(pin_num, enable, value);
+    return proc_gpio(pin_num, enable, value);
 }
 
 uint32_t sys_detach() {

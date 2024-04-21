@@ -162,7 +162,7 @@ uint32_t proc_fork();
 // proc_exit implements the exit syscall. It will remove the process from the
 // table, release all the resources taken by the process and call the
 // scheduler.
-void proc_exit();
+regsize_t proc_exit();
 
 // proc_execv implements the exec system call. The 'v' suffix means the
 // arguments are passed vectorized, in an array of pointers to strings. The
@@ -239,8 +239,14 @@ int32_t proc_dup(uint32_t fd);
 
 uint32_t proc_lsdir(char const *dir, dirent_t *dirents, regsize_t size);
 
-void* proc_pgalloc();
-void proc_pgfree(void *page);
+regsize_t proc_pgalloc();
+regsize_t proc_pgfree(void *page);
+
+regsize_t proc_getpid();
+regsize_t proc_pipe(uint32_t *fds);
+regsize_t proc_sysinfo();
+regsize_t proc_gpio(uint32_t pin_num, uint32_t enable, uint32_t value);
+regsize_t proc_restart();
 
 uint32_t proc_detach();
 int32_t proc_isopen(int32_t fd);

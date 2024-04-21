@@ -1,9 +1,11 @@
 #include "bakedinfs.h"
 #include "drivers/uart/uart.h"
 #include "errno.h"
+#include "gpio.h"
 #include "kernel.h"
 #include "mem.h"
 #include "pagealloc.h"
+#include "pipe.h"
 #include "pmp.h"
 #include "proc.h"
 #include "programs.h"
@@ -484,7 +486,7 @@ void patch_proc_sp(process_t *proc, regsize_t sp) {
     proc->ctx.regs[REG_SP] = sp;
 }
 
-void proc_exit() {
+regsize_t proc_exit() {
     process_t* proc = myproc();
     release_page(proc->stack_page);
 #if CONFIG_MMU
@@ -510,6 +512,7 @@ void proc_exit() {
     proc_table.num_procs--;
     release(&proc_table.lock);
     swtch(&proc->ctx, &thiscpu()->context);
+    return 0;
 }
 
 // check_exited_children iterates over process table looking for zombie
@@ -802,7 +805,7 @@ int32_t proc_dup(uint32_t fd) {
     return newfd;
 }
 
-void* proc_pgalloc() {
+regsize_t proc_pgalloc() {
     process_t* proc = myproc();
     void *page = allocate_page("user", proc->pid, PAGE_USERMEM);
     if (!page) {
@@ -811,13 +814,14 @@ void* proc_pgalloc() {
 #if CONFIG_MMU
     map_page_sv39(proc->upagetable, page, USR_VIRT(page), PERM_UDATA, proc->pid);
 #endif
-    return (void*)USR_VIRT(page);
+    return USR_VIRT(page);
 }
 
-void proc_pgfree(void *page) {
+regsize_t proc_pgfree(void *page) {
     process_t* proc = myproc();
     page = va2pa(proc->upagetable, page);
     release_page(page);
+    return 0;
 }
 
 // proc_detach detaches the current process from its parent. The parent will no
@@ -906,4 +910,38 @@ uint32_t proc_lsdir(char const *dir, dirent_t *dirents, regsize_t size) {
         return -1;
     }
     return status;
+}
+
+regsize_t proc_getpid() {
+    return myproc()->pid;
+}
+
+regsize_t proc_pipe(uint32_t *fds) {
+    return pipe_open(fds);
+}
+
+regsize_t proc_sysinfo() {
+    sysinfo_t* info = (sysinfo_t*)trap_frame.regs[REG_A0];
+    process_t *proc = myproc();
+    info = va2pa(proc->upagetable, info);
+    acquire(&proc_table.lock);
+    info->procs = proc_table.num_procs;
+    release(&proc_table.lock);
+
+    acquire(&paged_memory.lock);
+    info->totalram = paged_memory.num_pages;
+    info->freeram = count_free_pages();
+    info->unclaimed_start = paged_memory.unclaimed_start;
+    info->unclaimed_end = paged_memory.unclaimed_end;
+    release(&paged_memory.lock);
+    return 0;
+}
+
+regsize_t proc_gpio(uint32_t pin_num, uint32_t enable, uint32_t value) {
+    return gpio_do_syscall(pin_num, enable, value);
+}
+
+regsize_t proc_restart() {
+    poweroff();
+    return 0;
 }

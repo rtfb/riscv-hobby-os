@@ -58,8 +58,8 @@ typedef struct wait_cond_s {
 
 // TODO: unify the return values of syscalls
 
-void sys_restart();
-void sys_exit();
+regsize_t sys_restart();
+regsize_t sys_exit();
 uint32_t sys_fork();
 int32_t sys_read();
 int32_t sys_write();
