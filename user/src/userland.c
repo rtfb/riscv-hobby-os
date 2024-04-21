@@ -523,7 +523,7 @@ int _userland u_main_echo(int argc, char const* argv[]) {
                     exit(-2);
                 }
             }
-            nwrit = write(1, argv[i], ustrlen(argv[i]));
+            nwrit = write(1, (void*)argv[i], ustrlen(argv[i]));
             if (nwrit == -1) {
                 prints("ERROR: write=-1\n");
                 exit(-3);

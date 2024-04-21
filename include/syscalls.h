@@ -2,6 +2,7 @@
 #define _SYSCALLS_H_
 
 #include "sys.h"
+#include "syscalldecls.h"
 #include "syscallnums.h"
 
 extern void *syscall_vector[];
@@ -56,33 +57,7 @@ typedef struct wait_cond_s {
     uint64_t want_nscheds;
 } wait_cond_t;
 
-// TODO: unify the return values of syscalls
-
-regsize_t sys_restart();
-regsize_t sys_exit();
-uint32_t sys_fork();
-int32_t sys_read();
-int32_t sys_write();
-int32_t sys_open();
-int32_t sys_close();
-int32_t sys_wait();
-uint32_t sys_execv();
-uint32_t sys_getpid();
-uint32_t sys_dup();
-uint32_t sys_pipe();
-uint32_t sys_sysinfo();
-uint32_t sys_sleep();
-uint32_t sys_plist();
-uint32_t sys_pinfo();
-regsize_t sys_pgalloc();
-regsize_t sys_pgfree();
-uint32_t sys_gpio();
-uint32_t sys_detach();
-int32_t sys_isopen();
-uint32_t sys_pipeattch();
-uint32_t sys_lsdir();
-
-// These are implemented in assembler as of now:
+// Implemented in src/baremetal-poweroff.S
 extern void poweroff();
 
 #endif // ifndef _SYSCALLS_H_

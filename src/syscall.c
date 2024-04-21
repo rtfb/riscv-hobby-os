@@ -18,7 +18,7 @@ void syscall(regsize_t kernel_sp) {
         // TODO: kill proc
         return;
     }
-    if (nr >= 0 && nr <= syscall_vector_len && syscall_vector[nr] != 0) {
+    if (nr >= 0 && nr <= SYSCALL_VECTOR_LEN && syscall_vector[nr] != 0) {
         int32_t (*funcPtr)(void) = syscall_vector[nr];
         trap_frame.regs[REG_A0] = (*funcPtr)();
     } else {

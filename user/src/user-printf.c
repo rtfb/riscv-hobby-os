@@ -53,5 +53,5 @@ int32_t _userland printfvec(char const* fmt, regsize_t* args) {
 // prints() than printf() with a single argument because printf() has to
 // allocate a buffer and prints() can call write() directly.
 int32_t _userland prints(char const* str) {
-    return write(1, str, -1);
+    return write(1, (void*)str, -1);
 }

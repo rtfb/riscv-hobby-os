@@ -162,6 +162,21 @@ run-virt: $(OUT)/os_virt
 gdb:
 	$(GDB) $(shell cat .debug-session)
 
+user/inc/usyscalls.h: include/syscalls.hh scripts/gen-syscalls.py
+	./scripts/gen-syscalls.py
+
+user/inc/usyscalls.S: include/syscalls.hh scripts/gen-syscalls.py
+	./scripts/gen-syscalls.py
+
+include/syscallnums.h: include/syscalls.hh scripts/gen-syscalls.py
+	./scripts/gen-syscalls.py
+
+include/syscalldecls.h: include/syscalls.hh scripts/gen-syscalls.py
+	./scripts/gen-syscalls.py
+
+src/syscalls.c: include/syscalls.hh scripts/gen-syscalls.py
+	./scripts/gen-syscalls.py
+
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
           -fno-plt -fno-pic \
