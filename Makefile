@@ -86,6 +86,7 @@ BASE_DEPS = $(BOOT) \
 	src/sbi.c \
 	src/spinlock.c \
 	src/string.c \
+	src/syscall.c \
 	src/syscalls.c \
 	src/timer.c \
 	src/vm-stub.c \

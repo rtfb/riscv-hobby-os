@@ -4,6 +4,9 @@
 #include "sys.h"
 #include "syscallnums.h"
 
+extern void *syscall_vector[];
+extern int syscall_vector_len;
+
 // Notes:
 // * xxxxram numbers are in pages, multiply them by PAGE_SIZE to get bytes
 // * the commented fields are not (yet?) implemented, uncomment them as we go
