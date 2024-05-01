@@ -26,7 +26,7 @@ _start:
         .balign 8
         .dword LINUX_IMAGE_HEADER_TEXT_OFFSET
         // Effective size of kernel image
-        .dword _end - _start
+        .dword heap_start - _start
         .dword 0
         .word RISCV_HEADER_VERSION
         .word 0
@@ -35,6 +35,13 @@ _start:
         .balign 4
         .ascii "RSC\x05"
         .word 0
+
+// Reserve the bottom 4KiB of RAM for kernel stack, and place the actual code
+// right above it. Only do that if the code is not in ROM. If it is, the bottom
+// of RAM is reserved in kernel.ld.
+#if !CODE_IN_ROM
+.balign 4096
+#endif
 
 .globl _start_kernel
 _start_kernel:
@@ -67,12 +74,12 @@ _start_kernel:
         csrr    a0, mhartid             // set a0 to mhartid to be compatible with boot in S-mode
 #endif
         mv      tp, a0                  // store hartid in tp
-                                        // setup stack pointer:
-        la      t0, stack_top_addr      // set it at stack_top_addr for hart0,
-        mv      t1, a0                  // at stack_top_addr-512 for hart1, etc.
+        la      t0, RAM_START
+        mv      t1, a0
+        add     t1, t1, 1
         li      t2, 512
         mul     t1, t1, t2
-        sub     t0, t0, t1
+        add     t0, t0, t1
         mv      sp, t0
 
         // only allow mhartid==BOOT_HART_ID to jump to the init_segments code;
@@ -327,11 +334,12 @@ trap_vector:                            // 3.1.20 Machine Cause Register (mcause
 
 set_global_stack:
         // set the same stack location as we do during the boot time.
-        la      t0, stack_top_addr         // set it at stack_top_addr for hart0,
-        mv      t1, tp                     // hartid is preserved in tp, so now t1=mhartid
+        la      t0, RAM_START
+        mv      t1, tp
+        add     t1, t1, 1
         li      t2, 512
         mul     t1, t1, t2
-        sub     t0, t0, t1
+        add     t0, t0, t1
         mv      sp, t0
 
 stack_done:
@@ -459,7 +467,12 @@ exception:
         csrr    t1, REG_EPC
         csrr    t2, REG_TVAL
         la      t3, user_payload
-        la      t4, stack_top_addr
+#if HAS_S_MODE
+        la      t4, _start_kernel
+#else
+        la      t4, RAM_START
+        add     t4, t4, 512
+#endif
         addi    sp, sp, -5*REGSZ
         OP_STOR t0, 0*REGSZ(sp)
         OP_STOR t1, 1*REGSZ(sp)

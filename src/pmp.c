@@ -39,30 +39,29 @@ void* init_pmp() {
     unsigned long access_flags = (PMP_X | PMP_W | PMP_R) * PMP_0;
     set_pmpcfg0(mode | access_flags);
 #else
-    // define 4 memory address ranges for Physical Memory Protection
-    // 0 :: [0 .. user_payload]
-    // 1 :: [user_payload .. .rodata]
-    // 2 :: [.rodata .. stack_bottom_addr]
-    // 3 :: [stack_bottom_addr .. paged_mem_end]
+    // define 3 memory address ranges for Physical Memory Protection
+    // 0 :: [0 .. .rodata]
+    // 1 :: [.rodata .. stack_bottom_addr]
+    // 2 :: [stack_bottom_addr .. paged_mem_end]
     set_pmpaddr0(&user_payload);
     set_pmpaddr1(&rodata);
-    set_pmpaddr2(&stack_bottom_addr);
-    set_pmpaddr3(paged_mem_end);
+    set_pmpaddr2(paged_mem_end);
 
-    // set 4 PMP entries to TOR (Top Of the address Range) addressing mode so that the associated
-    // address register forms the top of the address range per entry,
-    // the type of PMP entry is encoded in 2 bits: OFF = 0, TOR = 1, NA4 = 2, NAPOT = 3
-    // and stored in 3:4 bits of every PMP entry
-    unsigned long mode = PMP_TOR * (PMP_0 | PMP_1 | PMP_2 | PMP_3);
+    // set 3 PMP entries to TOR (Top Of the address Range) addressing mode so
+    // that the associated address register forms the top of the address range
+    // per entry, the type of PMP entry is encoded in 2 bits: OFF = 0, TOR = 1,
+    // NA4 = 2, NAPOT = 3 and stored in 3:4 bits of every PMP entry
+    unsigned long mode = PMP_TOR * (PMP_0 | PMP_1 | PMP_2);
 
-    // set access flags for 4 PMP entries:
-    // 0 :: [0 .. user_payload]                      000  M-mode kernel code, no access in U-mode
-    // 1 :: [user_payload .. .rodata]                X0R  user code, executable, non-modifiable in U-mode
-    // 2 :: [.rodata .. stack_bottom_addr]           000  no access in U-mode
-    // 3 :: [stack_bottom_addr .. paged_mem_end]     0WR  user stack, modifiable, but no executable in U-mode
-    // access (R)ead, (W)rite and e(X)ecute are 1 bit flags and stored in 0:2 bits of every PMP entry
+    // set access flags for 3 PMP entries:
+    // 0 :: [0 .. .user_payload]                 000  kernel stack and code, no access in U-mode
+    // 1 :: [.user_payload .. .rodata]           X0R  user code, executable, non-modifiable in U-mode
+    // 2 :: [.rodata .. paged_mem_end]           0WR  heap, modifiable, but not executable in U-mode
+
+    // access (R)ead, (W)rite and e(X)ecute are 1 bit flags and stored in 0:2
+    // bits of every PMP entry
     unsigned long access_flags =   ((PMP_X | PMP_R) * PMP_1)
-                                 | ((PMP_W | PMP_R) * PMP_3);
+                                 | ((PMP_W | PMP_R) * PMP_2);
     set_pmpcfg0(mode | access_flags);
 #endif
 #endif

@@ -5,7 +5,6 @@ SECTIONS
   RAM_START = DEFINED(RAM_START) ? RAM_START : 0x80000000;
   /* Default to 16MiB of RAM if not specified otherwise: */
   RAM_SIZE = DEFINED(RAM_SIZE) ? RAM_SIZE : 0x1000000;
-  STACK_SIZE = DEFINED(STACK_SIZE) ? STACK_SIZE : 0x1000;
   PAGE_SIZE = 0x1000;
 
   /* text: kernel code section */
@@ -27,9 +26,14 @@ SECTIONS
   /* build-id: Store after readonly data */
   build_id = .;
   .gnu_build_id : { *(.note.gnu.build-id) }
+  rodata_end = .;
 
-  . = DEFINED(ROM_START) ? RAM_START : .;
-  . = ALIGN(PAGE_SIZE);
+  /*
+   * If our code lives in ROM, reserve the bottom 512 bytes of RAM for kernel
+   * stack and place all RAM sections above it. Otherwise just align data
+   * section to the page boundary.
+   */
+  . = DEFINED(ROM_START) ? RAM_START + 512 : ALIGN(PAGE_SIZE);
   data_start = .;
   .data : { *(.data) }
   bss_start = .;
@@ -41,14 +45,5 @@ SECTIONS
   .sdata : { *(.sdata) }
   .debug : { *(.debug) }
 
-  /* align stack to 16 bytes as required by the ABI. It could be relaxed to 4
-   * bytes on RV32E, but not worth the effort.
-   */
-  . = ALIGN(16);
-  stack_bottom_addr = .;
-  . += STACK_SIZE;
-  stack_top_addr = .;
-
-  /* End of uninitialized data segment */
-  _end = .;
+  heap_start = .;
 }

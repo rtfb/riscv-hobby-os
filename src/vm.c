@@ -22,8 +22,14 @@
 extern void* RAM_START;
 extern void* user_code_start;
 extern void* rodata_start;
+extern void* rodata_end;
 extern void* data_start;
-extern void* _end;
+extern void* heap_start;
+
+// Note: 512 here means 512 words, which in case of 64 bits makes it a
+// PAGE_SIZE, 4KiB. That's because the bottom 4KiB of RAM are reserved for
+// kernel stack, and the actual code starts above it.
+#define KERNEL_CODE_START (&RAM_START + 512)
 
 // make_kernel_page_table allocates and populates a pagetable for kernel address
 // space. It maps all relevant memory ranges with identity mapping (i.e. the
@@ -36,15 +42,17 @@ void* make_kernel_page_table(page_t *pages, int num_pages) {
     }
     memset(pagetable, PAGE_SIZE, 0);
 
+    map_page_id(pagetable, &RAM_START, PERM_KDATA, -1);
+
     // map kernel code as kernel-executable:
-    map_range_id(pagetable, &RAM_START, &user_code_start, PERM_KCODE);
+    map_range_id(pagetable, KERNEL_CODE_START, &user_code_start, PERM_KCODE);
 
     // map rodata:
-    map_range_id(pagetable, &rodata_start, &data_start, PERM_KRODATA);
+    map_range_id(pagetable, &rodata_start, (void*)PAGE_ROUND_UP(&rodata_end), PERM_KRODATA);
 
     // map data segment:
     void *start = (void*)PAGE_ROUND_DOWN(&data_start);
-    void *end = (void*)PAGE_ROUND_UP(&_end);
+    void *end = (void*)PAGE_ROUND_UP(&heap_start);
     map_range_id(pagetable, start, end, PERM_KDATA);
 
     // pre-map all pages in kernel space:
@@ -71,7 +79,8 @@ void init_user_page_table(void *pagetable, uint32_t pid) {
     // and if it weren't mapped as executable, it would page fault. It's safe
     // to do because the userland will not have access to anything mapped for
     // supervisor access anyway.
-    map_page_id(pagetable, &RAM_START, PERM_KCODE, pid);
+    map_page_id(pagetable, &RAM_START, PERM_KDATA, pid);
+    map_page_id(pagetable, KERNEL_CODE_START, PERM_KCODE, pid);
     void *trap_frame_page = (void*)PAGE_ROUND_DOWN(&trap_frame);
     map_page_id(pagetable, trap_frame_page, PERM_KDATA, pid);
     void *paged_memory_page = (void*)PAGE_ROUND_DOWN(&paged_memory);

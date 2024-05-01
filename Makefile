@@ -195,12 +195,10 @@ $(OUT)/os_sifive_u32: ${OS_SIFIVE_U32_DEPS}
 		-g -include include/machine/qemu_u.h \
 		${OS_SIFIVE_U32_DEPS} -o $@
 
-# XXX: investigate why STACK_SIZE=0x100 is not enough on e64
 $(OUT)/os_sifive_e: ${OS_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 -g \
 		-Wl,--defsym,RAM_SIZE=0x4000 \
-		-Wl,--defsym,STACK_SIZE=0x200 \
 		-include include/machine/qemu_e.h \
 		${OS_SIFIVE_E_DEPS} -o $@
 
@@ -209,7 +207,6 @@ $(OUT)/os_sifive_e32: ${OS_SIFIVE_E32_DEPS}
 		-Wl,--defsym,ROM_START=0x20400000 \
 		-Wa,--defsym,XLEN=32 \
 		-g -Wl,--defsym,RAM_SIZE=0x4000 \
-		-Wl,--defsym,STACK_SIZE=0x100 \
 		-include include/machine/qemu_e.h \
 		${OS_SIFIVE_E32_DEPS} -o $@
 
@@ -218,17 +215,14 @@ $(OUT)/os_test_sifive_e32: ${OS_SIFIVE_E32_DEPS}
 		-Wl,--defsym,ROM_START=0x20400000 \
 		-Wa,--defsym,XLEN=32 \
 		-g -Wl,--defsym,RAM_SIZE=0x4000 \
-		-Wl,--defsym,STACK_SIZE=0x100 \
 		-DHARDCODED_TEST=0x1001 \
 		-include include/machine/qemu_e.h \
 		${OS_SIFIVE_E32_DEPS} -o $@
 
-# XXX: investigate why STACK_SIZE=0x100 is not enough on e64
 $(OUT)/os_test_sifive_e: ${OS_SIFIVE_E_DEPS}
 	$(RISCV64_GCC) -march=rv64g -mabi=lp64 $(GCC_FLAGS) \
 		-Wl,--defsym,ROM_START=0x20400000 -g \
 		-Wl,--defsym,RAM_SIZE=0x4000 \
-		-Wl,--defsym,STACK_SIZE=0x200 \
 		-DHARDCODED_TEST=0x1001 \
 		-include include/machine/qemu_e.h \
 		${OS_SIFIVE_E_DEPS} -o $@

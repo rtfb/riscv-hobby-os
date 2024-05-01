@@ -19,8 +19,7 @@ extern void* user_payload;
 extern void* rodata;
 
 // defined in kernel.ld:
-extern void* stack_bottom_addr;
-extern void* stack_top_addr;
+extern void* heap_start;
 
 // Returns the end of RAM address, which is then passed to init_paged_memory.
 void* init_pmp();
