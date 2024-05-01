@@ -106,7 +106,7 @@ uint32_t proc_fork() {
     }
     uintptr_t status = init_proc(child, parent->trap.pc, 0);
     if (status != 0) {
-        *parent->perrno = status;
+        *parent->perrno = -status;
         release(&child->lock);
         return -1;
     }
@@ -355,19 +355,19 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     // allocate stack. Fail early if we're out of memory:
     void* sp = kalloc("init_proc: sp", proc->pid);
     if (!sp) {
-        return ENOMEM;
+        return -ENOMEM;
     }
     void *ksp = kalloc("init_proc: ksp", proc->pid);
     if (!ksp) {
         release_page(sp);
-        return ENOMEM;
+        return -ENOMEM;
     }
 #if CONFIG_MMU
     void *upagetable = kalloc("init_proc: upagetable", proc->pid);
     if (!upagetable) {
         release_page(sp);
         release_page(ksp);
-        return ENOMEM;
+        return -ENOMEM;
     }
     proc->upagetable = upagetable;
     proc->usatp = MAKE_SATP(upagetable);
@@ -410,16 +410,16 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
 
     int status = itoa(proc->piddir, MAX_FILENAME_LEN, proc->pid);
     if (status < 0) {
-        return ENOBUFS;
+        return -ENOBUFS;
     }
     bifs_directory_t *procfs_dir = bifs_mkdir("/proc", proc->piddir);
     if (!procfs_dir) {
-        return ENFILE;
+        return -ENFILE;
     }
     proc->procfs_dir = procfs_dir;
     bifs_file_t *procfs_name_file = bifs_allocate_file();
     if (!procfs_name_file) {
-        return ENFILE;
+        return -ENFILE;
     }
     procfs_name_file->parent = procfs_dir;
     procfs_name_file->flags = BIFS_READABLE | BIFS_RAW;
@@ -431,7 +431,7 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->procfs_name_file = procfs_name_file;
     bifs_file_t *procfs_stats_file = bifs_allocate_file();
     if (!procfs_stats_file) {
-        return ENFILE;
+        return -ENFILE;
     }
     procfs_stats_file->parent = procfs_dir;
     procfs_stats_file->flags = BIFS_READABLE | BIFS_RAW | BIFS_TMPFILE;
