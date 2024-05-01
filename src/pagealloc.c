@@ -53,15 +53,6 @@ void* allocate_page(char const *site, uint32_t pid, uint32_t flags) {
     return 0;
 }
 
-// kalloc is a convenience shorthand for allocating a page for kernel needs.
-void *kalloc(char const *site, uint32_t pid) {
-    void *page = allocate_page(site, pid, 0);
-    if (!page) {
-        return 0;
-    }
-    return page;
-}
-
 void release_page(void *ptr) {
     acquire(&paged_memory.lock);
     for (int i = 0; i < paged_memory.num_pages; i++) {

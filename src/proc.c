@@ -16,12 +16,11 @@
 proc_table_t proc_table;
 trap_frame_t trap_frame;
 
-void init_process_table(uint32_t runflags) {
+void init_process_table() {
     proc_table.pid_counter = 0;
     for (int i = 0; i < MAX_PROCS; i++) {
         proc_table.procs[i].state = PROC_STATE_AVAILABLE;
     }
-    init_test_processes(runflags);
 }
 
 // sleep_scheduler is called when there's nothing to schedule; this either
@@ -373,9 +372,9 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->usatp = MAKE_SATP(upagetable);
     init_user_page_table(upagetable, proc->pid);
 
-    regsize_t guard_page = TOPMOST_VIRT_PAGE - PAGE_SIZE;
     map_page_sv39(proc->upagetable, sp, TOPMOST_VIRT_PAGE, PERM_UDATA, proc->pid);
-    map_page_sv39(proc->upagetable, 0, guard_page, PERM_KDATA, proc->pid);
+    // guard page just under the stac:
+    map_page_sv39(proc->upagetable, 0, TOPMOST_VIRT_PAGE - PAGE_SIZE, PERM_KDATA, proc->pid);
 #endif
     proc->name = name;
     proc->trap.pc = pc;
@@ -408,42 +407,48 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->magic = (uint32_t*)proc->kstack_page;
     *proc->magic = PROC_MAGIC_STACK_SENTINEL;
 
+    uintptr_t status = init_procfs_files(proc, name);
+    if (status) {
+        return status;
+    }
+
+    acquire(&proc_table.lock);
+    proc_table.num_procs++;
+    release(&proc_table.lock);
+    return 0;
+}
+
+uintptr_t init_procfs_files(process_t *proc, char const *name) {
     int status = itoa(proc->piddir, MAX_FILENAME_LEN, proc->pid);
     if (status < 0) {
         return -ENOBUFS;
     }
-    bifs_directory_t *procfs_dir = bifs_mkdir("/proc", proc->piddir);
-    if (!procfs_dir) {
+    proc->procfs_dir = bifs_mkdir("/proc", proc->piddir);
+    if (!proc->procfs_dir) {
         return -ENFILE;
     }
-    proc->procfs_dir = procfs_dir;
-    bifs_file_t *procfs_name_file = bifs_allocate_file();
-    if (!procfs_name_file) {
+    proc->procfs_name_file = bifs_allocate_file();
+    if (!proc->procfs_name_file) {
         return -ENFILE;
     }
-    procfs_name_file->parent = procfs_dir;
-    procfs_name_file->flags = BIFS_READABLE | BIFS_RAW;
-    procfs_name_file->name = "name";
-    procfs_name_file->data = "";
+    proc->procfs_name_file->parent = proc->procfs_dir;
+    proc->procfs_name_file->flags = BIFS_READABLE | BIFS_RAW;
+    proc->procfs_name_file->name = "name";
+    proc->procfs_name_file->data = "";
     if (name) {
-        procfs_name_file->data = (char*)name;
+        proc->procfs_name_file->data = (char*)name;
     }
-    proc->procfs_name_file = procfs_name_file;
     bifs_file_t *procfs_stats_file = bifs_allocate_file();
     if (!procfs_stats_file) {
         return -ENFILE;
     }
-    procfs_stats_file->parent = procfs_dir;
+    procfs_stats_file->parent = proc->procfs_dir;
     procfs_stats_file->flags = BIFS_READABLE | BIFS_RAW | BIFS_TMPFILE;
     procfs_stats_file->name = "stats";
     procfs_stats_file->dataquery = (dq_closure_t){
         .func = procfs_stats_data_func,
         .data = proc,
     };
-
-    acquire(&proc_table.lock);
-    proc_table.num_procs++;
-    release(&proc_table.lock);
     return 0;
 }
 

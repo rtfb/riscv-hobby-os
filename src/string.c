@@ -1,7 +1,6 @@
 #include "string.h"
 
 int strncmp(char const *a, char const *b, unsigned int num) {
-    unsigned int i = 0;
     do {
         if (!*a && !*b) {
             return 0;
@@ -15,11 +14,11 @@ int strncmp(char const *a, char const *b, unsigned int num) {
         if (*a != *b) {
             break;
         }
-        i++;
+        num--;
         a++;
         b++;
-    } while(i < num);
-    if (i == num) {
+    } while(num > 0);
+    if (num == 0) {
         return 0;
     }
     return *a - *b;

@@ -9,6 +9,7 @@ void kernel_timer_tick(regsize_t sp);
 void set_timer();
 void disable_interrupts();
 void enable_interrupts();
+void test_kprintf();
 
 // defined in boot.S
 extern void* trap_vector;

@@ -338,8 +338,7 @@ int32_t bin_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size) {
 
 bifs_directory_t *bifs_mkdir(char const *parent_path, char const *name) {
     bifs_directory_t *parent;
-    int32_t status = bifs_opendirpath(&parent, parent_path, kstrlen(parent_path));
-    if (status != 0) {
+    if (bifs_opendirpath(&parent, parent_path, kstrlen(parent_path))) {
         return 0;
     }
     bifs_directory_t *dir = bifs_allocate_dir();

@@ -8,6 +8,7 @@
 #include "plic.h"
 #include "pmp.h"
 #include "proc.h"
+#include "programs.h"
 #include "riscv.h"
 #include "runflags.h"
 #include "spinlock.h"
@@ -21,9 +22,8 @@
 spinlock init_lock = 0;
 int user_stack_size = 0;
 
-void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
+void kinit(regsize_t cpu_id, uintptr_t fdt_header_addr) {
     acquire(&init_lock);
-    unsigned int cpu_id = hartid;
     if (cpu_id != BOOT_HART_ID) {
         release(&init_lock);
         // TODO: support multi-core
@@ -38,7 +38,7 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     kprintf("kinit: cpu %d\n", cpu_id);
     fdt_init(fdt_header_addr);
     kprintf("bootargs: %s\n", fdt_get_bootargs());
-    init_trap_vector(hartid);
+    init_trap_vector(cpu_id);
     void* paged_mem_end = init_pmp();
     init_timer(); // must go after init_trap_vector because it might rewrite mtvec/mscratch
 #if BOOT_MODE_M && HAS_S_MODE
@@ -48,22 +48,32 @@ void kinit(regsize_t hartid, uintptr_t fdt_header_addr) {
     // will not be called and kinit() will just keep executing.
     set_supervisor_mode();
 #endif
-    char const* str = "foo"; // this is a random string to test out %s in kprintf()
-    void *p = (void*)0xabcdf10a; // this is a random hex to test out %p in kprintf()
-    kprintf("kprintf test: str=%s, ptr=%p, pos int=%d, neg int=%d\n",
-        str, p, 1337, MAX_NEG_INT);
+    test_kprintf();
     uint32_t runflags = parse_runflags();
     user_stack_size = (runflags == RUNFLAGS_TINY_STACK) ? 512 : PAGE_SIZE;
-    int running_tests = runflags & RUNFLAGS_TESTS;
     init_paged_memory(paged_mem_end);
-    if (!running_tests) {
+    if ((runflags & RUNFLAGS_TESTS) == 0) {
         do_page_report(paged_mem_end);
     }
     fs_init();
-    init_process_table(runflags);
+    init_process_table();
+    if (runflags != RUNFLAGS_DRY_RUN) {
+        if (runflags == RUNFLAGS_SMOKE_TEST || runflags == RUNFLAGS_TINY_STACK) {
+            assign_init_program("sh", test_script);
+        } else {
+            assign_init_program("sh", 0);
+        }
+    }
     init_pipes();
     release(&init_lock);
     scheduler(); // done init'ing, now run the scheduler, forever
+}
+
+void test_kprintf() {
+    char const* str = "foo"; // a random string to test out %s in kprintf()
+    void *p = (void*)0xabcdf10a; // a random hex to test out %p in kprintf()
+    kprintf("kprintf test: str=%s, ptr=%p, pos int=%d, neg int=%d\n",
+        str, p, 1337, MAX_NEG_INT);
 }
 
 // 3.1.12 Machine Trap-Vector Base-Address Register (mtvec)

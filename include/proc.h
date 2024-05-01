@@ -140,7 +140,7 @@ void swtch(context_t *old, context_t *new);
 // would do, but a poor man's version until we can do better.
 void init_test_processes(uint32_t runflags);
 
-void init_process_table(uint32_t runflags);
+void init_process_table();
 void scheduler();
 void sched();
 void forkret();
@@ -197,6 +197,7 @@ void update_proc_by_chan(process_t *proc, void *chan);
 
 process_t* alloc_process();
 uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name);
+uintptr_t init_procfs_files(process_t *proc, char const *name);
 
 // alloc_pid returns a unique process identifier suitable to assign to a newly
 // created process.

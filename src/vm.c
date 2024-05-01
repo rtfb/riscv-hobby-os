@@ -8,6 +8,16 @@
 
 #if CONFIG_MMU
 
+// map_range_id is a convenience wrapper around map_range for identity-mapping
+// the range in kernel address space.
+#define map_range_id(pagetable, pa_start, pa_end, perm) \
+    map_range(pagetable, pa_start, pa_end, pa_start, perm, -1)
+
+// map_page_id is a convenience wrapper around map_page_sv39 for
+// identity-mapping the page in kernel address space.
+#define map_page_id(pagetable, pa, perm, pid) \
+    map_page_sv39(pagetable, pa, (regsize_t)(pa), perm, pid)
+
 // defined in kernel.ld:
 extern void* RAM_START;
 extern void* user_code_start;
@@ -61,25 +71,19 @@ void init_user_page_table(void *pagetable, uint32_t pid) {
     // and if it weren't mapped as executable, it would page fault. It's safe
     // to do because the userland will not have access to anything mapped for
     // supervisor access anyway.
-    set_kernel_pages(pagetable, pid);
-
-    // map rodata to user address space:
-    void *start = &rodata_start;
-    void *end = &data_start;
-    map_range(pagetable, start, end, (void*)USR_VIRT(start), PERM_URODATA, pid);
-
-    // now map all userland code as user-executable:
-    start = &user_code_start;
-    end = &rodata_start;
-    map_range(pagetable, start, end, (void*)USR_VIRT(start), PERM_UCODE, pid);
-}
-
-void set_kernel_pages(regsize_t *pagetable, int pid) {
     map_page_id(pagetable, &RAM_START, PERM_KCODE, pid);
     void *trap_frame_page = (void*)PAGE_ROUND_DOWN(&trap_frame);
     map_page_id(pagetable, trap_frame_page, PERM_KDATA, pid);
     void *paged_memory_page = (void*)PAGE_ROUND_DOWN(&paged_memory);
     map_page_id(pagetable, paged_memory_page, PERM_KDATA, pid);
+
+    // map rodata to user address space:
+    map_range(pagetable, &rodata_start, &data_start,
+        (void*)USR_VIRT(&rodata_start), PERM_URODATA, pid);
+
+    // now map all userland code as user-executable:
+    map_range(pagetable, &user_code_start, &rodata_start,
+        (void*)USR_VIRT(&user_code_start), PERM_UCODE, pid);
 }
 
 // map_page_sv39 populates a given pagetable with an entry that maps a given
@@ -123,18 +127,6 @@ void map_range(void *pagetable, void *pa_start, void *pa_end, void *va_start, in
         page_pa += PAGE_SIZE;
         va += PAGE_SIZE;
     }
-}
-
-// map_range_id is a convenience wrapper around map_range for identity-mapping
-// the range in kernel address space.
-void map_range_id(void *pagetable, void *pa_start, void *pa_end, int perm) {
-    map_range(pagetable, pa_start, pa_end, pa_start, perm, -1);
-}
-
-// map_page_id is a convenience wrapper around map_page_sv39 for
-// identity-mapping the page in kernel address space.
-void map_page_id(void *pagetable, void *pa, int perm, int pid) {
-    map_page_sv39(pagetable, pa, (regsize_t)pa, perm, pid);
 }
 
 void free_page_table_r(regsize_t *pt, int level) {

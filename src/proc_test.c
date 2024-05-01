@@ -85,17 +85,6 @@ user_program_t userland_programs[MAX_USERLAND_PROGS] _rodata = {
     },
 };
 
-void init_test_processes(uint32_t runflags) {
-    if (runflags == RUNFLAGS_DRY_RUN) {
-        return;
-    }
-    if (runflags == RUNFLAGS_SMOKE_TEST || runflags == RUNFLAGS_TINY_STACK) {
-        assign_init_program("sh", test_script);
-    } else {
-        assign_init_program("sh", 0);
-    }
-}
-
 void assign_init_program(char const* prog, char const *test_script) {
     user_program_t *program = find_user_program(prog);
     if (!program) {
