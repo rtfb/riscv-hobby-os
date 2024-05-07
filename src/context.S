@@ -1,6 +1,6 @@
 #include "asm.h"
 .balign 4
-.section .text
+.section .trampoline
 
 .globl k_interrupt_timer
 k_interrupt_timer:
@@ -71,6 +71,14 @@ ret_to_user:
 
         // return to userland:
         OP_xRET
+
+// IMPORTANT! This is a sentinel, keep it here. All code that should fit in the
+// trampoline page should go before it. The kernel.ld linker script contains an
+// assert that will fail to link if the trampoline code gets larger than a
+// single page (4KiB).
+.globl end_of_trampoline
+end_of_trampoline:
+        nop
 
 // Context switch
 //

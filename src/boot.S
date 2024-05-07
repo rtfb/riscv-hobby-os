@@ -8,7 +8,7 @@
 //       Privileged Architecture Version 1.10
 
 .balign 4
-.section .text
+.section .initstack
 
 // This section between _start and _start_kernel is a hardcoded Linux kernel
 // signature. Functionally, it does nothing, but immediately jumps to
@@ -43,6 +43,7 @@ _start:
 .balign 4096
 #endif
 
+.section .trampoline
 .globl _start_kernel
 _start_kernel:
         // from: sifive-interrupt-cookbook-v1p2.pdf

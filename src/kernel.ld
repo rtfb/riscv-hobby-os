@@ -9,7 +9,10 @@ SECTIONS
 
   /* text: kernel code section */
   . = DEFINED(ROM_START) ? ROM_START : RAM_START;
-  .text : { *(.text) }
+  .text : {
+      *(.initstack .trampoline .text)
+      ASSERT((end_of_trampoline - _start_kernel < 0x1000), "Trampoline overflows one page!");
+  }
 
   . = ALIGN(PAGE_SIZE);
   user_code_start = .;
