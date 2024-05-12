@@ -2,8 +2,8 @@
 #include "userland.h"
 
 uintptr_t* _userland __errno_location() {
-    register uintptr_t a0 asm ("a0");
-    asm volatile (
+    register uintptr_t a0 __asm__ ("a0");
+    __asm__ __volatile__ (
         "mv a0, sp"
         : "=r"(a0)   // output in a0
     );

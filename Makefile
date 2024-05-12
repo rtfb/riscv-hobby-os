@@ -180,6 +180,7 @@ src/syscalls.c: include/syscalls.hh scripts/gen-syscalls.py
 GCC_FLAGS=-static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles \
           -ffreestanding \
           -fno-plt -fno-pic \
+          -std=c17 \
           --param=case-values-threshold=20 \
           -Wa,-Iinclude \
           -Tsrc/kernel.ld -Iinclude -Iuser/inc

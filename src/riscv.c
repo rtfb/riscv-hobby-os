@@ -46,8 +46,8 @@ void set_interrupt_enable_bits() {
 }
 
 unsigned int get_tp() {
-    register unsigned int a0 asm ("a0");
-    asm volatile (
+    register unsigned int a0 __asm__ ("a0");
+    __asm__ __volatile__ (
         "mv a0, tp"
         : "=r"(a0)   // output in a0
     );
@@ -61,7 +61,7 @@ void* shift_right_addr(void* addr, int bits) {
 
 void set_pmpaddr0(void* addr) {
     addr = shift_right_addr(addr, 2);
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw   pmpaddr0, %0;"  // set pmpaddr0 to the requested addr
         :                       // no output
         : "r"(addr)             // input in addr
@@ -70,7 +70,7 @@ void set_pmpaddr0(void* addr) {
 
 void set_pmpaddr1(void* addr) {
     addr = shift_right_addr(addr, 2);
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw   pmpaddr1, %0;"  // set pmpaddr1 to the requested addr
         :                       // no output
         : "r"(addr)             // input in addr
@@ -79,7 +79,7 @@ void set_pmpaddr1(void* addr) {
 
 void set_pmpaddr2(void* addr) {
     addr = shift_right_addr(addr, 2);
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw   pmpaddr2, %0;"  // set pmpaddr2 to the requested addr
         :                       // no output
         : "r"(addr)             // input in addr
@@ -88,7 +88,7 @@ void set_pmpaddr2(void* addr) {
 
 void set_pmpaddr3(void* addr) {
     addr = shift_right_addr(addr, 2);
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw   pmpaddr3, %0;"  // set pmpaddr3 to the requested addr
         :                       // no output
         : "r"(addr)             // input in addr
@@ -96,7 +96,7 @@ void set_pmpaddr3(void* addr) {
 }
 
 void set_pmpcfg0(unsigned long value) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw   pmpcfg0, %0;"   // set pmpcfg0 to the requested value
         :                       // no output
         : "r"(value)            // input in value
@@ -104,8 +104,8 @@ void set_pmpcfg0(unsigned long value) {
 }
 
 unsigned int get_status_csr() {
-    register unsigned int a0 asm ("a0");
-    asm volatile (
+    register unsigned int a0 __asm__ ("a0");
+    __asm__ __volatile__ (
         "csrr a0, " REG_STATUS
         : "=r"(a0)   // output in a0
     );
@@ -113,8 +113,8 @@ unsigned int get_status_csr() {
 }
 
 unsigned int get_mstatus_csr() {
-    register unsigned int a0 asm ("a0");
-    asm volatile (
+    register unsigned int a0 __asm__ ("a0");
+    __asm__ __volatile__ (
         "csrr a0, mstatus"
         : "=r"(a0)   // output in a0
     );
@@ -122,7 +122,7 @@ unsigned int get_mstatus_csr() {
 }
 
 void set_status_csr(unsigned int value) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw " REG_STATUS ", %0"
         :            // no output
         : "r"(value) // input in value
@@ -130,7 +130,7 @@ void set_status_csr(unsigned int value) {
 }
 
 void set_mstatus_csr(unsigned int value) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw mstatus, %0"
         :            // no output
         : "r"(value) // input in value
@@ -138,8 +138,8 @@ void set_mstatus_csr(unsigned int value) {
 }
 
 void* get_epc_csr() {
-    register void* a0 asm ("a0");
-    asm volatile (
+    register void* a0 __asm__ ("a0");
+    __asm__ __volatile__ (
         "csrr a0, " REG_EPC
         : "=r"(a0)   // output in a0
     );
@@ -147,7 +147,7 @@ void* get_epc_csr() {
 }
 
 void set_jump_address(void *func) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw " REG_EPC ", %0;"  // set mepc to userland function
         :                        // no output
         : "r"(func)              // input in func
@@ -197,7 +197,7 @@ void set_supervisor_mode() {
     // mepc to point to the next instruction after mret, which effectively will
     // jump to this function's epilogue and the code flow will continue
     // undisturbed, but now in S-Mode.
-    asm volatile (
+    __asm__ __volatile__ (
         "                     \n\
         auipc  t0, 0          \n\
         addi   t0, t0, 16     \n\
@@ -208,7 +208,7 @@ void set_supervisor_mode() {
 }
 
 void set_sscratch_csr(void* ptr) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw sscratch, %0"
         :            // no output
         : "r"(ptr)   // input in value
@@ -216,7 +216,7 @@ void set_sscratch_csr(void* ptr) {
 }
 
 void set_mscratch_csr(void* ptr) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw mscratch, %0"
         :            // no output
         : "r"(ptr)   // input in value
@@ -224,7 +224,7 @@ void set_mscratch_csr(void* ptr) {
 }
 
 void set_mtvec_csr(void* ptr) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw mtvec, %0"
         :            // no output
         : "r"(ptr)   // input in value
@@ -232,7 +232,7 @@ void set_mtvec_csr(void* ptr) {
 }
 
 void set_mideleg_csr(regsize_t value) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw mideleg, %0"
         :            // no output
         : "r"(value) // input in value
@@ -240,7 +240,7 @@ void set_mideleg_csr(regsize_t value) {
 }
 
 void set_medeleg_csr(regsize_t value) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw medeleg, %0"
         :            // no output
         : "r"(value) // input in value
@@ -248,7 +248,7 @@ void set_medeleg_csr(regsize_t value) {
 }
 
 void set_mie_csr(regsize_t value) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw mie, %0"
         :            // no output
         : "r"(value) // input in value
@@ -256,7 +256,7 @@ void set_mie_csr(regsize_t value) {
 }
 
 void set_stvec_csr(void *ptr) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw  stvec, %0;"   // set stvec to the requested value
         :                    // no output
         : "r"(ptr)           // input in ptr
@@ -264,7 +264,7 @@ void set_stvec_csr(void *ptr) {
 }
 
 void set_mepc_csr(void* ptr) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrw mepc, %0"
         :            // no output
         : "r"(ptr)   // input in value
@@ -272,7 +272,7 @@ void set_mepc_csr(void* ptr) {
 }
 
 void set_ie_csr(unsigned int value) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrs " REG_IE ", %0;"  // set mie to the requested value
         :                       // no output
         : "r"(value)            // input in value
@@ -280,7 +280,7 @@ void set_ie_csr(unsigned int value) {
 }
 
 void csr_sip_clear_flags(regsize_t flags) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrc sip, %0;"  // clear requested bits of sip
         :                // no output
         : "r"(flags)     // input in flags
@@ -290,7 +290,7 @@ void csr_sip_clear_flags(regsize_t flags) {
 // csr_sip_set_flags sets the requested bits of sip to be set to 1. Effectively,
 // it does an atomic "sip |= flags".
 void csr_sip_set_flags(regsize_t flags) {
-    asm volatile (
+    __asm__ __volatile__ (
         "csrs sip, %0;"  // set requested bits of sip
         :                // no output
         : "r"(flags)     // input in flags
@@ -305,7 +305,7 @@ void csr_sip_set_flags(regsize_t flags) {
 // It's meant to be called in cases like panic(), or to suspend an unused hart.
 void hard_park_hart() {
     while (1) {
-        asm volatile ("wfi");
+        __asm__ __volatile__ ("wfi");
     }
 }
 
@@ -314,7 +314,7 @@ void hard_park_hart() {
 // which in turn will let the scheduler do its thing.
 void soft_park_hart() {
     while (1) {
-        asm volatile ("wfi");
+        __asm__ __volatile__ ("wfi");
         if (unsleep_scheduler) {
             unsleep_scheduler = 0;
             cause_timer_interrupt_now();

@@ -7,8 +7,8 @@ void machine_init_timer() {
 }
 
 uint64_t time_get_now() {
-    register uint64_t a0 asm ("a0");
-    asm volatile (
+    register uint64_t a0 __asm__ ("a0");
+    __asm__ __volatile__ (
         "csrr a0, time"
         : "=r"(a0)   // output in a0
     );
