@@ -299,7 +299,7 @@ void csr_sip_set_flags(regsize_t flags) {
 
 // hard_park_hart is an infinite loop, it will stop the calling hart forever.
 // The wfi (wait for interrupt) instruction is just a hint to the core that it
-// may downlock itself or otherwise save energy, not that we expect any
+// may downclock itself or otherwise save energy, not that we expect any
 // interrupts to happen on it.
 //
 // It's meant to be called in cases like panic(), or to suspend an unused hart.
