@@ -34,7 +34,9 @@
                     case 'p':                                          \
                         /* do a 0x, then print an unsigned %x: */      \
                         _PRINTF_WRITE_CHAR('0');                       \
+                        dsti++;                                        \
                         _PRINTF_WRITE_CHAR('x');                       \
+                        dsti++;                                        \
                         unsigned long int uh = args[argnum++];         \
                         tmp = _PRINT_RADIXU(uh, 16, digit_buf, DIGIT_BUF_SZ); \
                         break;                                         \

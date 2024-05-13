@@ -10,7 +10,7 @@ char const* _userland print_radix(long int num, int radix, char *buf, unsigned i
 }
 
 // the unsigned version of print_radix
-char const* print_radixu(unsigned long int num, int radix, char *buf, unsigned int size) {
+char const* _userland print_radixu(unsigned long int num, int radix, char *buf, unsigned int size) {
     PRINT_RADIX_IMPL;
 }
 

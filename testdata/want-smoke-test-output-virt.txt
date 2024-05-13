@@ -13,7 +13,7 @@ S   0     3      sh
 R   3     1      ps
 23
 1090
-formatted string: num=387, zero=0, char=X, hex=0xaddbeef, str=foo
+formatted string: num=387, zero=0, char=X, hex=0xaddbeef, str=foo, ptr=0xaddbeef
 QUIT_QEMU
 
 qemu-launcher: killing qemu due to quit sequence
