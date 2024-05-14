@@ -60,6 +60,9 @@ void fs_free_file(file_t *f) {
         bifs_file_t *bf = (bifs_file_t*)f->fs_file;
         bf->data = 0;
     }
+    if (f->fs_file) {
+        bifs_delete_tmpfile(f->fs_file);
+    }
 }
 
 int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {

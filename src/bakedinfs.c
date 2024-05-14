@@ -175,6 +175,19 @@ bifs_directory_t* bifs_allocate_dir() {
     return 0;
 }
 
+void bifs_delete_dir(bifs_directory_t* d) {
+    d->flags = 0;
+}
+
+void bifs_delete_tmpfiles(bifs_directory_t *d) {
+    for (int i = 0; i < BIFS_MAX_FILES; i++) {
+        bifs_file_t *f = &bifs_all_files[i];
+        if (f->parent == d) {
+            bifs_delete_tmpfile(f);
+        }
+    }
+}
+
 bifs_file_t* bifs_allocate_file() {
     for (int i = 0; i < BIFS_MAX_FILES; i++) {
         bifs_file_t *f = &bifs_all_files[i];
@@ -184,6 +197,14 @@ bifs_file_t* bifs_allocate_file() {
         }
     }
     return 0;
+}
+
+// bifs_delete_tmpfile deallocates a file, but only if it's a BIFS_TMPFILE.
+void bifs_delete_tmpfile(bifs_file_t* f) {
+    if ((f->flags & BIFS_TMPFILE) == 0) {
+        return;
+    }
+    f->flags = 0;
 }
 
 int32_t bifs_opendirpath(bifs_directory_t **dir, char const *path, int end) {

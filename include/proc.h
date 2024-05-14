@@ -198,6 +198,7 @@ void update_proc_by_chan(process_t *proc, void *chan);
 process_t* alloc_process();
 uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name);
 uintptr_t init_procfs_files(process_t *proc, char const *name);
+void cleanup_proc(process_t *proc);
 
 // alloc_pid returns a unique process identifier suitable to assign to a newly
 // created process.

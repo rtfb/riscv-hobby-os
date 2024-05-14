@@ -92,6 +92,23 @@ int should_wake_up(process_t* proc) {
     return 0;
 }
 
+void cleanup_proc(process_t *proc) {
+    if (proc->stack_page) {
+        release_page(proc->stack_page);
+    }
+    if (proc->kstack_page) {
+        release_page(proc->kstack_page);
+    }
+    if (proc->upagetable) {
+        free_page_table(proc->upagetable);
+    }
+    proc->state = PROC_STATE_AVAILABLE;
+    if (proc->procfs_dir) {
+        bifs_delete_tmpfiles(proc->procfs_dir);
+        bifs_delete_dir(proc->procfs_dir);
+    }
+}
+
 uint32_t proc_fork() {
     process_t* parent = myproc();
     parent->trap.pc = trap_frame.pc;
@@ -106,6 +123,7 @@ uint32_t proc_fork() {
     uintptr_t status = init_proc(child, parent->trap.pc, 0);
     if (status != 0) {
         *parent->perrno = -status;
+        cleanup_proc(child);
         release(&child->lock);
         return -1;
     }
@@ -352,39 +370,33 @@ int32_t procfs_stats_data_func(dq_closure_t *c, char *buf, regsize_t bufsz) {
 uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->pid = alloc_pid();
     // allocate stack. Fail early if we're out of memory:
-    void* sp = kalloc("init_proc: sp", proc->pid);
-    if (!sp) {
+    proc->stack_page = kalloc("init_proc: sp", proc->pid);
+    if (!proc->stack_page) {
         return -ENOMEM;
     }
-    void *ksp = kalloc("init_proc: ksp", proc->pid);
-    if (!ksp) {
-        release_page(sp);
+    proc->kstack_page = kalloc("init_proc: ksp", proc->pid);
+    if (!proc->kstack_page) {
         return -ENOMEM;
     }
 #if CONFIG_MMU
-    void *upagetable = kalloc("init_proc: upagetable", proc->pid);
-    if (!upagetable) {
-        release_page(sp);
-        release_page(ksp);
+    proc->upagetable = kalloc("init_proc: upagetable", proc->pid);
+    if (!proc->upagetable) {
         return -ENOMEM;
     }
-    proc->upagetable = upagetable;
-    proc->usatp = MAKE_SATP(upagetable);
-    init_user_page_table(upagetable, proc->pid);
+    proc->usatp = MAKE_SATP(proc->upagetable);
+    init_user_page_table(proc->upagetable, proc->pid);
 
-    map_page_sv39(proc->upagetable, sp, TOPMOST_VIRT_PAGE, PERM_UDATA, proc->pid);
+    map_page_sv39(proc->upagetable, proc->stack_page, TOPMOST_VIRT_PAGE, PERM_UDATA, proc->pid);
     // guard page just under the stac:
     map_page_sv39(proc->upagetable, 0, TOPMOST_VIRT_PAGE - PAGE_SIZE, PERM_KDATA, proc->pid);
 #endif
     proc->name = name;
     proc->trap.pc = pc;
-    proc->stack_page = sp;
-    proc->perrno = _set_perrno(sp); // reserve the last word for errno
-    proc->kstack_page = ksp;
+    proc->perrno = _set_perrno(proc->stack_page); // reserve the last word for errno
     proc->trap.regs[REG_SP] = STK_ROUND(
-        USR_STK_VIRT(sp)    // base of the stack page
-        + user_stack_size   // stack size to get to the end
-        - sizeof(uintptr_t) // compensate for perrno
+        USR_STK_VIRT(proc->stack_page)  // base of the stack page
+        + user_stack_size               // stack size to get to the end
+        - sizeof(uintptr_t)             // compensate for perrno
     );
     proc->trap.regs[REG_TP] = trap_frame.regs[REG_TP];
     proc->state = PROC_STATE_READY;
@@ -394,7 +406,7 @@ uintptr_t init_proc(process_t* proc, regsize_t pc, char const *name) {
     proc->files[FD_STDERR] = &stderr;
     memset(&proc->ctx.regs, sizeof(proc->ctx.regs), 0);
     proc->ctx.regs[REG_RA] = (regsize_t)forkret;
-    proc->ctx.regs[REG_SP] = (regsize_t)ksp + PAGE_SIZE;
+    proc->ctx.regs[REG_SP] = (regsize_t)proc->kstack_page + PAGE_SIZE;
     proc->nscheds = 0;
     proc->cond = (pwake_cond_t){
         .type = PWAKE_COND_CHAN,
@@ -432,7 +444,7 @@ uintptr_t init_procfs_files(process_t *proc, char const *name) {
         return -ENFILE;
     }
     proc->procfs_name_file->parent = proc->procfs_dir;
-    proc->procfs_name_file->flags = BIFS_READABLE | BIFS_RAW;
+    proc->procfs_name_file->flags = BIFS_READABLE | BIFS_RAW | BIFS_TMPFILE;
     proc->procfs_name_file->name = "name";
     proc->procfs_name_file->data = "";
     if (name) {
@@ -440,6 +452,7 @@ uintptr_t init_procfs_files(process_t *proc, char const *name) {
     }
     bifs_file_t *procfs_stats_file = bifs_allocate_file();
     if (!procfs_stats_file) {
+        bifs_delete_tmpfile(proc->procfs_name_file);
         return -ENFILE;
     }
     procfs_stats_file->parent = proc->procfs_dir;
@@ -510,8 +523,8 @@ regsize_t proc_exit() {
         }
     }
 
-    proc->procfs_dir->flags = 0;
-    proc->procfs_name_file->flags = 0;
+    bifs_delete_tmpfiles(proc->procfs_dir);
+    bifs_delete_dir(proc->procfs_dir);
 
     acquire(&proc_table.lock);
     proc_table.num_procs--;

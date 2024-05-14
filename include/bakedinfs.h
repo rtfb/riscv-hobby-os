@@ -57,7 +57,10 @@ int32_t bifs_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size);
 int32_t bin_lsdir(bifs_directory_t *dir, dirent_t *dirents, regsize_t size);
 
 bifs_directory_t* bifs_allocate_dir();
+void bifs_delete_dir(bifs_directory_t* d);
+void bifs_delete_tmpfiles(bifs_directory_t *d);
 bifs_file_t* bifs_allocate_file();
+void bifs_delete_tmpfile(bifs_file_t* f);
 bifs_directory_t *bifs_mkdir(char const *parent_path, char const *name);
 
 // next_slash starts looking at path[pos] and keeps going until it finds a slash
