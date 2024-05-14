@@ -577,10 +577,6 @@ int32_t proc_wait(wait_cond_t *cond) {
 }
 
 int32_t proc_wait_by_cond(process_t *proc, pwake_cond_t *cond) {
-    if (cond->type != PWAKE_COND_NSCHEDS) {
-        *proc->perrno = ENOSYS;
-        return -1;
-    }
     process_t *target_proc = find_proc_by_pid(cond->target_pid);
     if (!target_proc) {
         *proc->perrno = ESRCH;

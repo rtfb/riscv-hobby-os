@@ -67,7 +67,13 @@ void _userland sh_wait_for_all_children(cmd_t *cmd_chain) {
             sleep(1);
             continue; // don't wait for a hanger
         }
-        wait(0);
+        if (node->pid != -1) {
+            wait_cond_t cond = (wait_cond_t){
+                .type = WAIT_COND_CHILD,
+                .target_pid = node->pid,
+            };
+            wait(&cond);
+        }
     }
 }
 
@@ -183,10 +189,10 @@ uint32_t _userland traverse(cmd_t *node, int depth) {
             return -1;
         }
     }
-    uint32_t pid = fork();
-    if (pid == -1) {
+    node->pid = fork();
+    if (node->pid == -1) {
         prints("ERROR: fork!\n");
-    } else if (pid == 0) { // child
+    } else if (node->pid == 0) { // child
         if (pipefd[0] != -1) {
             close(0);           // close stdin
             dup(pipefd[0]);     // now replace stdin with the pipe's reading end

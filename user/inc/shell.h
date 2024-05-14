@@ -16,6 +16,9 @@ typedef struct cmd {
     // args contains the pointers into buf. args[0]=cmd, args[1]=arg1, etc
     char const *args[ARGV_BUF_SIZE];
 
+    // pid of the child process or -1 on error
+    uint32_t pid;
+
     struct cmd *next;
 } cmd_t;
 
