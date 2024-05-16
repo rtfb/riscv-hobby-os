@@ -85,6 +85,9 @@ void scheduler() {
 }
 
 int should_wake_up(process_t* proc) {
+    if (proc->chan != 0) {
+        return 0;
+    }
     uint64_t now = time_get_now();
     if (proc->wakeup_time != 0 && proc->wakeup_time <= now) {
         return 1;
@@ -444,7 +447,7 @@ uintptr_t init_procfs_files(process_t *proc, char const *name) {
         return -ENFILE;
     }
     proc->procfs_name_file->parent = proc->procfs_dir;
-    proc->procfs_name_file->flags = BIFS_READABLE | BIFS_RAW | BIFS_TMPFILE;
+    proc->procfs_name_file->flags |= BIFS_RAW | BIFS_TMPFILE;
     proc->procfs_name_file->name = "name";
     proc->procfs_name_file->data = "";
     if (name) {
@@ -452,11 +455,10 @@ uintptr_t init_procfs_files(process_t *proc, char const *name) {
     }
     bifs_file_t *procfs_stats_file = bifs_allocate_file();
     if (!procfs_stats_file) {
-        bifs_delete_tmpfile(proc->procfs_name_file);
         return -ENFILE;
     }
     procfs_stats_file->parent = proc->procfs_dir;
-    procfs_stats_file->flags = BIFS_READABLE | BIFS_RAW | BIFS_TMPFILE;
+    procfs_stats_file->flags |= BIFS_RAW | BIFS_TMPFILE;
     procfs_stats_file->name = "stats";
     procfs_stats_file->dataquery = (dq_closure_t){
         .func = procfs_stats_data_func,

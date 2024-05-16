@@ -60,9 +60,6 @@ void fs_free_file(file_t *f) {
         bifs_file_t *bf = (bifs_file_t*)f->fs_file;
         bf->data = 0;
     }
-    if (f->fs_file) {
-        bifs_delete_tmpfile(f->fs_file);
-    }
 }
 
 int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {
@@ -70,12 +67,12 @@ int32_t fs_open(file_t *f, char const *filepath, uint32_t flags) {
     if (status < 0) {
         return status;
     }
-    if (status & BIFS_TMPFILE) {
+    bifs_file_t *bf = (bifs_file_t*)f->fs_file;
+    if (status & BIFS_TMPFILE && !bf->data) {
         f->tmpfile_mem = kalloc("fs_open", myproc()->pid);
         if (!f->tmpfile_mem) {
             return -ENOMEM;
         }
-        bifs_file_t *bf = (bifs_file_t*)f->fs_file;
         if (bf->dataquery.func != 0) {
             int32_t nwritten = bf->dataquery.func(&bf->dataquery, f->tmpfile_mem, PAGE_SIZE-1);
             ((char*)f->tmpfile_mem)[nwritten] = 0;
