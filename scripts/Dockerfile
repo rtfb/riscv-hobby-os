@@ -1,4 +1,6 @@
-FROM alpine
+FROM alpine:edge
+
+RUN apk add qemu=9.0.0-r0
 
 RUN apk update && apk add \
     bash \

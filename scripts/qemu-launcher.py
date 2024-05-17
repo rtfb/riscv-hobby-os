@@ -181,6 +181,9 @@ def make_qemu_command(args):
         machine = 'sifive_e'
 
     cmd = make_docker_cmd(is_32bit, is_interactive(args))
+    if args.version:
+        cmd.append('-version')
+        return cmd, machine, binary, is_32bit
 
     # Override our guesses if args were passed explicitly:
     if args.qemu is not None:
@@ -230,6 +233,9 @@ def run(args):
     if args.timeout is not None:
         timeout = mkdelta(args.timeout)
     cmd, machine, binary, is_32bit = make_qemu_command(args)
+    if args.version:
+        subprocess.run(cmd)
+        return
     if args.debug:
         write_gdb_files(binary, machine, is_32bit)
     filename = 'out/test-run-{}.log'.format(os.path.basename(args.binary))
@@ -267,6 +273,7 @@ def main():
     parser.add_argument('--debug', help='stop to wait for gdb before executing binary',
                         action='store_true')
     parser.add_argument('--bootargs', help='pass this as bootargs to the kernel')
+    parser.add_argument('--version', help='print qemu version', action='store_true')
     args = parser.parse_args()
     run(args)
 
